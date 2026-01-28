@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CelebrationProvider } from './components/celebrations';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -158,7 +159,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <CelebrationProvider>
+        <AppRoutes />
+      </CelebrationProvider>
     </AuthProvider>
   );
 }
