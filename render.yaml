@@ -1,11 +1,16 @@
 # ChoreChamp Render Blueprint
 # https://render.com/docs/blueprint-spec
+#
+# Services deployed:
+# - chorechamp-db (PostgreSQL free tier)
+# - chorechamp-api (Node.js API)
+# - chorechamp-site (Static web app)
 
 services:
   # Web App (Static)
   - type: web
     runtime: static
-    name: chorechamp-app
+    name: chorechamp-site
     rootDir: apps/web
     buildCommand: cd ../.. && npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/web build
     staticPublishPath: ./dist
@@ -34,10 +39,10 @@ services:
     runtime: node
     name: chorechamp-api
     rootDir: apps/api
+    plan: free
     buildCommand: cd ../.. && npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/api build
     startCommand: node dist/server.js
     healthCheckPath: /health
-    plan: starter
     envVars:
       - key: NODE_ENV
         value: production
@@ -48,21 +53,15 @@ services:
           name: chorechamp-db
           property: connectionString
       - key: BETTER_AUTH_SECRET
-        generateValue: true
+        sync: false
       - key: BETTER_AUTH_URL
         sync: false
       - key: CORS_ORIGIN
         sync: false
 
-  # Redis (for sessions and caching)
-  - type: redis
-    name: chorechamp-redis
-    plan: free
-    maxmemoryPolicy: allkeys-lru
-
 # PostgreSQL Database
 databases:
   - name: chorechamp-db
-    plan: starter
+    plan: free
     databaseName: chorechamp
     user: chorechamp
