@@ -12,6 +12,7 @@ import FamilyManagement from './pages/FamilyManagement';
 import Settings from './pages/Settings';
 import HouseholdSettings from './pages/HouseholdSettings';
 import CreateChore from './pages/CreateChore';
+import EditChore from './pages/EditChore';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -146,6 +147,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CreateChore />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/chores/:choreId/edit"
+        element={
+          <ProtectedRoute>
+            <EditChore />
           </ProtectedRoute>
         }
       />

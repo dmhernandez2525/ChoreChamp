@@ -20,6 +20,7 @@ interface ChoreFormProps {
   onCancel: () => void;
   initialData?: Partial<CreateChoreRequest>;
   isSubmitting?: boolean;
+  mode?: 'create' | 'edit';
 }
 
 function getTodayDate(): string {
@@ -32,6 +33,7 @@ export function ChoreForm({
   onCancel,
   initialData,
   isSubmitting,
+  mode = 'create',
 }: ChoreFormProps) {
   // Basic info
   const [title, setTitle] = useState(initialData?.title || '');
@@ -457,7 +459,13 @@ export function ChoreForm({
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create Chore'}
+          {isSubmitting
+            ? mode === 'edit'
+              ? 'Saving...'
+              : 'Creating...'
+            : mode === 'edit'
+            ? 'Save Changes'
+            : 'Create Chore'}
         </Button>
       </div>
     </form>
