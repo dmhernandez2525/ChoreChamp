@@ -35,10 +35,9 @@ function groupActivitiesByDate(activities: Activity[]): Map<string, Activity[]> 
       });
     }
 
-    if (!groups.has(dateKey)) {
-      groups.set(dateKey, []);
-    }
-    groups.get(dateKey)!.push(activity);
+    const existing = groups.get(dateKey) || [];
+    existing.push(activity);
+    groups.set(dateKey, existing);
   });
 
   return groups;

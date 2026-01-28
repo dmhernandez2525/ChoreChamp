@@ -87,16 +87,19 @@ function Toggle({
   checked,
   onChange,
   disabled,
+  label,
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
+  label?: string;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
@@ -145,14 +148,14 @@ export function NotificationPreferences({ onSave, isLoading }: NotificationPrefe
               <p className="font-medium text-gray-900">Push Notifications</p>
               <p className="text-sm text-gray-500">Receive notifications on your device</p>
             </div>
-            <Toggle checked={pushEnabled} onChange={setPushEnabled} />
+            <Toggle checked={pushEnabled} onChange={setPushEnabled} label="Toggle push notifications" />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900">Email Notifications</p>
               <p className="text-sm text-gray-500">Receive notifications via email</p>
             </div>
-            <Toggle checked={emailEnabled} onChange={setEmailEnabled} />
+            <Toggle checked={emailEnabled} onChange={setEmailEnabled} label="Toggle email notifications" />
           </div>
         </div>
       </div>
@@ -186,6 +189,7 @@ export function NotificationPreferences({ onSave, isLoading }: NotificationPrefe
                 <Toggle
                   checked={pref.inApp}
                   onChange={(value) => updatePreference(pref.type, 'inApp', value)}
+                  label={`${pref.label} in-app notifications`}
                 />
               </div>
               <div className="flex justify-center">
@@ -193,6 +197,7 @@ export function NotificationPreferences({ onSave, isLoading }: NotificationPrefe
                   checked={pref.push && pushEnabled}
                   onChange={(value) => updatePreference(pref.type, 'push', value)}
                   disabled={!pushEnabled}
+                  label={`${pref.label} push notifications`}
                 />
               </div>
               <div className="flex justify-center">
@@ -200,6 +205,7 @@ export function NotificationPreferences({ onSave, isLoading }: NotificationPrefe
                   checked={pref.email && emailEnabled}
                   onChange={(value) => updatePreference(pref.type, 'email', value)}
                   disabled={!emailEnabled}
+                  label={`${pref.label} email notifications`}
                 />
               </div>
             </div>
