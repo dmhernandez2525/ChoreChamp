@@ -11,6 +11,7 @@ import JoinHousehold from './pages/JoinHousehold';
 import FamilyManagement from './pages/FamilyManagement';
 import Settings from './pages/Settings';
 import HouseholdSettings from './pages/HouseholdSettings';
+import CreateChore from './pages/CreateChore';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -137,6 +138,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <HouseholdSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/chores/new"
+        element={
+          <ProtectedRoute>
+            <CreateChore />
           </ProtectedRoute>
         }
       />
