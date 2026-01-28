@@ -14,6 +14,10 @@ import HouseholdSettings from './pages/HouseholdSettings';
 import CreateChore from './pages/CreateChore';
 import EditChore from './pages/EditChore';
 import TemplateBrowser from './pages/TemplateBrowser';
+import MemberPoints from './pages/MemberPoints';
+import RewardsStore from './pages/RewardsStore';
+import CreateReward from './pages/CreateReward';
+import EditReward from './pages/EditReward';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -172,6 +176,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <TemplateBrowser />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/members/:memberId/points"
+        element={
+          <ProtectedRoute>
+            <MemberPoints />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/rewards"
+        element={
+          <ProtectedRoute>
+            <RewardsStore />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/rewards/new"
+        element={
+          <ProtectedRoute>
+            <CreateReward />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/rewards/:rewardId/edit"
+        element={
+          <ProtectedRoute>
+            <EditReward />
           </ProtectedRoute>
         }
       />

@@ -8,6 +8,7 @@ import type {
   CreateChoreRequest,
   CompleteChoreRequest,
   JoinHouseholdRequest,
+  CreateRewardRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -19,6 +20,23 @@ export const queryKeys = {
   chores: (householdId: string) => ['chores', householdId] as const,
   todaysChores: (householdId: string, memberId?: string) =>
     ['todaysChores', householdId, memberId] as const,
+  // Gamification
+  stats: (householdId: string, memberId: string) =>
+    ['stats', householdId, memberId] as const,
+  transactions: (householdId: string, memberId: string) =>
+    ['transactions', householdId, memberId] as const,
+  streak: (householdId: string, memberId: string) =>
+    ['streak', householdId, memberId] as const,
+  badges: (householdId: string, memberId: string) =>
+    ['badges', householdId, memberId] as const,
+  leaderboard: (householdId: string, period?: string) =>
+    ['leaderboard', householdId, period] as const,
+  // Rewards
+  rewards: (householdId: string) => ['rewards', householdId] as const,
+  reward: (householdId: string, rewardId: string) =>
+    ['reward', householdId, rewardId] as const,
+  pendingRedemptions: (householdId: string) =>
+    ['pendingRedemptions', householdId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -171,6 +189,193 @@ export function useApproveCompletion(householdId: string) {
     mutationFn: (completionId: string) => apiClient.approveCompletion(householdId, completionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.todaysChores(householdId) });
+    },
+  });
+}
+
+// ===== Gamification Hooks =====
+export function useGamificationStats(householdId: string, memberId: string) {
+  return useQuery({
+    queryKey: queryKeys.stats(householdId, memberId),
+    queryFn: () => apiClient.getGamificationStats(householdId, memberId),
+    enabled: !!householdId && !!memberId,
+  });
+}
+
+export function usePointTransactions(
+  householdId: string,
+  memberId: string,
+  options?: { limit?: number; offset?: number }
+) {
+  return useQuery({
+    queryKey: [...queryKeys.transactions(householdId, memberId), options],
+    queryFn: () => apiClient.getPointTransactions(householdId, memberId, options),
+    enabled: !!householdId && !!memberId,
+  });
+}
+
+export function useMemberStreak(householdId: string, memberId: string) {
+  return useQuery({
+    queryKey: queryKeys.streak(householdId, memberId),
+    queryFn: () => apiClient.getMemberStreak(householdId, memberId),
+    enabled: !!householdId && !!memberId,
+  });
+}
+
+export function useMemberBadges(householdId: string, memberId: string) {
+  return useQuery({
+    queryKey: queryKeys.badges(householdId, memberId),
+    queryFn: () => apiClient.getMemberBadges(householdId, memberId),
+    enabled: !!householdId && !!memberId,
+  });
+}
+
+export function useLeaderboard(householdId: string, period?: 'week' | 'month' | 'all') {
+  return useQuery({
+    queryKey: queryKeys.leaderboard(householdId, period),
+    queryFn: () => apiClient.getLeaderboard(householdId, period),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Reward Hooks =====
+export function useRewards(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.rewards(householdId),
+    queryFn: () => apiClient.getRewards(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useReward(householdId: string, rewardId: string) {
+  return useQuery({
+    queryKey: queryKeys.reward(householdId, rewardId),
+    queryFn: () => apiClient.getReward(householdId, rewardId),
+    enabled: !!householdId && !!rewardId,
+  });
+}
+
+export function useCreateReward(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateRewardRequest) => apiClient.createReward(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rewards(householdId) });
+    },
+  });
+}
+
+export function useUpdateReward(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      rewardId,
+      data,
+    }: {
+      rewardId: string;
+      data: Partial<CreateRewardRequest>;
+    }) => apiClient.updateReward(householdId, rewardId, data),
+    onSuccess: (_, { rewardId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rewards(householdId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.reward(householdId, rewardId),
+      });
+    },
+  });
+}
+
+export function useDeleteReward(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (rewardId: string) => apiClient.deleteReward(householdId, rewardId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rewards(householdId) });
+    },
+  });
+}
+
+export function useRedeemReward(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      rewardId,
+      memberId,
+      notes,
+    }: {
+      rewardId: string;
+      memberId: string;
+      notes?: string;
+    }) => apiClient.redeemReward(householdId, rewardId, memberId, notes),
+    onSuccess: (_, { memberId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rewards(householdId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stats(householdId, memberId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.transactions(householdId, memberId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pendingRedemptions(householdId),
+      });
+    },
+  });
+}
+
+export function usePendingRedemptions(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.pendingRedemptions(householdId),
+    queryFn: () => apiClient.getPendingRedemptions(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useApproveRedemption(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (redemptionId: string) =>
+      apiClient.approveRedemption(householdId, redemptionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pendingRedemptions(householdId),
+      });
+    },
+  });
+}
+
+export function useFulfillRedemption(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (redemptionId: string) =>
+      apiClient.fulfillRedemption(householdId, redemptionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pendingRedemptions(householdId),
+      });
+    },
+  });
+}
+
+export function useRejectRedemption(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      redemptionId,
+      reason,
+    }: {
+      redemptionId: string;
+      reason: string;
+    }) => apiClient.rejectRedemption(householdId, redemptionId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pendingRedemptions(householdId),
+      });
     },
   });
 }

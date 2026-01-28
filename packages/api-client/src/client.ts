@@ -14,6 +14,14 @@ import type {
   ChoreCompletion,
   CompleteChoreRequest,
   TodayChore,
+  GamificationStats,
+  PointTransaction,
+  Badge,
+  StreakData,
+  LeaderboardEntry,
+  Reward,
+  CreateRewardRequest,
+  RewardRedemption,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -160,6 +168,117 @@ class ApiClient {
     reason: string
   ): Promise<void> {
     return this.request(`/households/${householdId}/completions/${completionId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  // ===== Gamification =====
+  async getGamificationStats(householdId: string, memberId: string): Promise<GamificationStats> {
+    return this.request(`/households/${householdId}/members/${memberId}/stats`);
+  }
+
+  async getPointTransactions(
+    householdId: string,
+    memberId: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<PointTransaction[]> {
+    const params = new URLSearchParams();
+    if (options?.limit) params.set('limit', options.limit.toString());
+    if (options?.offset) params.set('offset', options.offset.toString());
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/members/${memberId}/transactions${query}`);
+  }
+
+  async getMemberStreak(householdId: string, memberId: string): Promise<StreakData> {
+    return this.request(`/households/${householdId}/members/${memberId}/streak`);
+  }
+
+  async getMemberBadges(householdId: string, memberId: string): Promise<Badge[]> {
+    return this.request(`/households/${householdId}/members/${memberId}/badges`);
+  }
+
+  async getLeaderboard(
+    householdId: string,
+    period?: 'week' | 'month' | 'all'
+  ): Promise<LeaderboardEntry[]> {
+    const query = period ? `?period=${period}` : '';
+    return this.request(`/households/${householdId}/leaderboard${query}`);
+  }
+
+  // ===== Rewards =====
+  async getRewards(householdId: string): Promise<Reward[]> {
+    return this.request(`/households/${householdId}/rewards`);
+  }
+
+  async getReward(householdId: string, rewardId: string): Promise<Reward> {
+    return this.request(`/households/${householdId}/rewards/${rewardId}`);
+  }
+
+  async createReward(householdId: string, data: CreateRewardRequest): Promise<Reward> {
+    return this.request(`/households/${householdId}/rewards`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateReward(
+    householdId: string,
+    rewardId: string,
+    data: Partial<CreateRewardRequest>
+  ): Promise<Reward> {
+    return this.request(`/households/${householdId}/rewards/${rewardId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteReward(householdId: string, rewardId: string): Promise<void> {
+    return this.request(`/households/${householdId}/rewards/${rewardId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async redeemReward(
+    householdId: string,
+    rewardId: string,
+    memberId: string,
+    notes?: string
+  ): Promise<RewardRedemption> {
+    return this.request(`/households/${householdId}/rewards/${rewardId}/redeem`, {
+      method: 'POST',
+      body: JSON.stringify({ memberId, notes }),
+    });
+  }
+
+  async getPendingRedemptions(householdId: string): Promise<RewardRedemption[]> {
+    return this.request(`/households/${householdId}/redemptions/pending`);
+  }
+
+  async approveRedemption(
+    householdId: string,
+    redemptionId: string
+  ): Promise<RewardRedemption> {
+    return this.request(`/households/${householdId}/redemptions/${redemptionId}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async fulfillRedemption(
+    householdId: string,
+    redemptionId: string
+  ): Promise<RewardRedemption> {
+    return this.request(`/households/${householdId}/redemptions/${redemptionId}/fulfill`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectRedemption(
+    householdId: string,
+    redemptionId: string,
+    reason: string
+  ): Promise<RewardRedemption> {
+    return this.request(`/households/${householdId}/redemptions/${redemptionId}/reject`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
