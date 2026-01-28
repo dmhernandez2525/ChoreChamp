@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CelebrationProvider } from './components/celebrations';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -10,6 +11,7 @@ import JoinHousehold from './pages/JoinHousehold';
 import FamilyManagement from './pages/FamilyManagement';
 import Settings from './pages/Settings';
 import HouseholdSettings from './pages/HouseholdSettings';
+import CreateChore from './pages/CreateChore';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -140,6 +142,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/households/:householdId/chores/new"
+        element={
+          <ProtectedRoute>
+            <CreateChore />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/settings"
         element={
           <ProtectedRoute>
@@ -158,7 +168,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <CelebrationProvider>
+        <AppRoutes />
+      </CelebrationProvider>
     </AuthProvider>
   );
 }

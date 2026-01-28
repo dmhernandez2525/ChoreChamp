@@ -10,6 +10,7 @@ import {
 } from '@chorechamp/api-client';
 import { useAuth } from '../context/AuthContext';
 import { useChoreStore } from '../stores/chore-store';
+import { useCelebration } from '../components/celebrations';
 import {
   ChoreList,
   ChorePreviewList,
@@ -43,6 +44,9 @@ export default function HouseholdDashboard() {
   // Mutations
   const completeChore = useCompleteChore(householdId!);
   const approveCompletion = useApproveCompletion(householdId!);
+
+  // Celebrations
+  const { celebrateChoreCompleted } = useCelebration();
 
   // Find current member based on user
   const currentMember = useMemo(() => {
@@ -84,6 +88,13 @@ export default function HouseholdDashboard() {
         choreId,
         data: {},
       });
+
+      // Find the chore to get its points value
+      const completedChore = todayChores?.find((tc) => tc.chore.id === choreId);
+      const points = completedChore?.chore.pointValue || 10;
+
+      // Celebrate!
+      celebrateChoreCompleted(points, household?.pointsName || 'Stars');
     } finally {
       setCompletingChoreId(null);
     }

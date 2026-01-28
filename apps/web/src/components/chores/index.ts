@@ -4,3 +4,4 @@ export { ChoreList, ChorePreviewList } from './ChoreList';
 export { ChoreDetailModal } from './ChoreDetailModal';
 export { PendingApprovals, PendingApprovalsCount } from './PendingApprovals';
 export { StatsCards, QuickStats } from './StatsCards';
+export * from './form';
