@@ -21,6 +21,7 @@
     "db:migrate": "pnpm --filter=@chorechamp/database migrate",
     "db:push": "pnpm --filter=@chorechamp/database push",
     "db:seed": "pnpm --filter=@chorechamp/database seed",
+    "db:verify": "pnpm --filter=@chorechamp/database verify",
     "db:studio": "pnpm --filter=@chorechamp/database studio",
     "clean": "turbo clean && rm -rf node_modules"
   },

@@ -54,6 +54,7 @@ Located in: `/_@agent-prompts/ChoreChamp/research/sessions/`
 
 | Resource | Location |
 |----------|----------|
+| [Database Guide](./DATABASE.md) | Schema, migrations, seed data |
 | Agent Prompt | `/CHORECHAMP_AGENT_PROMPT.md` |
 | Work Status | `/roadmap/WORK_STATUS.md` |
 | Agent Logs | `/roadmap/AGENT_LOGS/` |
