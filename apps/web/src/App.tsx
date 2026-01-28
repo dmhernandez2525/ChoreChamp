@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
@@ -26,8 +27,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Public route wrapper (redirects authenticated users)
-function PublicRoute({ children }: { children: React.ReactNode }) {
+// Auth route wrapper (redirects authenticated users to dashboard)
+function AuthRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -42,7 +43,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -62,35 +63,36 @@ function NotFound() {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public landing page - always accessible */}
+      <Route path="/" element={<Landing />} />
+
+      {/* Auth routes - redirect to dashboard if already logged in */}
       <Route
         path="/login"
         element={
-          <PublicRoute>
+          <AuthRoute>
             <Login />
-          </PublicRoute>
+          </AuthRoute>
         }
       />
       <Route
         path="/signup"
         element={
-          <PublicRoute>
+          <AuthRoute>
             <SignUp />
-          </PublicRoute>
+          </AuthRoute>
         }
       />
 
       {/* Protected routes */}
       <Route
-        path="/"
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         }
       />
-
-      {/* Placeholder routes - to be implemented */}
       <Route
         path="/households/new"
         element={

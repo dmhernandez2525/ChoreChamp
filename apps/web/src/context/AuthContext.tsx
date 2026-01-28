@@ -25,13 +25,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshSession = async () => {
     try {
-      const session = await authApi.getSession();
+      // Add timeout to prevent hanging if API is unavailable
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Session check timeout')), 5000)
+      );
+
+      const session = await Promise.race([
+        authApi.getSession(),
+        timeoutPromise
+      ]) as { user?: User } | null;
+
       if (session?.user) {
         setUser(session.user);
       } else {
         setUser(null);
       }
     } catch {
+      // If API is unavailable or times out, just set user to null
       setUser(null);
     }
   };
