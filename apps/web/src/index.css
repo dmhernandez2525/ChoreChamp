@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Custom styles */
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+}
+
+/* Smooth animations */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
