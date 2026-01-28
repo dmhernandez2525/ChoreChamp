@@ -15,7 +15,9 @@ const HOST = process.env.HOST || '0.0.0.0';
 async function main() {
   // Create Fastify instance
   const fastify = Fastify({
-    logger: logger,
+    logger: {
+      level: process.env.LOG_LEVEL || 'info',
+    },
   });
 
   // Register plugins
