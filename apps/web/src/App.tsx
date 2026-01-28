@@ -5,6 +5,11 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
 import HouseholdDashboard from './pages/HouseholdDashboard';
+import CreateHousehold from './pages/CreateHousehold';
+import JoinHousehold from './pages/JoinHousehold';
+import FamilyManagement from './pages/FamilyManagement';
+import Settings from './pages/Settings';
+import HouseholdSettings from './pages/HouseholdSettings';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -98,12 +103,7 @@ function AppRoutes() {
         path="/households/new"
         element={
           <ProtectedRoute>
-            <div className="flex min-h-screen items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold">Create Household</h1>
-                <p className="mt-2 text-gray-600">Coming soon...</p>
-              </div>
-            </div>
+            <CreateHousehold />
           </ProtectedRoute>
         }
       />
@@ -111,20 +111,39 @@ function AppRoutes() {
         path="/households/join"
         element={
           <ProtectedRoute>
-            <div className="flex min-h-screen items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold">Join Household</h1>
-                <p className="mt-2 text-gray-600">Coming soon...</p>
-              </div>
-            </div>
+            <JoinHousehold />
           </ProtectedRoute>
         }
       />
       <Route
-        path="/households/:householdId/*"
+        path="/households/:householdId"
         element={
           <ProtectedRoute>
             <HouseholdDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/members"
+        element={
+          <ProtectedRoute>
+            <FamilyManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/settings"
+        element={
+          <ProtectedRoute>
+            <HouseholdSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         }
       />
