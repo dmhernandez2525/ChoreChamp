@@ -3,3 +3,8 @@ export { PointsBalanceCard } from './PointsBalanceCard';
 export { PointsHistory } from './PointsHistory';
 export { StatsOverview } from './StatsOverview';
 export { TransactionItem } from './TransactionItem';
+export { RewardCard } from './RewardCard';
+export { RewardsList } from './RewardsList';
+export { RewardForm } from './RewardForm';
+export { RedeemRewardModal } from './RedeemRewardModal';
+export { PendingRedemptions } from './PendingRedemptions';
