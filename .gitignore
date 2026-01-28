@@ -9,6 +9,17 @@ build/
 out/
 .turbo/
 
+# TypeScript build artifacts in source directories
+*.tsbuildinfo
+apps/**/src/**/*.js
+apps/**/src/**/*.js.map
+apps/**/src/**/*.d.ts
+apps/**/src/**/*.d.ts.map
+apps/**/vite.config.js
+apps/**/vite.config.d.ts
+apps/**/vite.config.js.map
+apps/**/vite.config.d.ts.map
+
 # Environment files
 .env
 .env.local
