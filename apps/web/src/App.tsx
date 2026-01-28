@@ -14,6 +14,7 @@ import HouseholdSettings from './pages/HouseholdSettings';
 import CreateChore from './pages/CreateChore';
 import EditChore from './pages/EditChore';
 import TemplateBrowser from './pages/TemplateBrowser';
+import MemberPoints from './pages/MemberPoints';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -172,6 +173,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <TemplateBrowser />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/members/:memberId/points"
+        element={
+          <ProtectedRoute>
+            <MemberPoints />
           </ProtectedRoute>
         }
       />
