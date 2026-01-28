@@ -8,6 +8,8 @@ import HouseholdDashboard from './pages/HouseholdDashboard';
 import CreateHousehold from './pages/CreateHousehold';
 import JoinHousehold from './pages/JoinHousehold';
 import FamilyManagement from './pages/FamilyManagement';
+import Settings from './pages/Settings';
+import HouseholdSettings from './pages/HouseholdSettings';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -126,6 +128,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <FamilyManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/settings"
+        element={
+          <ProtectedRoute>
+            <HouseholdSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         }
       />
