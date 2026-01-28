@@ -5,15 +5,17 @@
 # - chorechamp-db (PostgreSQL free tier)
 # - chorechamp-api (Node.js API)
 # - chorechamp-site (Static web app)
+#
+# Note: rootDir is set to repo root to handle pnpm workspaces properly
 
 services:
   # Web App (Static)
   - type: web
     runtime: static
     name: chorechamp-site
-    rootDir: apps/web
-    buildCommand: cd ../.. && npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/web build
-    staticPublishPath: ./dist
+    # Root dir is repo root to support pnpm workspaces
+    buildCommand: npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/web build
+    staticPublishPath: apps/web/dist
     envVars:
       - key: NODE_VERSION
         value: "20"
@@ -38,10 +40,10 @@ services:
   - type: web
     runtime: node
     name: chorechamp-api
-    rootDir: apps/api
     plan: free
-    buildCommand: cd ../.. && npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/api build
-    startCommand: node dist/server.js
+    # Root dir is repo root to support pnpm workspaces
+    buildCommand: npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/api build
+    startCommand: cd apps/api && node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
