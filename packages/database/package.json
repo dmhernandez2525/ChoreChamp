@@ -18,7 +18,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "drizzle-orm": "^0.38.0",
+    "drizzle-orm": "^0.41.0",
     "postgres": "^3.4.5"
   },
   "devDependencies": {

@@ -2,43 +2,12 @@
 # https://render.com/docs/blueprint-spec
 
 services:
-  # Marketing Site (Static)
-  - type: web
-    runtime: static
-    name: chorechamp-site
-    rootDir: apps/marketing
-    buildCommand: NODE_ENV=development npm ci && npm run build
-    staticPublishPath: ./out
-    envVars:
-      - key: NODE_VERSION
-        value: "20"
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /index.html
-        name: Cache-Control
-        value: no-cache
-
   # Web App (Static)
   - type: web
     runtime: static
     name: chorechamp-app
     rootDir: apps/web
-    buildCommand: NODE_ENV=development npm ci && npm run build
+    buildCommand: cd ../.. && npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/web build
     staticPublishPath: ./dist
     envVars:
       - key: NODE_VERSION
@@ -65,55 +34,35 @@ services:
     runtime: node
     name: chorechamp-api
     rootDir: apps/api
-    buildCommand: NODE_ENV=development npm ci && npm run build
-    startCommand: NODE_ENV=production npm start
+    buildCommand: cd ../.. && npm install -g pnpm && pnpm install && pnpm --filter @chorechamp/api build
+    startCommand: node dist/server.js
     healthCheckPath: /health
     plan: starter
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "20"
       - key: DATABASE_URL
         fromDatabase:
           name: chorechamp-db
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: chorechamp-redis
-          type: redis
-          property: connectionString
       - key: BETTER_AUTH_SECRET
         generateValue: true
+      - key: BETTER_AUTH_URL
+        sync: false
       - key: CORS_ORIGIN
         sync: false
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: APPLE_CLIENT_ID
-        sync: false
-      - key: APPLE_CLIENT_SECRET
-        sync: false
-      - key: S3_BUCKET
-        sync: false
-      - key: S3_REGION
-        sync: false
-      - key: S3_ACCESS_KEY
-        sync: false
-      - key: S3_SECRET_KEY
-        sync: false
-      - key: CDN_URL
-        sync: false
 
-# Database
+  # Redis (for sessions and caching)
+  - type: redis
+    name: chorechamp-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+# PostgreSQL Database
 databases:
   - name: chorechamp-db
     plan: starter
     databaseName: chorechamp
     user: chorechamp
-
-# Redis
-services:
-  - type: redis
-    name: chorechamp-redis
-    plan: starter
-    maxmemoryPolicy: allkeys-lru
