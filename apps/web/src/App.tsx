@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import HouseholdSettings from './pages/HouseholdSettings';
 import CreateChore from './pages/CreateChore';
 import EditChore from './pages/EditChore';
+import TemplateBrowser from './pages/TemplateBrowser';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -166,7 +167,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="/templates" element={<div>Templates Browser - Coming Soon</div>} />
+      <Route
+        path="/households/:householdId/templates"
+        element={
+          <ProtectedRoute>
+            <TemplateBrowser />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
