@@ -1,0 +1,376 @@
+import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { eq, and } from 'drizzle-orm';
+import { db } from '../lib/db';
+import { members } from '@chorechamp/database';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+
+// Validation schemas
+const createMemberSchema = z.object({
+  name: z.string().min(1).max(100),
+  role: z.enum(['parent', 'child', 'teen', 'viewer']),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  avatarUrl: z.string().url().optional(),
+  birthYear: z.number().min(1900).max(new Date().getFullYear()).optional(),
+  canRedeemRewards: z.boolean().default(true),
+  requiresApproval: z.boolean().default(true),
+});
+
+const updateMemberSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  role: z.enum(['parent', 'child', 'teen', 'viewer']).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  avatarUrl: z.string().url().nullable().optional(),
+  birthYear: z.number().min(1900).max(new Date().getFullYear()).nullable().optional(),
+  canRedeemRewards: z.boolean().optional(),
+  requiresApproval: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
+
+async function verifyParentMembership(
+  userId: string,
+  householdId: string
+): Promise<boolean> {
+  const [membership] = await db
+    .select()
+    .from(members)
+    .where(and(
+      eq(members.householdId, householdId),
+      eq(members.userId, userId),
+      eq(members.role, 'parent')
+    ));
+  return !!membership;
+}
+
+async function verifyMembership(
+  userId: string,
+  householdId: string
+): Promise<typeof members.$inferSelect | null> {
+  const [membership] = await db
+    .select()
+    .from(members)
+    .where(and(
+      eq(members.householdId, householdId),
+      eq(members.userId, userId)
+    ));
+  return membership || null;
+}
+
+export async function memberRoutes(fastify: FastifyInstance) {
+  // Get all members of a household
+  fastify.get('/', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    const householdMembers = await db
+      .select()
+      .from(members)
+      .where(eq(members.householdId, householdId));
+
+    return reply.send(householdMembers);
+  });
+
+  // Create a new member (for child profiles without user accounts)
+  fastify.post('/', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const body = createMemberSchema.parse(request.body);
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can add members',
+      });
+    }
+
+    const [member] = await db
+      .insert(members)
+      .values({
+        householdId,
+        name: body.name,
+        role: body.role,
+        color: body.color,
+        avatarUrl: body.avatarUrl,
+        birthYear: body.birthYear,
+        canRedeemRewards: body.canRedeemRewards,
+        requiresApproval: body.requiresApproval,
+      })
+      .returning();
+
+    return reply.status(201).send(member);
+  });
+
+  // Get a specific member
+  fastify.get('/:memberId', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    const [member] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.id, memberId),
+        eq(members.householdId, householdId)
+      ));
+
+    if (!member) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Member not found',
+      });
+    }
+
+    return reply.send(member);
+  });
+
+  // Update a member
+  fastify.patch('/:memberId', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    const body = updateMemberSchema.parse(request.body);
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    // Get target member
+    const [targetMember] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.id, memberId),
+        eq(members.householdId, householdId)
+      ));
+
+    if (!targetMember) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Member not found',
+      });
+    }
+
+    // Check permissions
+    const isSelf = targetMember.userId === user.id;
+    const isParent = membership.role === 'parent';
+
+    // Only parents can change roles or permissions
+    if ((body.role || body.canRedeemRewards !== undefined || body.requiresApproval !== undefined) && !isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can change roles and permissions',
+      });
+    }
+
+    // Non-parents can only edit themselves
+    if (!isParent && !isSelf) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You can only edit your own profile',
+      });
+    }
+
+    const [member] = await db
+      .update(members)
+      .set({
+        ...body,
+        updatedAt: new Date(),
+      })
+      .where(eq(members.id, memberId))
+      .returning();
+
+    return reply.send(member);
+  });
+
+  // Delete a member
+  fastify.delete('/:memberId', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can remove members',
+      });
+    }
+
+    // Prevent deleting self
+    const [targetMember] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.id, memberId),
+        eq(members.householdId, householdId)
+      ));
+
+    if (!targetMember) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Member not found',
+      });
+    }
+
+    if (targetMember.userId === user.id) {
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: 'Cannot remove yourself from the household',
+      });
+    }
+
+    await db.delete(members).where(eq(members.id, memberId));
+
+    return reply.status(204).send();
+  });
+
+  // Award bonus points to a member
+  fastify.post('/:memberId/points', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    const { amount, reason } = request.body as { amount: number; reason?: string };
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can award bonus points',
+      });
+    }
+
+    if (!amount || typeof amount !== 'number') {
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: 'Amount is required and must be a number',
+      });
+    }
+
+    const [targetMember] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.id, memberId),
+        eq(members.householdId, householdId)
+      ));
+
+    if (!targetMember) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Member not found',
+      });
+    }
+
+    const [member] = await db
+      .update(members)
+      .set({
+        pointsCurrent: (targetMember.pointsCurrent || 0) + amount,
+        pointsLifetime: (targetMember.pointsLifetime || 0) + Math.max(0, amount),
+        updatedAt: new Date(),
+      })
+      .where(eq(members.id, memberId))
+      .returning();
+
+    // TODO: Log this bonus in a points history table
+
+    return reply.send({
+      member,
+      bonus: { amount, reason },
+    });
+  });
+
+  // Use a streak freeze
+  fastify.post('/:memberId/streak-freeze', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    // Get target member
+    const [targetMember] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.id, memberId),
+        eq(members.householdId, householdId)
+      ));
+
+    if (!targetMember) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Member not found',
+      });
+    }
+
+    // Check if user can use freeze (self or parent)
+    const isSelf = targetMember.userId === user.id;
+    const isParent = membership.role === 'parent';
+
+    if (!isSelf && !isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You can only use streak freezes for yourself or your children',
+      });
+    }
+
+    const freezesAvailable = targetMember.streakFreezesAvailable || 0;
+    const freezesUsed = targetMember.streakFreezesUsed || 0;
+
+    if (freezesAvailable <= 0) {
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: 'No streak freezes available',
+      });
+    }
+
+    const [member] = await db
+      .update(members)
+      .set({
+        streakFreezesAvailable: freezesAvailable - 1,
+        streakFreezesUsed: freezesUsed + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(members.id, memberId))
+      .returning();
+
+    return reply.send(member);
+  });
+}
