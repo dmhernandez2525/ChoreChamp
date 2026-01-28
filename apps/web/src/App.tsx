@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CelebrationProvider } from './components/celebrations';
+import { PWAProvider } from './components/pwa';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -285,7 +286,9 @@ export default function App() {
   return (
     <AuthProvider>
       <CelebrationProvider>
-        <AppRoutes />
+        <PWAProvider>
+          <AppRoutes />
+        </PWAProvider>
       </CelebrationProvider>
     </AuthProvider>
   );
