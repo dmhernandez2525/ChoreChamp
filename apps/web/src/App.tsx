@@ -20,6 +20,7 @@ import CreateReward from './pages/CreateReward';
 import EditReward from './pages/EditReward';
 import MemberBadges from './pages/MemberBadges';
 import MemberStreaks from './pages/MemberStreaks';
+import Leaderboard from './pages/Leaderboard';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -226,6 +227,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <MemberStreaks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/leaderboard"
+        element={
+          <ProtectedRoute>
+            <Leaderboard />
           </ProtectedRoute>
         }
       />
