@@ -22,6 +22,7 @@ import MemberBadges from './pages/MemberBadges';
 import MemberStreaks from './pages/MemberStreaks';
 import Leaderboard from './pages/Leaderboard';
 import BossBattle from './pages/BossBattle';
+import NotificationCenter from './pages/NotificationCenter';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -244,6 +245,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <BossBattle />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationCenter />
           </ProtectedRoute>
         }
       />
