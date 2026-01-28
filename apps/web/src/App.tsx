@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
+import HouseholdDashboard from './pages/HouseholdDashboard';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -123,12 +124,7 @@ function AppRoutes() {
         path="/households/:householdId/*"
         element={
           <ProtectedRoute>
-            <div className="flex min-h-screen items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold">Household Dashboard</h1>
-                <p className="mt-2 text-gray-600">Coming soon...</p>
-              </div>
-            </div>
+            <HouseholdDashboard />
           </ProtectedRoute>
         }
       />
