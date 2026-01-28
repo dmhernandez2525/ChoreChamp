@@ -13,11 +13,9 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 async function main() {
-  // Create Fastify instance
+  // Create Fastify instance with default logger
   const fastify = Fastify({
-    logger: {
-      level: process.env.LOG_LEVEL || 'info',
-    },
+    logger: true,
   });
 
   // Register plugins
