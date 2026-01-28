@@ -21,6 +21,7 @@ import EditReward from './pages/EditReward';
 import MemberBadges from './pages/MemberBadges';
 import MemberStreaks from './pages/MemberStreaks';
 import Leaderboard from './pages/Leaderboard';
+import BossBattle from './pages/BossBattle';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -235,6 +236,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Leaderboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/boss-battle"
+        element={
+          <ProtectedRoute>
+            <BossBattle />
           </ProtectedRoute>
         }
       />
