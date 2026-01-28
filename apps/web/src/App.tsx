@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CelebrationProvider } from './components/celebrations';
+import { PWAProvider } from './components/pwa';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -20,6 +21,11 @@ import CreateReward from './pages/CreateReward';
 import EditReward from './pages/EditReward';
 import MemberBadges from './pages/MemberBadges';
 import MemberStreaks from './pages/MemberStreaks';
+import Leaderboard from './pages/Leaderboard';
+import BossBattle from './pages/BossBattle';
+import NotificationCenter from './pages/NotificationCenter';
+import Activity from './pages/Activity';
+import Reports from './pages/Reports';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -229,6 +235,46 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/households/:householdId/leaderboard"
+        element={
+          <ProtectedRoute>
+            <Leaderboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/boss-battle"
+        element={
+          <ProtectedRoute>
+            <BossBattle />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationCenter />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/activity"
+        element={
+          <ProtectedRoute>
+            <Activity />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/reports"
+        element={
+          <ProtectedRoute>
+            <Reports />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
@@ -240,7 +286,9 @@ export default function App() {
   return (
     <AuthProvider>
       <CelebrationProvider>
-        <AppRoutes />
+        <PWAProvider>
+          <AppRoutes />
+        </PWAProvider>
       </CelebrationProvider>
     </AuthProvider>
   );
