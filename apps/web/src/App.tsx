@@ -24,6 +24,7 @@ import Leaderboard from './pages/Leaderboard';
 import BossBattle from './pages/BossBattle';
 import NotificationCenter from './pages/NotificationCenter';
 import Activity from './pages/Activity';
+import Reports from './pages/Reports';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -262,6 +263,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Activity />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/reports"
+        element={
+          <ProtectedRoute>
+            <Reports />
           </ProtectedRoute>
         }
       />
