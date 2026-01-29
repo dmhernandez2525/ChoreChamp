@@ -270,6 +270,18 @@ export function ProfileScreen() {
             <Text className="text-gray-400">›</Text>
           </TouchableOpacity>
 
+          {/* Sounds & Haptics */}
+          <TouchableOpacity
+            className="flex-row items-center justify-between px-6 py-4 border-t border-gray-100"
+            onPress={() => navigation.navigate('SoundsAndHaptics')}
+          >
+            <View className="flex-row items-center">
+              <Text className="text-xl mr-3">🔊</Text>
+              <Text className="text-gray-600">Sounds & Haptics</Text>
+            </View>
+            <Text className="text-gray-400">›</Text>
+          </TouchableOpacity>
+
           {/* Last Sync */}
           <View className="flex-row items-center justify-between px-6 py-4 border-t border-gray-100">
             <Text className="text-gray-600">Last Sync</Text>
