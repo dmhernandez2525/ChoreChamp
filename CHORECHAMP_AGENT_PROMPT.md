@@ -10,7 +10,7 @@
 
 ### Project Location
 ```
-/Users/daniel/Desktop/Projects/PersonalProjects/ChoreChamp/
+/Users/daniel/Desktop/Projects/ChoreChamp/
 ```
 
 ### Key Commands
@@ -258,19 +258,19 @@ useEffect(() => {
 Check these projects for patterns:
 
 ### FocusFlow
-`/Users/daniel/Desktop/Projects/PersonalProjects/FocusFlow/`
+`/Users/daniel/Desktop/Projects/FocusFlow/`
 - TurboRepo structure
 - Fastify API patterns
 - Drizzle ORM schema
 - better-auth integration
 
 ### LifeContextCompiler
-`/Users/daniel/Desktop/Projects/PersonalProjects/LifeContextCompiler/`
+`/Users/daniel/Desktop/Projects/LifeContextCompiler/`
 - Cross-platform (web + mobile)
 - Expo React Native patterns
 
 ### RecordForge
-`/Users/daniel/Desktop/Projects/PersonalProjects/RecordForge/`
+`/Users/daniel/Desktop/Projects/RecordForge/`
 - Swift/AppKit for macOS
 - Tauri for Windows
 - Native desktop architecture
