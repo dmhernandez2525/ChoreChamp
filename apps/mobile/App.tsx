@@ -1,6 +1,7 @@
 import './src/styles/global.css';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,6 +9,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
 import { RootNavigator } from './src/navigation';
+import { initializeDatabase } from './src/db';
+import { setupSyncTriggers } from './src/stores/sync-store';
+import { NetworkStatusBanner } from './src/components/ui';
 
 // Prevent auto-hiding splash screen
 SplashScreen.preventAutoHideAsync();
@@ -28,17 +32,26 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Pre-load any resources or data here
-        // For now, just a small delay for splash screen
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Initialize SQLite database
+        await initializeDatabase();
+
+        // Setup sync triggers for app state changes
+        const cleanup = setupSyncTriggers();
+
+        // Store cleanup for component unmount
+        return cleanup;
       } catch (e) {
-        console.warn(e);
+        console.warn('App initialization error:', e);
       } finally {
         setAppIsReady(true);
       }
     }
 
-    prepare();
+    const cleanupPromise = prepare();
+
+    return () => {
+      cleanupPromise.then((cleanup) => cleanup?.());
+    };
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
@@ -56,8 +69,11 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <NavigationContainer>
-            <StatusBar style="auto" />
-            <RootNavigator />
+            <View style={{ flex: 1 }}>
+              <StatusBar style="auto" />
+              <NetworkStatusBanner />
+              <RootNavigator />
+            </View>
           </NavigationContainer>
         </QueryClientProvider>
       </SafeAreaProvider>
