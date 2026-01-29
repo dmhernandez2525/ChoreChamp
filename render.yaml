@@ -45,7 +45,8 @@ services:
     # Root dir is repo root to support pnpm workspaces
     # NODE_ENV=development during install to get devDependencies (esbuild, etc.)
     buildCommand: npm install -g pnpm && NODE_ENV=development pnpm install && pnpm --filter @chorechamp/api build
-    startCommand: pnpm db:push && cd apps/api && node dist/server.js
+    # One-time: Drop tables to allow uuid->text migration, then push schema
+    startCommand: node -e "const p=require('postgres');const c=p(process.env.DATABASE_URL);c\`DROP TABLE IF EXISTS notification_log, notification_preferences, device_tokens, coppa_consents, password_reset_tokens, sessions, accounts, user_households, invite_codes, members, chores, chore_completions, households, users CASCADE\`.then(()=>c.end())" && pnpm db:push && cd apps/api && node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
