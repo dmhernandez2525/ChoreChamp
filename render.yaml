@@ -45,8 +45,7 @@ services:
     # Root dir is repo root to support pnpm workspaces
     # NODE_ENV=development during install to get devDependencies (esbuild, etc.)
     buildCommand: npm install -g pnpm && NODE_ENV=development pnpm install && pnpm --filter @chorechamp/api build
-    # One-time: Drop tables to allow uuid->text migration, then push schema
-    startCommand: pnpm db:drop-tables && pnpm db:push && cd apps/api && node dist/server.js
+    startCommand: cd apps/api && node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
