@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/auth-store';
 import { useNotificationStore } from '../stores/notification-store';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
-import { NotificationSettingsScreen } from '../screens/settings';
+import { NotificationSettingsScreen, WidgetSettingsScreen } from '../screens/settings';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +49,14 @@ export function RootNavigator() {
           <Stack.Screen
             name="NotificationSettings"
             component={NotificationSettingsScreen}
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="WidgetSettings"
+            component={WidgetSettingsScreen}
             options={{
               presentation: 'modal',
               animation: 'slide_from_bottom',
