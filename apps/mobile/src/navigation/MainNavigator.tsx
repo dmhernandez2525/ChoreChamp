@@ -1,41 +1,13 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HomeScreen } from '../screens/HomeScreen';
+import { DashboardScreen } from '../screens/main';
+import { ChoreListScreen } from '../screens/chores';
+import { RewardsScreen } from '../screens/rewards';
+import { ProfileScreen } from '../screens/profile';
 import type { MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-
-// Placeholder screens for tabs - will be fully built in F5.3
-function ChoresScreen() {
-  return (
-    <View className="flex-1 bg-gray-50 items-center justify-center">
-      <Text className="text-6xl mb-4">📋</Text>
-      <Text className="text-xl font-semibold text-gray-900">Chores</Text>
-      <Text className="text-gray-500">Coming in F5.3</Text>
-    </View>
-  );
-}
-
-function RewardsScreen() {
-  return (
-    <View className="flex-1 bg-gray-50 items-center justify-center">
-      <Text className="text-6xl mb-4">🎁</Text>
-      <Text className="text-xl font-semibold text-gray-900">Rewards</Text>
-      <Text className="text-gray-500">Coming in F5.3</Text>
-    </View>
-  );
-}
-
-function ProfileScreen() {
-  return (
-    <View className="flex-1 bg-gray-50 items-center justify-center">
-      <Text className="text-6xl mb-4">👤</Text>
-      <Text className="text-xl font-semibold text-gray-900">Profile</Text>
-      <Text className="text-gray-500">Coming in F5.3</Text>
-    </View>
-  );
-}
 
 // Tab icon component
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
@@ -75,14 +47,14 @@ export function MainNavigator() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={DashboardScreen}
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
         }}
       />
       <Tab.Screen
         name="Chores"
-        component={ChoresScreen}
+        component={ChoreListScreen}
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />,
         }}
