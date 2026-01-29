@@ -19,7 +19,7 @@ export default function Login() {
 
     try {
       await signIn(email, password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in');
     } finally {
