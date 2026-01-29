@@ -20,6 +20,7 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
   NotificationSettings: undefined;
   WidgetSettings: undefined;
+  SoundsAndHaptics: undefined;
 };
 
 // Type helper for useNavigation hook
