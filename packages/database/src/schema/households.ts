@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, smallint, integer, timestamp, boolean, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, smallint, integer, timestamp, boolean, index, text } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
 import { members } from './members';
@@ -10,7 +10,7 @@ export const households = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: varchar('name', { length: 100 }).notNull(),
-    createdBy: uuid('created_by')
+    createdBy: text('created_by')
       .notNull()
       .references(() => users.id),
     timezone: varchar('timezone', { length: 50 }).default('America/New_York'),
@@ -46,7 +46,7 @@ export const inviteCodes = pgTable(
       .references(() => households.id, { onDelete: 'cascade' }),
     code: varchar('code', { length: 8 }).unique().notNull(),
     role: varchar('role', { length: 20 }).default('child'),
-    createdBy: uuid('created_by')
+    createdBy: text('created_by')
       .notNull()
       .references(() => users.id),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
@@ -63,7 +63,7 @@ export const inviteCodes = pgTable(
 
 // Junction table for users belonging to multiple households
 export const userHouseholds = pgTable('user_households', {
-  userId: uuid('user_id')
+  userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   householdId: uuid('household_id')

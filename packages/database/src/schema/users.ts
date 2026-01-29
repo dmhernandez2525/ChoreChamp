@@ -2,8 +2,9 @@ import { pgTable, uuid, varchar, boolean, timestamp, text, inet } from 'drizzle-
 import { relations } from 'drizzle-orm';
 
 // Users table - for authenticated parent accounts
+// Note: id uses text instead of uuid for better-auth compatibility
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   email: varchar('email', { length: 255 }).unique().notNull(),
   emailVerified: boolean('email_verified').default(false),
   name: varchar('name', { length: 255 }),
@@ -13,9 +14,10 @@ export const users = pgTable('users', {
 });
 
 // OAuth accounts (Google, Apple)
+// Note: id/userId use text instead of uuid for better-auth compatibility
 export const accounts = pgTable('accounts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id')
+  id: text('id').primaryKey(),
+  userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   provider: varchar('provider', { length: 50 }).notNull(), // 'email', 'google', 'apple'
@@ -27,9 +29,10 @@ export const accounts = pgTable('accounts', {
 });
 
 // Sessions
+// Note: id/userId use text instead of uuid for better-auth compatibility
 export const sessions = pgTable('sessions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id')
+  id: text('id').primaryKey(),
+  userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   token: varchar('token', { length: 255 }).unique().notNull(),

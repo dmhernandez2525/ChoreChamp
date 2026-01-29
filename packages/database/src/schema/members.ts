@@ -12,7 +12,7 @@ export const members = pgTable(
     householdId: uuid('household_id')
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
-    userId: uuid('user_id').references(() => users.id), // NULL for child profiles
+    userId: text('user_id').references(() => users.id), // NULL for child profiles
 
     name: varchar('name', { length: 100 }).notNull(),
     role: varchar('role', { length: 20 }).notNull(), // 'parent', 'child', 'teen', 'viewer'
