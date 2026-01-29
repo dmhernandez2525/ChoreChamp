@@ -45,7 +45,7 @@ services:
     # Root dir is repo root to support pnpm workspaces
     # NODE_ENV=development during install to get devDependencies (esbuild, etc.)
     buildCommand: npm install -g pnpm && NODE_ENV=development pnpm install && pnpm --filter @chorechamp/api build
-    startCommand: cd apps/api && node dist/server.js
+    startCommand: pnpm db:push && cd apps/api && node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

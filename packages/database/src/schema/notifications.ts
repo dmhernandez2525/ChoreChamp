@@ -7,7 +7,7 @@ export const notificationPreferences = pgTable(
   'notification_preferences',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
 
@@ -41,7 +41,7 @@ export const deviceTokens = pgTable(
   'device_tokens',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
 
@@ -64,7 +64,7 @@ export const notificationLog = pgTable(
   'notification_log',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
 
