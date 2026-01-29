@@ -15,6 +15,7 @@
     "studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
     "verify": "tsx src/verify.ts",
+    "drop-tables": "tsx src/drop-tables.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/"
   },
