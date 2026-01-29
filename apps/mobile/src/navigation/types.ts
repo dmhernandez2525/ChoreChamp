@@ -18,6 +18,10 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
+  NotificationSettings: undefined;
+  WidgetSettings: undefined;
+  SoundsAndHaptics: undefined;
+  BiometricSettings: undefined;
 };
 
 // Type helper for useNavigation hook

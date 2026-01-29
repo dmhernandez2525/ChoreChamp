@@ -267,10 +267,10 @@ export async function syncMembers(householdId: string): Promise<void> {
 
     if (existing.length > 0 && existing[0].syncVersion) {
       // If local points are higher, we may have offline earnings
-      // Use the server value but add any local delta
-      const localDelta = (existing[0].pointsCurrent ?? 0) - (existing[0].pointsCurrent ?? 0);
-      if (localDelta > 0) {
-        pointsCurrent = member.pointsCurrent + localDelta;
+      // Take the higher value to preserve offline point additions
+      const localPoints = existing[0].pointsCurrent ?? 0;
+      if (localPoints > member.pointsCurrent) {
+        pointsCurrent = localPoints;
       }
     }
 

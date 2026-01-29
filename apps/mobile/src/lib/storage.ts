@@ -5,6 +5,8 @@ const KEYS = {
   USER_DATA: 'chorechamp_user_data',
   ACTIVE_HOUSEHOLD: 'chorechamp_active_household',
   ACTIVE_MEMBER: 'chorechamp_active_member',
+  PUSH_TOKEN: 'chorechamp_push_token',
+  NOTIFICATION_SETTINGS: 'chorechamp_notification_settings',
 } as const;
 
 type StorageKey = (typeof KEYS)[keyof typeof KEYS];
@@ -99,6 +101,32 @@ export const storage = {
 
   async removeActiveMember(): Promise<void> {
     return this.remove(KEYS.ACTIVE_MEMBER);
+  },
+
+  // Push token helpers
+  async getPushToken(): Promise<string | null> {
+    return this.get(KEYS.PUSH_TOKEN);
+  },
+
+  async setPushToken(token: string): Promise<void> {
+    return this.set(KEYS.PUSH_TOKEN, token);
+  },
+
+  async removePushToken(): Promise<void> {
+    return this.remove(KEYS.PUSH_TOKEN);
+  },
+
+  // Notification settings helpers
+  async getNotificationSettings(): Promise<string | null> {
+    return this.get(KEYS.NOTIFICATION_SETTINGS);
+  },
+
+  async setNotificationSettings(settings: string): Promise<void> {
+    return this.set(KEYS.NOTIFICATION_SETTINGS, settings);
+  },
+
+  async removeNotificationSettings(): Promise<void> {
+    return this.remove(KEYS.NOTIFICATION_SETTINGS);
   },
 
   // Clear all auth data
