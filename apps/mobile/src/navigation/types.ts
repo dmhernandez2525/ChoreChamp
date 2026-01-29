@@ -21,6 +21,7 @@ export type RootStackParamList = {
   NotificationSettings: undefined;
   WidgetSettings: undefined;
   SoundsAndHaptics: undefined;
+  BiometricSettings: undefined;
 };
 
 // Type helper for useNavigation hook
