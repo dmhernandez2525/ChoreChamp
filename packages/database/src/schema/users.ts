@@ -34,7 +34,7 @@ export const accounts = pgTable('accounts', {
 });
 
 // Sessions
-// Note: id/userId use text instead of uuid for better-auth compatibility
+// Note: Field names match better-auth expected schema
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id')
@@ -42,9 +42,10 @@ export const sessions = pgTable('sessions', {
     .references(() => users.id, { onDelete: 'cascade' }),
   token: varchar('token', { length: 255 }).unique().notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  ipAddress: inet('ip_address'),
+  ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // COPPA parental consent records
