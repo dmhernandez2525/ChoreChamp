@@ -11,7 +11,7 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
-    "push": "drizzle-kit push",
+    "push": "drizzle-kit push --force",
     "studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
     "verify": "tsx src/verify.ts",
