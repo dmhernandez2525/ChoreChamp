@@ -9,6 +9,9 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../stores/auth-store';
 import { useHouseholdStore } from '../../stores/household-store';
 import { useSyncStore } from '../../stores/sync-store';
@@ -16,7 +19,10 @@ import { clearAllCachedData } from '../../db';
 import { Button } from '../../components/ui';
 import type { Member } from '@chorechamp/types';
 
+type ProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export function ProfileScreen() {
+  const navigation = useNavigation<ProfileNavigationProp>();
   const { user, signOut } = useAuthStore();
   const {
     activeHousehold,
@@ -239,6 +245,18 @@ export function ProfileScreen() {
           <Text className="text-lg font-semibold text-gray-900 px-6 pt-6 pb-2">
             Settings
           </Text>
+
+          {/* Notifications */}
+          <TouchableOpacity
+            className="flex-row items-center justify-between px-6 py-4 border-t border-gray-100"
+            onPress={() => navigation.navigate('NotificationSettings')}
+          >
+            <View className="flex-row items-center">
+              <Text className="text-xl mr-3">🔔</Text>
+              <Text className="text-gray-600">Notifications</Text>
+            </View>
+            <Text className="text-gray-400">›</Text>
+          </TouchableOpacity>
 
           {/* Last Sync */}
           <View className="flex-row items-center justify-between px-6 py-4 border-t border-gray-100">
