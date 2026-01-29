@@ -1,0 +1,16 @@
+export {
+  performFullSync,
+  syncHouseholds,
+  syncMembers,
+  syncChores,
+  syncTodaysSchedule,
+  syncRewards,
+  queueOfflineOperation,
+  processOfflineQueue,
+  getLastSyncTime,
+  isCacheStale,
+  generateLocalId,
+  nowISO,
+  type SyncResult,
+  type QueuedOperation,
+} from './sync-engine';
