@@ -5,13 +5,15 @@ import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
 import { RootNavigator } from './src/navigation';
 import { initializeDatabase } from './src/db';
 import { setupSyncTriggers } from './src/stores/sync-store';
-import { NetworkStatusBanner } from './src/components/ui';
+import { NetworkStatusBanner, ErrorBoundary } from './src/components/ui';
+import { ThemeProvider } from './src/components/ThemeProvider';
+import { useThemeStore } from './src/stores/theme-store';
 
 // Prevent auto-hiding splash screen
 SplashScreen.preventAutoHideAsync();
@@ -64,17 +66,48 @@ export default function App() {
     return null;
   }
 
+  const isDark = useThemeStore((state) => state.isDark);
+
+  // Custom navigation themes matching our brand colors
+  const LightNavTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: '#6366f1',
+      background: '#f9fafb',
+      card: '#ffffff',
+      text: '#111827',
+      border: '#e5e7eb',
+    },
+  };
+
+  const DarkNavTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      primary: '#818cf8',
+      background: '#111827',
+      card: '#1f2937',
+      text: '#f9fafb',
+      border: '#374151',
+    },
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <NavigationContainer>
-            <View style={{ flex: 1 }}>
-              <StatusBar style="auto" />
-              <NetworkStatusBanner />
-              <RootNavigator />
-            </View>
-          </NavigationContainer>
+          <ThemeProvider>
+            <ErrorBoundary>
+              <NavigationContainer theme={isDark ? DarkNavTheme : LightNavTheme}>
+                <View style={{ flex: 1 }}>
+                  <StatusBar style={isDark ? 'light' : 'dark'} />
+                  <NetworkStatusBanner />
+                  <RootNavigator />
+                </View>
+              </NavigationContainer>
+            </ErrorBoundary>
+          </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

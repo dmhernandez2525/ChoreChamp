@@ -25,7 +25,7 @@ export function FloatingPoints({ points, x, y, onComplete }: FloatingPointsProps
     // Animate in
     opacity.value = withTiming(1, { duration: 150 });
     scale.value = withSequence(
-      withTiming(1.3, { duration: 200, easing: Easing.out(Easing.back) }),
+      withTiming(1.3, { duration: 200, easing: Easing.out(Easing.back(1.5)) }),
       withTiming(1, { duration: 100 })
     );
 

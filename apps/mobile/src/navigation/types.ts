@@ -23,6 +23,7 @@ export type RootStackParamList = {
   WidgetSettings: undefined;
   SoundsAndHaptics: undefined;
   BiometricSettings: undefined;
+  ThemeSettings: undefined;
   ChoreDetail: { chore: TodayChore };
   PendingApprovals: undefined;
   Leaderboard: undefined;

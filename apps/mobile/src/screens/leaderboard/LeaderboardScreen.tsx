@@ -66,23 +66,23 @@ export function LeaderboardScreen() {
 
   const getRankStyle = (rank: number) => {
     switch (rank) {
-      case 1: return 'bg-yellow-100 border-yellow-400';
-      case 2: return 'bg-gray-100 border-gray-300';
-      case 3: return 'bg-orange-100 border-orange-300';
-      default: return 'bg-white border-gray-200';
+      case 1: return 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600';
+      case 2: return 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600';
+      case 3: return 'bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-600';
+      default: return 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
     }
   };
 
   const renderPeriodButton = (buttonPeriod: Period, label: string) => (
     <TouchableOpacity
       className={`flex-1 py-2 px-4 rounded-xl ${
-        period === buttonPeriod ? 'bg-primary-500' : 'bg-gray-100'
+        period === buttonPeriod ? 'bg-primary-500 dark:bg-primary-600' : 'bg-gray-100 dark:bg-gray-800'
       }`}
       onPress={() => handlePeriodChange(buttonPeriod)}
     >
       <Text
         className={`text-center font-semibold ${
-          period === buttonPeriod ? 'text-white' : 'text-gray-600'
+          period === buttonPeriod ? 'text-white' : 'text-gray-600 dark:text-gray-300'
         }`}
       >
         {label}
@@ -97,13 +97,13 @@ export function LeaderboardScreen() {
     return (
       <View
         className={`mx-4 mb-3 p-4 rounded-xl border-2 ${getRankStyle(rank)} ${
-          isCurrentUser ? 'border-primary-500' : ''
+          isCurrentUser ? 'border-primary-500 dark:border-primary-400' : ''
         }`}
       >
         <View className="flex-row items-center">
           {/* Rank */}
           <View className="w-12 items-center">
-            <Text className={`${rank <= 3 ? 'text-2xl' : 'text-lg font-bold text-gray-500'}`}>
+            <Text className={`${rank <= 3 ? 'text-2xl' : 'text-lg font-bold text-gray-500 dark:text-gray-400'}`}>
               {getRankEmoji(rank)}
             </Text>
           </View>
@@ -121,26 +121,26 @@ export function LeaderboardScreen() {
           {/* Name and stats */}
           <View className="flex-1">
             <View className="flex-row items-center">
-              <Text className={`font-semibold text-base ${isCurrentUser ? 'text-primary-600' : 'text-gray-900'}`}>
+              <Text className={`font-semibold text-base ${isCurrentUser ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}>
                 {item.memberName}
               </Text>
               {isCurrentUser && (
-                <View className="ml-2 bg-primary-100 px-2 py-0.5 rounded-full">
-                  <Text className="text-primary-600 text-xs font-medium">You</Text>
+                <View className="ml-2 bg-primary-100 dark:bg-primary-900/30 px-2 py-0.5 rounded-full">
+                  <Text className="text-primary-600 dark:text-primary-300 text-xs font-medium">You</Text>
                 </View>
               )}
             </View>
-            <Text className="text-gray-500 text-sm">
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
               {item.completedChores} chore{item.completedChores !== 1 ? 's' : ''} completed
             </Text>
           </View>
 
           {/* Points */}
           <View className="items-end">
-            <Text className="text-lg font-bold text-primary-600">
+            <Text className="text-lg font-bold text-primary-600 dark:text-primary-400">
               {item.totalPoints.toLocaleString()}
             </Text>
-            <Text className="text-gray-400 text-xs">points</Text>
+            <Text className="text-gray-400 dark:text-gray-500 text-xs">points</Text>
           </View>
         </View>
       </View>
@@ -156,7 +156,7 @@ export function LeaderboardScreen() {
     const PodiumPosition = ({ entry, position }: { entry: LeaderboardEntry; position: 1 | 2 | 3 }) => {
       const heights = { 1: 'h-28', 2: 'h-20', 3: 'h-16' };
       const emojis = { 1: '🥇', 2: '🥈', 3: '🥉' };
-      const colors = { 1: 'bg-yellow-400', 2: 'bg-gray-300', 3: 'bg-orange-400' };
+      const colors = { 1: 'bg-yellow-400 dark:bg-yellow-500', 2: 'bg-gray-300 dark:bg-gray-500', 3: 'bg-orange-400 dark:bg-orange-500' };
 
       return (
         <View className="items-center flex-1">
@@ -166,10 +166,10 @@ export function LeaderboardScreen() {
           >
             <Text className="text-2xl">{emojis[position]}</Text>
           </View>
-          <Text className="font-semibold text-gray-900 text-center" numberOfLines={1}>
+          <Text className="font-semibold text-gray-900 dark:text-white text-center" numberOfLines={1}>
             {entry.memberName}
           </Text>
-          <Text className="text-primary-600 font-bold">{entry.totalPoints}</Text>
+          <Text className="text-primary-600 dark:text-primary-400 font-bold">{entry.totalPoints}</Text>
           <View className={`w-full ${heights[position]} ${colors[position]} rounded-t-lg mt-2`} />
         </View>
       );
@@ -187,7 +187,7 @@ export function LeaderboardScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       {/* Header */}
       <View className="px-6 pt-4 pb-2">
         <View className="flex-row items-center mb-4">
@@ -195,11 +195,11 @@ export function LeaderboardScreen() {
             className="mr-4"
             onPress={() => navigation.goBack()}
           >
-            <Text className="text-primary-600 text-lg">← Back</Text>
+            <Text className="text-primary-600 dark:text-primary-400 text-lg">← Back</Text>
           </TouchableOpacity>
           <View>
-            <Text className="text-2xl font-bold text-gray-900">Leaderboard</Text>
-            <Text className="text-gray-500">{activeHousehold?.name}</Text>
+            <Text className="text-2xl font-bold text-gray-900 dark:text-white">Leaderboard</Text>
+            <Text className="text-gray-500 dark:text-gray-400">{activeHousehold?.name}</Text>
           </View>
         </View>
 
@@ -241,8 +241,8 @@ export function LeaderboardScreen() {
           !isLoading ? (
             <View className="flex-1 items-center justify-center py-12">
               <Text className="text-5xl mb-4">🏆</Text>
-              <Text className="text-gray-900 font-medium text-lg">No Rankings Yet</Text>
-              <Text className="text-gray-500 text-center mt-2 px-8">
+              <Text className="text-gray-900 dark:text-white font-medium text-lg">No Rankings Yet</Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-center mt-2 px-8">
                 Complete chores to appear on the leaderboard!
               </Text>
             </View>
