@@ -138,3 +138,129 @@ export interface BadgeEarnedResult {
   badge: Badge;
   bonusAwarded: number;
 }
+
+// Activity Feed types
+export type ActivityType =
+  | 'chore_completed'
+  | 'chore_approved'
+  | 'chore_rejected'
+  | 'points_earned'
+  | 'points_spent'
+  | 'badge_earned'
+  | 'streak_milestone';
+
+export interface ActivityItem {
+  id: string;
+  type: ActivityType;
+  memberId: string;
+  memberName: string;
+  memberColor: string;
+  title: string;
+  description: string;
+  points?: number;
+  timestamp: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ActivityFeedResponse {
+  activities: ActivityItem[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface ActivityStats {
+  period: 'day' | 'week' | 'month';
+  startDate: Date;
+  summary: {
+    totalCompleted: number;
+    totalPoints: number;
+    pendingApprovals: number;
+  };
+  memberStats: Array<{
+    memberId: string;
+    memberName: string;
+    memberColor: string;
+    completedCount: number;
+    pointsEarned: number;
+  }>;
+}
+
+// Report types
+export interface ReportSummary {
+  period: {
+    start: Date;
+    end: Date;
+    days: number;
+  };
+  overall: {
+    totalCompletions: number;
+    totalPoints: number;
+    approvedCount: number;
+    rejectedCount: number;
+    pendingCount: number;
+    uniqueChores: number;
+    uniqueMembers: number;
+  };
+  members: Array<{
+    memberId: string;
+    memberName: string;
+    memberColor: string;
+    memberRole: string;
+    completions: number;
+    points: number;
+    currentStreak: number;
+    longestStreak: number;
+  }>;
+  topChores: Array<{
+    choreId: string;
+    choreName: string;
+    choreCategory: string;
+    completions: number;
+    totalPoints: number;
+  }>;
+}
+
+export interface ReportTrend {
+  period: {
+    start: Date;
+    end: Date;
+  };
+  trend: Array<{
+    date: string;
+    completions: number;
+    points: number;
+  }>;
+}
+
+export interface ReportCategories {
+  period: {
+    start: Date;
+    end: Date;
+  };
+  categories: Array<{
+    category: string;
+    completions: number;
+    points: number;
+    uniqueChores: number;
+  }>;
+}
+
+// Boss Battle API types
+export interface CreateBossBattleRequest {
+  name: string;
+  description?: string;
+  icon?: string;
+  healthMax?: number;
+  pointReward?: number;
+  durationDays?: number;
+}
+
+export interface DamageBossRequest {
+  damage: number;
+}
+
+export interface DamageBossResponse {
+  battle: BossBattle;
+  damageDealt: number;
+  isDefeated: boolean;
+}
