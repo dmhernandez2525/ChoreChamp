@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
+  useUpdateProfile,
+  useChangePassword,
+  useDeleteAccount,
+} from '@chorechamp/api-client';
+import {
   ProfileSection,
   SecuritySection,
   NotificationsSection,
@@ -25,26 +30,28 @@ export default function Settings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
+  // Mutations
+  const updateProfile = useUpdateProfile();
+  const changePassword = useChangePassword();
+  const deleteAccount = useDeleteAccount();
+
   // Handlers
   const handleUpdateProfile = async (data: { name: string }) => {
-    // TODO: Implement update profile API call
-    console.log('Update profile:', data);
-    // For now, just simulate success
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await updateProfile.mutateAsync(data);
   };
 
   const handleChangePassword = async (data: {
     currentPassword: string;
     newPassword: string;
   }) => {
-    // TODO: Implement change password API call
-    console.log('Change password:', data);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await changePassword.mutateAsync(data);
   };
 
   const handleDeleteAccount = async () => {
-    // TODO: Implement delete account API call
-    console.log('Delete account');
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      return;
+    }
+    await deleteAccount.mutateAsync();
     await signOut();
     navigate('/');
   };
@@ -52,7 +59,8 @@ export default function Settings() {
   const handleUpdateNotifications = async (
     preferences: typeof DEFAULT_NOTIFICATION_PREFS
   ) => {
-    // TODO: Implement update notifications API call
+    // TODO: Implement notification preferences storage
+    // This requires a user settings API endpoint
     console.log('Update notifications:', preferences);
     await new Promise((resolve) => setTimeout(resolve, 500));
   };

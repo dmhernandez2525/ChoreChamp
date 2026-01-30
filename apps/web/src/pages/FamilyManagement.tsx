@@ -1,7 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
-import { useHousehold, useMembers, useAddMember } from '@chorechamp/api-client';
+import {
+  useHousehold,
+  useMembers,
+  useAddMember,
+  useUpdateMember,
+  useDeleteMember,
+  useInviteCodes,
+  useCreateInviteCode,
+} from '@chorechamp/api-client';
 import { useAuth } from '../context/AuthContext';
 import {
   MemberList,
@@ -24,9 +32,13 @@ export default function FamilyManagement() {
   // Queries
   const { data: household, isLoading: loadingHousehold } = useHousehold(householdId!);
   const { data: members, isLoading: loadingMembers } = useMembers(householdId!);
+  const { data: inviteCodes, isLoading: loadingInvites } = useInviteCodes(householdId!);
 
   // Mutations
   const addMember = useAddMember(householdId!);
+  const updateMember = useUpdateMember(householdId!);
+  const deleteMember = useDeleteMember(householdId!);
+  const createInviteCode = useCreateInviteCode(householdId!);
 
   // Find current member
   const currentMember = useMemo(() => {
@@ -55,20 +67,31 @@ export default function FamilyManagement() {
     memberId: string,
     data: { name: string; color: string; birthYear?: number }
   ) => {
-    // TODO: Implement update member mutation
-    console.log('Update member', memberId, data);
+    await updateMember.mutateAsync({
+      memberId,
+      data: {
+        name: data.name,
+        color: data.color,
+        birthYear: data.birthYear,
+      },
+    });
+    setEditingMember(null);
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    // TODO: Implement remove member mutation
-    console.log('Remove member', memberId);
+    if (!confirm('Are you sure you want to remove this member?')) {
+      return;
+    }
+    await deleteMember.mutateAsync(memberId);
   };
 
   const handleGenerateCode = async (role: string) => {
     setIsGeneratingCode(true);
     try {
-      // TODO: Implement generate invite code mutation
-      console.log('Generate code for role:', role);
+      await createInviteCode.mutateAsync({
+        role: role as 'parent' | 'child' | 'teen' | 'viewer',
+        expiresInDays: 7,
+      });
     } finally {
       setIsGeneratingCode(false);
     }
@@ -193,9 +216,9 @@ export default function FamilyManagement() {
 
         {activeTab === 'invites' && isParent && (
           <InviteCodeSection
-            inviteCodes={[]} // TODO: Fetch invite codes
+            inviteCodes={inviteCodes || []}
             onGenerateCode={handleGenerateCode}
-            isGenerating={isGeneratingCode}
+            isGenerating={isGeneratingCode || loadingInvites}
           />
         )}
       </main>

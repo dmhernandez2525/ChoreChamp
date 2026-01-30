@@ -113,6 +113,23 @@ export interface JoinHouseholdResponse {
   member: Member;
 }
 
+export interface UpdateMemberRequest {
+  name?: string;
+  role?: MemberRole;
+  color?: string;
+  avatarUrl?: string | null;
+  birthYear?: number | null;
+  canRedeemRewards?: boolean;
+  requiresApproval?: boolean;
+  isActive?: boolean;
+}
+
+export interface CreateInviteCodeRequest {
+  role?: MemberRole;
+  maxUses?: number;
+  expiresInDays?: number;
+}
+
 export interface HouseholdWithMembers extends Household {
   members: Member[];
 }
