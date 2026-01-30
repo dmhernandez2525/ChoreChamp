@@ -14,29 +14,27 @@ This document tracks the current work status for ChoreChamp development. Update 
 
 ## Current Focus: Web + Android Completion
 
-### Phase A: Core Handler Completion (Web)
+### Phase A: Core Handler Completion (Web) ✅ COMPLETE (PR #54)
 **Goal:** Wire up all stubbed handlers in the web app
 
-#### Pending
-- [ ] A.1 - Member edit handler (FamilyManagement.tsx)
-- [ ] A.2 - Member delete handler (FamilyManagement.tsx)
-- [ ] A.3 - Invite code generation handler (FamilyManagement.tsx)
-- [ ] A.4 - Reject chore completion handler (HouseholdDashboard.tsx)
-- [ ] A.5 - Update user profile handler (Settings.tsx)
-- [ ] A.6 - Change password handler (Settings.tsx)
-- [ ] A.7 - Delete account handler (Settings.tsx)
-- [ ] A.8 - Update notification preferences handler (Settings.tsx)
+- [x] A.1 - Member edit handler (FamilyManagement.tsx)
+- [x] A.2 - Member delete handler (FamilyManagement.tsx)
+- [x] A.3 - Invite code generation handler (FamilyManagement.tsx)
+- [x] A.4 - Reject chore completion handler (HouseholdDashboard.tsx)
+- [x] A.5 - Update user profile handler (Settings.tsx)
+- [x] A.6 - Change password handler (Settings.tsx)
+- [x] A.7 - Delete account handler (Settings.tsx)
+- [ ] A.8 - Update notification preferences handler (Settings.tsx) - deferred (needs backend)
 
-### Phase B: Real API Integration (Web)
+### Phase B: Real API Integration (Web) ✅ COMPLETE (PR #55)
 **Goal:** Replace mock data with actual API calls
 
-#### Pending
-- [ ] B.1 - Boss Battles API endpoints (create, progress, complete)
-- [ ] B.2 - Activity Feed API endpoints
-- [ ] B.3 - Reports/Analytics API endpoints
-- [ ] B.4 - Wire Boss Battle page to real API
-- [ ] B.5 - Wire Activity Feed page to real API
-- [ ] B.6 - Wire Reports page to real API
+- [x] B.1 - Boss Battles API endpoints (create, progress, complete)
+- [x] B.2 - Activity Feed API endpoints
+- [x] B.3 - Reports/Analytics API endpoints
+- [x] B.4 - Wire Boss Battle page to real API
+- [x] B.5 - Wire Activity Feed page to real API
+- [x] B.6 - Wire Reports page to real API
 
 ### Phase C: Chore Features Completion (Android)
 **Goal:** Complete chore-related features on mobile
@@ -129,19 +127,19 @@ This document tracks the current work status for ChoreChamp development. Update 
 |---------|--------|-------|
 | Authentication | ✅ Done | Login, signup, auth context |
 | Household CRUD | ✅ Done | Create, read, update, delete |
-| Member management | ⚠️ Partial | Add works, edit/delete handlers stubbed |
-| Invite codes | ⚠️ Partial | UI exists, handler stubbed |
+| Member management | ✅ Done | Full CRUD with edit/delete |
+| Invite codes | ✅ Done | Generation handler wired |
 | Chore CRUD | ✅ Done | Full functionality |
 | Chore completion | ✅ Done | Mark complete works |
-| Chore approval | ⚠️ Partial | Approve works, reject stubbed |
+| Chore approval | ✅ Done | Approve and reject wired |
 | Rewards system | ✅ Done | Full redemption workflow |
 | Badge display | ✅ Done | Shows earned badges |
 | Streak display | ✅ Done | Shows current streak |
 | Leaderboard | ✅ Done | Week/month/all-time |
-| Boss Battles | ⚠️ Mock | Using hardcoded data |
-| Activity Feed | ⚠️ Mock | Using demo data |
-| Reports | ⚠️ Mock | Using demo data |
-| Settings | ⚠️ Partial | Profile/password handlers stubbed |
+| Boss Battles | ✅ Done | Real API integration |
+| Activity Feed | ✅ Done | Real API integration |
+| Reports | ✅ Done | Real API + CSV/JSON export |
+| Settings | ✅ Done | Profile/password handlers wired |
 | Notifications | ⚠️ Partial | Preference handler stubbed |
 
 ## Android App Feature Status
@@ -178,20 +176,19 @@ This document tracks the current work status for ChoreChamp development. Update 
 | /api/:householdId/chores/* | ✅ Done | Full CRUD + complete/approve |
 | /api/:householdId/schedule/* | ✅ Done | Daily view |
 | /api/templates/* | ✅ Done | 70 templates |
-| /api/:householdId/rewards/* | ❌ Missing | Need to create |
-| /api/:householdId/activity/* | ❌ Missing | Need to create |
-| /api/:householdId/reports/* | ❌ Missing | Need to create |
-| /api/:householdId/boss-battles/* | ❌ Missing | Need to create |
+| /api/:householdId/rewards/* | ✅ Done | Full CRUD + redemption |
+| /api/:householdId/activity/* | ✅ Done | Feed + stats |
+| /api/:householdId/reports/* | ✅ Done | Summary, trend, categories, export |
+| /api/:householdId/boss-battles/* | ✅ Done | CRUD + damage |
 | /api/notifications/push-token | ❌ Missing | Need to create |
 
 ---
 
 ## Next Steps
 
-1. **Start Phase A.1** - Wire up member edit handler in web app
-2. Continue through Phase A handlers
-3. Move to Phase B API creation
-4. Parallel work on Android Phase C
+1. **Phase C: Android Chore Features** - Build out chore approval, photo proof, timer, and steps UI
+2. Continue through remaining phases (D-G)
+3. Focus on Android-specific features per user direction
 
 ---
 
