@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/auth-store';
 import { useNotificationStore } from '../stores/notification-store';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
-import { NotificationSettingsScreen, WidgetSettingsScreen, SoundsAndHapticsScreen, BiometricSettingsScreen } from '../screens/settings';
+import { NotificationSettingsScreen, WidgetSettingsScreen, SoundsAndHapticsScreen, BiometricSettingsScreen, ThemeSettingsScreen } from '../screens/settings';
 import { ChoreDetailScreen, PendingApprovalsScreen } from '../screens/chores';
 import { LeaderboardScreen } from '../screens/leaderboard';
 import type { RootStackParamList } from './types';
@@ -75,6 +75,14 @@ export function RootNavigator() {
           <Stack.Screen
             name="BiometricSettings"
             component={BiometricSettingsScreen}
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="ThemeSettings"
+            component={ThemeSettingsScreen}
             options={{
               presentation: 'modal',
               animation: 'slide_from_bottom',

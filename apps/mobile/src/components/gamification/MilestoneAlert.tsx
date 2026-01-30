@@ -58,7 +58,7 @@ export function MilestoneAlert({ visible, type, data, onClose }: MilestoneAlertP
       // Animate icon
       iconScale.value = withSequence(
         withTiming(0, { duration: 0 }),
-        withTiming(1.3, { duration: 300, easing: Easing.out(Easing.back) }),
+        withTiming(1.3, { duration: 300, easing: Easing.out(Easing.back(1.5)) }),
         withTiming(1, { duration: 150 })
       );
     } else {

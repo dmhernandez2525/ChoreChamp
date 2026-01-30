@@ -7,6 +7,7 @@ const KEYS = {
   ACTIVE_MEMBER: 'chorechamp_active_member',
   PUSH_TOKEN: 'chorechamp_push_token',
   NOTIFICATION_SETTINGS: 'chorechamp_notification_settings',
+  THEME_MODE: 'chorechamp_theme_mode',
 } as const;
 
 type StorageKey = (typeof KEYS)[keyof typeof KEYS];
@@ -137,5 +138,23 @@ export const storage = {
       this.remove(KEYS.ACTIVE_HOUSEHOLD),
       this.remove(KEYS.ACTIVE_MEMBER),
     ]);
+  },
+
+  // Generic string get/set for custom keys
+  async getString(key: string): Promise<string | null> {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      console.error(`Error reading ${key} from secure storage`);
+      return null;
+    }
+  },
+
+  async setString(key: string, value: string): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch {
+      console.error(`Error writing ${key} to secure storage`);
+    }
   },
 };

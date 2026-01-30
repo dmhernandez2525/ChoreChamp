@@ -49,6 +49,11 @@ interface HouseholdActions {
   loadTodayChores: () => Promise<void>;
   loadRewards: () => Promise<void>;
 
+  // Optimistic updates
+  optimisticCompleteChore: (choreId: string, scheduleId: string) => { rollback: () => void };
+  optimisticAddPoints: (memberId: string, points: number) => { rollback: () => void };
+  optimisticRedeemReward: (rewardId: string, cost: number) => { rollback: () => void };
+
   // Clear
   clear: () => void;
 }
@@ -443,6 +448,93 @@ export const useHouseholdStore = create<HouseholdStore>((set, get) => ({
         error: error instanceof Error ? error.message : 'Failed to load rewards',
       });
     }
+  },
+
+  // Optimistically mark a chore as completed
+  optimisticCompleteChore: (choreId: string, scheduleId: string) => {
+    const { todayChores } = get();
+    const snapshot = [...todayChores];
+
+    // Update the chore to show as completed
+    const updatedChores = todayChores.map((tc) => {
+      if (tc.id === scheduleId || tc.choreId === choreId) {
+        return { ...tc, isCompleted: true };
+      }
+      return tc;
+    });
+
+    set({ todayChores: updatedChores });
+
+    return {
+      rollback: () => {
+        set({ todayChores: snapshot });
+      },
+    };
+  },
+
+  // Optimistically add points to a member
+  optimisticAddPoints: (memberId: string, points: number) => {
+    const { members, activeMember } = get();
+    const memberSnapshot = [...members];
+    const activeMemberSnapshot = activeMember ? { ...activeMember } : null;
+
+    // Update members list
+    const updatedMembers = members.map((m) => {
+      if (m.id === memberId) {
+        return {
+          ...m,
+          pointsCurrent: m.pointsCurrent + points,
+          pointsLifetime: m.pointsLifetime + points,
+        };
+      }
+      return m;
+    });
+
+    // Update active member if it matches
+    const updatedActiveMember =
+      activeMember?.id === memberId
+        ? {
+            ...activeMember,
+            pointsCurrent: activeMember.pointsCurrent + points,
+            pointsLifetime: activeMember.pointsLifetime + points,
+          }
+        : activeMember;
+
+    set({ members: updatedMembers, activeMember: updatedActiveMember });
+
+    return {
+      rollback: () => {
+        set({ members: memberSnapshot, activeMember: activeMemberSnapshot });
+      },
+    };
+  },
+
+  // Optimistically redeem a reward
+  optimisticRedeemReward: (rewardId: string, cost: number) => {
+    const { rewards, activeMember } = get();
+    const rewardsSnapshot = [...rewards];
+    const activeMemberSnapshot = activeMember ? { ...activeMember } : null;
+
+    // Update reward quantity
+    const updatedRewards = rewards.map((r) => {
+      if (r.id === rewardId && r.quantityRemaining !== null) {
+        return { ...r, quantityRemaining: r.quantityRemaining - 1 };
+      }
+      return r;
+    });
+
+    // Deduct points from active member
+    const updatedActiveMember = activeMember
+      ? { ...activeMember, pointsCurrent: activeMember.pointsCurrent - cost }
+      : null;
+
+    set({ rewards: updatedRewards, activeMember: updatedActiveMember });
+
+    return {
+      rollback: () => {
+        set({ rewards: rewardsSnapshot, activeMember: activeMemberSnapshot });
+      },
+    };
   },
 
   clear: () => {
