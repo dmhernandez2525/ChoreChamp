@@ -7,6 +7,7 @@ import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
 import { NotificationSettingsScreen, WidgetSettingsScreen, SoundsAndHapticsScreen, BiometricSettingsScreen } from '../screens/settings';
 import { ChoreDetailScreen, PendingApprovalsScreen } from '../screens/chores';
+import { LeaderboardScreen } from '../screens/leaderboard';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -89,6 +90,13 @@ export function RootNavigator() {
           <Stack.Screen
             name="PendingApprovals"
             component={PendingApprovalsScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="Leaderboard"
+            component={LeaderboardScreen}
             options={{
               animation: 'slide_from_right',
             }}
