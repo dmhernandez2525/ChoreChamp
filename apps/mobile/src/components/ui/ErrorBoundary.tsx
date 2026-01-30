@@ -72,7 +72,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 Oops! Something went wrong
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-center mb-6">
-                We're sorry for the inconvenience. Please try again.
+                {"We're sorry for the inconvenience. Please try again."}
               </Text>
 
               <TouchableOpacity

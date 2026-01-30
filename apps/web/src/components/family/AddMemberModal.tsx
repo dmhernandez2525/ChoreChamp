@@ -66,7 +66,7 @@ export function AddMemberModal({ open, onClose, onSubmit }: AddMemberModalProps)
         birthYear: undefined,
       });
       onClose();
-    } catch (err) {
+    } catch {
       setError('Failed to add member. Please try again.');
     } finally {
       setIsSubmitting(false);

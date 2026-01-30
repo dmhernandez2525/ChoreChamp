@@ -1,4 +1,4 @@
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../lib/db';
 import {
   deviceTokens,

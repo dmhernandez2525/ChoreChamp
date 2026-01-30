@@ -84,7 +84,7 @@ async function verify() {
         console.log(`  ${name}: MISSING`);
         allTablesExist = false;
       }
-    } catch (error) {
+    } catch {
       console.log(`  ${name}: ERROR`);
       allTablesExist = false;
     }

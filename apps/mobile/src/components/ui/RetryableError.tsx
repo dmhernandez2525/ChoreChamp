@@ -111,7 +111,7 @@ export function OfflineNotice({ onRetry, isRetrying = false }: OfflineNoticeProp
         <Text className="text-2xl mr-3">📡</Text>
         <View className="flex-1">
           <Text className="text-warning-800 dark:text-warning-200 font-semibold">
-            You're offline
+            {"You're offline"}
           </Text>
           <Text className="text-warning-700 dark:text-warning-300 text-sm">
             Some features may not be available

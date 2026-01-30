@@ -38,19 +38,21 @@ function sortChores(
     let comparison = 0;
 
     switch (sortBy) {
-      case 'dueTime':
+      case 'dueTime': {
         const timeA = a.chore.dueTime || '23:59';
         const timeB = b.chore.dueTime || '23:59';
         comparison = timeA.localeCompare(timeB);
         break;
+      }
       case 'points':
         comparison = a.chore.pointValue - b.chore.pointValue;
         break;
-      case 'difficulty':
+      case 'difficulty': {
         const diffA = difficultyOrder[a.chore.difficulty as keyof typeof difficultyOrder] ?? 2;
         const diffB = difficultyOrder[b.chore.difficulty as keyof typeof difficultyOrder] ?? 2;
         comparison = diffA - diffB;
         break;
+      }
       case 'name':
         comparison = a.chore.title.localeCompare(b.chore.title);
         break;
