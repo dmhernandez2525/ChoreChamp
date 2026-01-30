@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
+import {
+  useReportSummary,
+  apiClient,
+} from '@chorechamp/api-client';
 import {
   DateRangePicker,
   ReportList,
@@ -8,36 +12,6 @@ import {
   ReportPreview,
 } from '../components/reports';
 import type { ReportType, ExportFormat } from '../components/reports';
-
-// Demo report data
-const demoReportData = {
-  type: 'chore_summary' as ReportType,
-  generatedAt: new Date(),
-  dateRange: {
-    start: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
-    end: new Date(),
-  },
-  summary: {
-    totalChores: 156,
-    completedChores: 142,
-    totalPoints: 2450,
-    averageStreak: 8,
-  },
-  choreBreakdown: [
-    { name: 'Take out trash', completed: 28, total: 30, completionRate: 93 },
-    { name: 'Wash dishes', completed: 45, total: 50, completionRate: 90 },
-    { name: 'Clean bedroom', completed: 20, total: 24, completionRate: 83 },
-    { name: 'Do laundry', completed: 12, total: 16, completionRate: 75 },
-    { name: 'Vacuum living room', completed: 8, total: 12, completionRate: 67 },
-    { name: 'Mow lawn', completed: 3, total: 4, completionRate: 75 },
-  ],
-  memberBreakdown: [
-    { name: 'Emma', choresCompleted: 52, pointsEarned: 890, currentStreak: 14 },
-    { name: 'Jake', choresCompleted: 48, pointsEarned: 820, currentStreak: 7 },
-    { name: 'Mom', choresCompleted: 28, pointsEarned: 480, currentStreak: 21 },
-    { name: 'Dad', choresCompleted: 14, pointsEarned: 260, currentStreak: 3 },
-  ],
-};
 
 export default function Reports() {
   const { householdId } = useParams<{ householdId: string }>();
@@ -48,19 +22,59 @@ export default function Reports() {
   const [generatingReports, setGeneratingReports] = useState<ReportType[]>([]);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportingReport, setExportingReport] = useState<ReportType | null>(null);
-  const [currentReport, setCurrentReport] = useState<typeof demoReportData | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedReportType, setSelectedReportType] = useState<ReportType | null>(null);
 
-  const handleGenerate = (reportId: ReportType) => {
+  const dateOptions = useMemo(() => ({
+    startDate: dateRange.start.toISOString().split('T')[0],
+    endDate: dateRange.end.toISOString().split('T')[0],
+  }), [dateRange]);
+
+  const { data: summaryData, refetch: refetchSummary } = useReportSummary(
+    householdId!,
+    dateOptions
+  );
+
+  // Transform API data to component format
+  const currentReport = useMemo(() => {
+    if (!summaryData || !selectedReportType) return null;
+
+    const avgStreak = summaryData.members.length > 0
+      ? Math.round(summaryData.members.reduce((sum, m) => sum + m.currentStreak, 0) / summaryData.members.length)
+      : 0;
+
+    return {
+      type: selectedReportType,
+      generatedAt: new Date(),
+      dateRange,
+      summary: {
+        totalChores: summaryData.overall.uniqueChores,
+        completedChores: summaryData.overall.totalCompletions,
+        totalPoints: summaryData.overall.totalPoints,
+        averageStreak: avgStreak,
+      },
+      choreBreakdown: summaryData.topChores.map((c) => ({
+        name: c.choreName,
+        completed: c.completions,
+        total: c.completions, // API doesn't track total assigned
+        completionRate: 100,
+      })),
+      memberBreakdown: summaryData.members.map((m) => ({
+        name: m.memberName,
+        choresCompleted: m.completions,
+        pointsEarned: m.points,
+        currentStreak: m.currentStreak,
+      })),
+    };
+  }, [summaryData, selectedReportType, dateRange]);
+
+  const handleGenerate = async (reportId: ReportType) => {
     setGeneratingReports((prev) => [...prev, reportId]);
-    setIsGenerating(true);
+    setSelectedReportType(reportId);
 
-    // Simulate report generation
-    setTimeout(() => {
-      setGeneratingReports((prev) => prev.filter((id) => id !== reportId));
-      setCurrentReport({ ...demoReportData, type: reportId, generatedAt: new Date(), dateRange });
-      setIsGenerating(false);
-    }, 1500);
+    // Refetch data for the selected date range
+    await refetchSummary();
+
+    setGeneratingReports((prev) => prev.filter((id) => id !== reportId));
   };
 
   const handleExportClick = (reportId: ReportType) => {
@@ -68,16 +82,45 @@ export default function Reports() {
     setExportModalOpen(true);
   };
 
-  const handleExport = (format: ExportFormat) => {
-    // Simulate export
-    console.log(`Exporting ${exportingReport} as ${format}`);
+  const handleExport = async (format: ExportFormat) => {
+    if (!householdId) return;
 
-    setTimeout(() => {
-      setExportModalOpen(false);
-      setExportingReport(null);
-      // In a real app, this would trigger a file download
-      alert(`Report exported as ${format.toUpperCase()}`);
-    }, 1000);
+    try {
+      const result = await apiClient.exportReport(householdId, {
+        startDate: dateOptions.startDate,
+        endDate: dateOptions.endDate,
+        format: format as 'json' | 'csv',
+      });
+
+      if (format === 'csv' && result instanceof Blob) {
+        // Download CSV file
+        const url = URL.createObjectURL(result);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chorechamp-report-${dateOptions.startDate}-to-${dateOptions.endDate}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // Download JSON file
+        const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chorechamp-report-${dateOptions.startDate}-to-${dateOptions.endDate}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export report');
+    }
+
+    setExportModalOpen(false);
+    setExportingReport(null);
   };
 
   return (
@@ -123,7 +166,7 @@ export default function Reports() {
           {/* Report preview */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Preview</h2>
-            <ReportPreview data={currentReport} isLoading={isGenerating} />
+            <ReportPreview data={currentReport} isLoading={generatingReports.length > 0} />
           </div>
         </div>
 
@@ -134,7 +177,7 @@ export default function Reports() {
             Export all your household data at once for backup or analysis purposes.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => alert('Exporting all data as CSV...')}>
+            <Button variant="outline" onClick={() => handleExport('csv')}>
               <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -145,7 +188,7 @@ export default function Reports() {
               </svg>
               Export All (CSV)
             </Button>
-            <Button variant="outline" onClick={() => alert('Exporting all data as JSON...')}>
+            <Button variant="outline" onClick={() => handleExport('json')}>
               <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -155,17 +198,6 @@ export default function Reports() {
                 />
               </svg>
               Export All (JSON)
-            </Button>
-            <Button variant="outline" onClick={() => alert('Creating backup...')}>
-              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                />
-              </svg>
-              Create Backup
             </Button>
           </div>
         </div>
