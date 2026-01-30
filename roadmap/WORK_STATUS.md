@@ -36,15 +36,14 @@ This document tracks the current work status for ChoreChamp development. Update 
 - [x] B.5 - Wire Activity Feed page to real API
 - [x] B.6 - Wire Reports page to real API
 
-### Phase C: Chore Features Completion (Android)
+### Phase C: Chore Features Completion (Android) ✅ COMPLETE (PR #56)
 **Goal:** Complete chore-related features on mobile
 
-#### Pending
-- [ ] C.1 - Chore approval workflow UI (parent-supervised chores)
-- [ ] C.2 - Photo proof capture & verification full flow
-- [ ] C.3 - Chore timer UI component
-- [ ] C.4 - Chore steps/task chunking UI
-- [ ] C.5 - Chore rejection handling
+- [x] C.1 - Chore approval workflow UI (parent-supervised chores)
+- [x] C.2 - Photo proof capture & verification full flow
+- [x] C.3 - Chore timer UI component
+- [x] C.4 - Chore steps/task chunking UI
+- [x] C.5 - Chore rejection handling
 
 ### Phase D: Gamification Completion (Both)
 **Goal:** Complete gamification features across platforms
@@ -148,11 +147,11 @@ This document tracks the current work status for ChoreChamp development. Update 
 |---------|--------|-------|
 | Authentication | ✅ Done | Login, signup, biometric |
 | Dashboard | ✅ Done | Today's chores, stats |
-| Chore list | ✅ Done | Swipe complete, filters |
-| Chore approval | ❌ Missing | UI not implemented |
-| Photo proof | ⚠️ Partial | Components exist, flow incomplete |
-| Chore timer | ❌ Missing | Data exists, UI missing |
-| Chore steps | ❌ Missing | Data exists, UI missing |
+| Chore list | ✅ Done | Swipe complete, filters, detail navigation |
+| Chore approval | ✅ Done | PendingApprovalsScreen for parents |
+| Photo proof | ✅ Done | Full capture and verification flow |
+| Chore timer | ✅ Done | ChoreTimer with pause/resume/overtime |
+| Chore steps | ✅ Done | ChoreSteps with progress tracking |
 | Rewards | ✅ Done | Browse, redeem |
 | Profile | ✅ Done | Stats, member switcher |
 | Badges | ⚠️ Partial | Display works, earning logic unclear |
