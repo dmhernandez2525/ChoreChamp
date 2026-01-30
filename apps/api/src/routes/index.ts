@@ -8,6 +8,7 @@ import { scheduleRoutes } from './schedule';
 import { bossBattleRoutes } from './boss-battles';
 import { activityRoutes } from './activity';
 import { reportsRoutes } from './reports';
+import { notificationRoutes } from './notifications';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -30,6 +31,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
     // Chore templates (public)
     api.register(templateRoutes, { prefix: '/chore-templates' });
+
+    // Notification routes
+    api.register(notificationRoutes, { prefix: '/notifications' });
 
     // Health/status check at API level
     api.get('/status', async () => {

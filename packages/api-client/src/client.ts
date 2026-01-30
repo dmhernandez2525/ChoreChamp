@@ -477,6 +477,94 @@ class ApiClient {
     const query = params.toString() ? `?${params.toString()}` : '';
     return this.request(`/households/${householdId}/reports/export${query}`);
   }
+
+  // ===== Notifications =====
+  async registerPushToken(
+    token: string,
+    platform: 'ios' | 'android' | 'web',
+    deviceName?: string
+  ): Promise<{ success: boolean }> {
+    return this.request('/notifications/push-token', {
+      method: 'POST',
+      body: JSON.stringify({ token, platform, deviceName }),
+    });
+  }
+
+  async unregisterPushToken(token: string): Promise<{ success: boolean }> {
+    return this.request('/notifications/push-token', {
+      method: 'DELETE',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  async getNotificationPreferences(): Promise<{
+    id: string;
+    pushEnabled: boolean;
+    choreReminders: boolean;
+    streakReminders: boolean;
+    approvalRequests: boolean;
+    familyUpdates: boolean;
+    celebrations: boolean;
+    weeklySummary: boolean;
+    quietHoursEnabled: boolean;
+    quietHoursStart: string;
+    quietHoursEnd: string;
+    maxDailyNotifications: number;
+  }> {
+    return this.request('/notifications/preferences');
+  }
+
+  async updateNotificationPreferences(
+    preferences: Partial<{
+      pushEnabled: boolean;
+      choreReminders: boolean;
+      streakReminders: boolean;
+      approvalRequests: boolean;
+      familyUpdates: boolean;
+      celebrations: boolean;
+      weeklySummary: boolean;
+      quietHoursEnabled: boolean;
+      quietHoursStart: string;
+      quietHoursEnd: string;
+      maxDailyNotifications: number;
+    }>
+  ): Promise<{
+    id: string;
+    pushEnabled: boolean;
+    choreReminders: boolean;
+    streakReminders: boolean;
+    approvalRequests: boolean;
+    familyUpdates: boolean;
+    celebrations: boolean;
+    weeklySummary: boolean;
+    quietHoursEnabled: boolean;
+    quietHoursStart: string;
+    quietHoursEnd: string;
+    maxDailyNotifications: number;
+  }> {
+    return this.request('/notifications/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify(preferences),
+    });
+  }
+
+  async getNotificationHistory(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Array<{
+    id: string;
+    notificationType: string;
+    title: string;
+    body: string;
+    status: string;
+    createdAt: Date;
+  }>> {
+    const params = new URLSearchParams();
+    if (options?.limit) params.set('limit', options.limit.toString());
+    if (options?.offset) params.set('offset', options.offset.toString());
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/notifications/history${query}`);
+  }
 }
 
 export const apiClient = new ApiClient();
