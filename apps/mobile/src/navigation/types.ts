@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { TodayChore } from '@chorechamp/types';
 
 // Auth Stack
 export type AuthStackParamList = {
@@ -22,6 +23,8 @@ export type RootStackParamList = {
   WidgetSettings: undefined;
   SoundsAndHaptics: undefined;
   BiometricSettings: undefined;
+  ChoreDetail: { chore: TodayChore };
+  PendingApprovals: undefined;
 };
 
 // Type helper for useNavigation hook
