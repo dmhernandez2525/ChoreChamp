@@ -16,23 +16,23 @@ interface ButtonProps extends TouchableOpacityProps {
 
 const variantStyles = {
   primary: {
-    container: 'bg-primary-500 active:bg-primary-600',
+    container: 'bg-primary-500 active:bg-primary-600 dark:bg-primary-600 dark:active:bg-primary-700',
     text: 'text-white',
   },
   secondary: {
-    container: 'bg-secondary-500 active:bg-secondary-600',
+    container: 'bg-secondary-500 active:bg-secondary-600 dark:bg-secondary-600 dark:active:bg-secondary-700',
     text: 'text-white',
   },
   outline: {
-    container: 'border-2 border-primary-500 bg-transparent active:bg-primary-50',
-    text: 'text-primary-500',
+    container: 'border-2 border-primary-500 bg-transparent active:bg-primary-50 dark:border-primary-400 dark:active:bg-primary-900/20',
+    text: 'text-primary-500 dark:text-primary-400',
   },
   ghost: {
-    container: 'bg-transparent active:bg-gray-100',
-    text: 'text-primary-500',
+    container: 'bg-transparent active:bg-gray-100 dark:active:bg-gray-800',
+    text: 'text-primary-500 dark:text-primary-400',
   },
   danger: {
-    container: 'bg-danger-500 active:bg-danger-600',
+    container: 'bg-danger-500 active:bg-danger-600 dark:bg-danger-600 dark:active:bg-danger-700',
     text: 'text-white',
   },
 };

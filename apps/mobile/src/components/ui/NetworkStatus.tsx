@@ -121,18 +121,18 @@ export function NetworkStatusIndicator() {
   return (
     <View className="flex-row items-center">
       {isOffline && (
-        <View className="bg-warning-100 rounded-full px-2 py-1 flex-row items-center">
-          <Text className="text-warning-700 text-xs font-medium">Offline</Text>
+        <View className="bg-warning-100 dark:bg-warning-900/30 rounded-full px-2 py-1 flex-row items-center">
+          <Text className="text-warning-700 dark:text-warning-300 text-xs font-medium">Offline</Text>
         </View>
       )}
       {!isOffline && isSyncing && (
-        <View className="bg-primary-100 rounded-full px-2 py-1">
-          <Text className="text-primary-700 text-xs font-medium">Syncing</Text>
+        <View className="bg-primary-100 dark:bg-primary-900/30 rounded-full px-2 py-1">
+          <Text className="text-primary-700 dark:text-primary-300 text-xs font-medium">Syncing</Text>
         </View>
       )}
       {!isOffline && !isSyncing && pendingOperations > 0 && (
-        <View className="bg-gray-100 rounded-full px-2 py-1">
-          <Text className="text-gray-700 text-xs font-medium">{pendingOperations} pending</Text>
+        <View className="bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-1">
+          <Text className="text-gray-700 dark:text-gray-300 text-xs font-medium">{pendingOperations} pending</Text>
         </View>
       )}
     </View>

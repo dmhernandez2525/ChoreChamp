@@ -40,7 +40,6 @@ export function ChoreDetailScreen() {
 
   const isCompleted = todayChore.isCompleted;
   const completion = todayChore.completion;
-  const isPendingApproval = completion?.status === 'pending';
   const isApproved = completion?.status === 'approved';
   const isRejected = completion?.status === 'rejected';
 
@@ -100,34 +99,34 @@ export function ChoreDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <ScrollView className="flex-1">
         {/* Header */}
-        <View className="bg-white px-6 pt-4 pb-6">
+        <View className="bg-white dark:bg-gray-800 px-6 pt-4 pb-6">
           <TouchableOpacity
             className="flex-row items-center mb-4"
             onPress={() => navigation.goBack()}
           >
-            <Text className="text-primary-600">← Back</Text>
+            <Text className="text-primary-600 dark:text-primary-400">← Back</Text>
           </TouchableOpacity>
 
           <View className="items-center">
-            <View className="w-20 h-20 bg-primary-100 rounded-2xl items-center justify-center mb-4">
+            <View className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-2xl items-center justify-center mb-4">
               <Text className="text-4xl">{chore.icon}</Text>
             </View>
-            <Text className="text-2xl font-bold text-gray-900 text-center">
+            <Text className="text-2xl font-bold text-gray-900 dark:text-white text-center">
               {chore.title}
             </Text>
             {chore.description && (
-              <Text className="text-gray-500 text-center mt-2">
+              <Text className="text-gray-500 dark:text-gray-400 text-center mt-2">
                 {chore.description}
               </Text>
             )}
 
             {/* Status badges */}
             <View className="flex-row gap-2 mt-4">
-              <View className="bg-primary-100 px-3 py-1 rounded-full">
-                <Text className="text-primary-700 font-medium">
+              <View className="bg-primary-100 dark:bg-primary-900/30 px-3 py-1 rounded-full">
+                <Text className="text-primary-700 dark:text-primary-300 font-medium">
                   +{chore.pointValue} {activeHousehold?.pointsName || 'points'}
                 </Text>
               </View>
@@ -135,19 +134,19 @@ export function ChoreDetailScreen() {
                 <View
                   className={`px-3 py-1 rounded-full ${
                     chore.difficulty === 'easy'
-                      ? 'bg-success-100'
+                      ? 'bg-success-100 dark:bg-success-900/30'
                       : chore.difficulty === 'medium'
-                      ? 'bg-warning-100'
-                      : 'bg-danger-100'
+                      ? 'bg-warning-100 dark:bg-warning-900/30'
+                      : 'bg-danger-100 dark:bg-danger-900/30'
                   }`}
                 >
                   <Text
                     className={`font-medium capitalize ${
                       chore.difficulty === 'easy'
-                        ? 'text-success-700'
+                        ? 'text-success-700 dark:text-success-300'
                         : chore.difficulty === 'medium'
-                        ? 'text-warning-700'
-                        : 'text-danger-700'
+                        ? 'text-warning-700 dark:text-warning-300'
+                        : 'text-danger-700 dark:text-danger-300'
                     }`}
                   >
                     {chore.difficulty}
@@ -155,8 +154,8 @@ export function ChoreDetailScreen() {
                 </View>
               )}
               {chore.requiresApproval && (
-                <View className="bg-purple-100 px-3 py-1 rounded-full">
-                  <Text className="text-purple-700 font-medium">
+                <View className="bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-full">
+                  <Text className="text-purple-700 dark:text-purple-300 font-medium">
                     Needs Approval
                   </Text>
                 </View>
@@ -213,18 +212,18 @@ export function ChoreDetailScreen() {
 
         {/* Requirements info */}
         {!isCompleted && (chore.requiresPhoto || chore.requiresApproval) && (
-          <View className="mx-6 mt-4 bg-blue-50 rounded-xl p-4">
-            <Text className="text-blue-900 font-semibold mb-2">Requirements</Text>
+          <View className="mx-6 mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+            <Text className="text-blue-900 dark:text-blue-100 font-semibold mb-2">Requirements</Text>
             {chore.requiresPhoto && (
               <View className="flex-row items-center mb-1">
-                <Text className="text-blue-600 mr-2">📸</Text>
-                <Text className="text-blue-700">Photo proof required</Text>
+                <Text className="text-blue-600 dark:text-blue-400 mr-2">📸</Text>
+                <Text className="text-blue-700 dark:text-blue-300">Photo proof required</Text>
               </View>
             )}
             {chore.requiresApproval && (
               <View className="flex-row items-center">
-                <Text className="text-blue-600 mr-2">👍</Text>
-                <Text className="text-blue-700">Parent approval required</Text>
+                <Text className="text-blue-600 dark:text-blue-400 mr-2">👍</Text>
+                <Text className="text-blue-700 dark:text-blue-300">Parent approval required</Text>
               </View>
             )}
           </View>
@@ -244,12 +243,12 @@ export function ChoreDetailScreen() {
 
         {/* Time estimate without timer */}
         {!chore.showTimer && chore.estimatedMinutes && (
-          <View className="mx-6 mt-4 bg-white rounded-xl p-4 shadow-sm">
+          <View className="mx-6 mt-4 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
             <View className="flex-row items-center">
               <Text className="text-2xl mr-3">⏱️</Text>
               <View>
-                <Text className="text-gray-500 text-sm">Estimated Time</Text>
-                <Text className="text-gray-900 font-semibold">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">Estimated Time</Text>
+                <Text className="text-gray-900 dark:text-white font-semibold">
                   {chore.estimatedMinutes} minutes
                 </Text>
               </View>
@@ -271,14 +270,14 @@ export function ChoreDetailScreen() {
 
         {/* Completed steps summary */}
         {chore.steps && chore.steps.length > 0 && isCompleted && (
-          <View className="mx-6 mt-4 bg-white rounded-xl p-4 shadow-sm">
-            <Text className="font-semibold text-gray-900 mb-2">Steps</Text>
+          <View className="mx-6 mt-4 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <Text className="font-semibold text-gray-900 dark:text-white mb-2">Steps</Text>
             {chore.steps.map((step, index) => (
               <View key={index} className="flex-row items-center py-2">
                 <View className="w-6 h-6 rounded-full bg-success-500 items-center justify-center mr-3">
                   <Text className="text-white text-sm">✓</Text>
                 </View>
-                <Text className="text-gray-600 line-through">{step}</Text>
+                <Text className="text-gray-600 dark:text-gray-400 line-through">{step}</Text>
               </View>
             ))}
           </View>
@@ -286,27 +285,27 @@ export function ChoreDetailScreen() {
 
         {/* Completion info for completed chores */}
         {isCompleted && completion && (
-          <View className="mx-6 mt-4 bg-white rounded-xl p-4 shadow-sm">
-            <Text className="font-semibold text-gray-900 mb-3">Completion Details</Text>
+          <View className="mx-6 mt-4 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <Text className="font-semibold text-gray-900 dark:text-white mb-3">Completion Details</Text>
             <View className="space-y-2">
               <View className="flex-row justify-between">
-                <Text className="text-gray-500">Completed</Text>
-                <Text className="text-gray-900">
+                <Text className="text-gray-500 dark:text-gray-400">Completed</Text>
+                <Text className="text-gray-900 dark:text-white">
                   {new Date(completion.completedAt).toLocaleString()}
                 </Text>
               </View>
               {completion.durationSeconds && (
                 <View className="flex-row justify-between">
-                  <Text className="text-gray-500">Duration</Text>
-                  <Text className="text-gray-900">
+                  <Text className="text-gray-500 dark:text-gray-400">Duration</Text>
+                  <Text className="text-gray-900 dark:text-white">
                     {Math.floor(completion.durationSeconds / 60)}m {completion.durationSeconds % 60}s
                   </Text>
                 </View>
               )}
               {completion.approvedAt && (
                 <View className="flex-row justify-between">
-                  <Text className="text-gray-500">Approved</Text>
-                  <Text className="text-gray-900">
+                  <Text className="text-gray-500 dark:text-gray-400">Approved</Text>
+                  <Text className="text-gray-900 dark:text-white">
                     {new Date(completion.approvedAt).toLocaleString()}
                   </Text>
                 </View>
@@ -321,9 +320,9 @@ export function ChoreDetailScreen() {
 
       {/* Complete button */}
       {!isCompleted && (
-        <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        <View className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
           <TouchableOpacity
-            className="bg-success-500 rounded-xl py-4 items-center"
+            className="bg-success-500 dark:bg-success-600 rounded-xl py-4 items-center"
             onPress={() => setCompletionModalVisible(true)}
           >
             <Text className="text-white font-semibold text-lg">
@@ -335,9 +334,9 @@ export function ChoreDetailScreen() {
 
       {/* Retry button for rejected chores */}
       {isRejected && (
-        <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        <View className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
           <TouchableOpacity
-            className="bg-primary-500 rounded-xl py-4 items-center"
+            className="bg-primary-500 dark:bg-primary-600 rounded-xl py-4 items-center"
             onPress={() => setCompletionModalVisible(true)}
           >
             <Text className="text-white font-semibold text-lg">

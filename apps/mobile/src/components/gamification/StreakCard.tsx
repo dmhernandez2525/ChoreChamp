@@ -156,7 +156,7 @@ export function StreakCard({
             <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <View
                 className="h-full bg-primary-500 rounded-full"
-                style={{ width: `${milestoneProgress * 100}%` }}
+                style={{ width: `${milestoneProgress.progress * 100}%` }}
               />
             </View>
           </View>

@@ -13,7 +13,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@chorechamp/types": ["../../packages/types/src"]
+      "@chorechamp/types": ["../../packages/types/src"],
+      "@chorechamp/gamification": ["../../packages/gamification/src"]
     }
   },
   "include": [
