@@ -73,7 +73,7 @@ export function HouseholdSettingsSection({
         pointsName: formData.pointsName.trim() || 'Stars',
       });
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       setError('Failed to update settings. Please try again.');
     } finally {
       setIsSaving(false);
@@ -96,7 +96,7 @@ export function HouseholdSettingsSection({
     setIsLeaving(true);
     try {
       await onLeaveHousehold();
-    } catch (err) {
+    } catch {
       setError('Failed to leave household. Please try again.');
       setIsLeaving(false);
     }
@@ -110,7 +110,7 @@ export function HouseholdSettingsSection({
     setIsDeleting(true);
     try {
       await onDeleteHousehold();
-    } catch (err) {
+    } catch {
       setError('Failed to delete household. Please try again.');
       setIsDeleting(false);
     }

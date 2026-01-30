@@ -1,4 +1,4 @@
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../lib/db';
 import {
   deviceTokens,
@@ -138,7 +138,7 @@ async function sendExpoPushNotification(
       body: JSON.stringify(messages),
     });
 
-    const result = await response.json();
+    const result = await response.json() as { data?: ExpoPushTicket[] };
     return result.data || [];
   } catch (error) {
     console.error('Failed to send push notifications:', error);

@@ -43,7 +43,7 @@ export function NotificationsSection({
       await onUpdatePreferences(localPrefs);
       setHasChanges(false);
       setSuccess('Notification preferences saved');
-    } catch (err) {
+    } catch {
       setError('Failed to save preferences. Please try again.');
     } finally {
       setIsSaving(false);

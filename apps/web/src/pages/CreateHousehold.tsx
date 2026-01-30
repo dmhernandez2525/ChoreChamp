@@ -50,7 +50,7 @@ export default function CreateHousehold() {
         pointsName: formData.pointsName.trim() || 'Stars',
       });
       navigate(`/households/${result.household.id}`);
-    } catch (err) {
+    } catch {
       setError('Failed to create household. Please try again.');
     }
   };

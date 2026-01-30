@@ -30,6 +30,7 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const isDark = useThemeStore((state) => state.isDark);
 
   useEffect(() => {
     async function prepare() {
@@ -65,8 +66,6 @@ export default function App() {
   if (!appIsReady) {
     return null;
   }
-
-  const isDark = useThemeStore((state) => state.isDark);
 
   // Custom navigation themes matching our brand colors
   const LightNavTheme = {

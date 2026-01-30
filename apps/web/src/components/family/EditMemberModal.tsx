@@ -63,7 +63,7 @@ export function EditMemberModal({ member, onClose, onSubmit }: EditMemberModalPr
         birthYear: formData.birthYear,
       });
       onClose();
-    } catch (err) {
+    } catch {
       setError('Failed to update member. Please try again.');
     } finally {
       setIsSubmitting(false);

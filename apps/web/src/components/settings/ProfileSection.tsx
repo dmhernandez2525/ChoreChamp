@@ -41,7 +41,7 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
     try {
       await onUpdateProfile({ name: name.trim() });
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       setError('Failed to update profile. Please try again.');
     } finally {
       setIsSaving(false);

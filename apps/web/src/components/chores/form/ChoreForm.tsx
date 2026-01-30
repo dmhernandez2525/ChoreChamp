@@ -163,7 +163,7 @@ export function ChoreForm({
 
     try {
       await onSubmit(data);
-    } catch (err) {
+    } catch {
       setError('Failed to save chore. Please try again.');
     }
   };

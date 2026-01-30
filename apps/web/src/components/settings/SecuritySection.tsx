@@ -43,7 +43,7 @@ export function SecuritySection({ onChangePassword, onDeleteAccount }: SecurityS
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (err) {
+    } catch {
       setError('Failed to change password. Please check your current password.');
     } finally {
       setIsSaving(false);
@@ -59,7 +59,7 @@ export function SecuritySection({ onChangePassword, onDeleteAccount }: SecurityS
     setIsDeleting(true);
     try {
       await onDeleteAccount();
-    } catch (err) {
+    } catch {
       setError('Failed to delete account. Please try again.');
       setIsDeleting(false);
     }

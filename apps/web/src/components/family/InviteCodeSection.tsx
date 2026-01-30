@@ -21,8 +21,8 @@ export function InviteCodeSection({
       await navigator.clipboard.writeText(code);
       setCopiedCode(code);
       setTimeout(() => setCopiedCode(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
   };
 
@@ -34,7 +34,7 @@ export function InviteCodeSection({
           text: `Use this code to join our family household: ${code}`,
           url: `${window.location.origin}/households/join?code=${code}`,
         });
-      } catch (err) {
+      } catch {
         // User cancelled or share failed
       }
     } else {
