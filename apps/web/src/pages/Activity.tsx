@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
+import { useActivityFeed, useMembers } from '@chorechamp/api-client';
 import {
   ActivityFeed,
   ActivityFilter,
@@ -8,156 +9,89 @@ import {
   MemberActivitySummary,
   categoryActivityTypes,
 } from '../components/activity';
-import type { Activity, ActivityCategory } from '../components/activity';
+import { Skeleton } from '../components/common';
+import type { Activity, ActivityCategory, ActivityType } from '../components/activity';
+import type { ActivityItem as ApiActivityItem } from '@chorechamp/types';
 
-// Demo activities for development
-const demoActivities: Activity[] = [
-  {
-    id: '1',
-    type: 'chore_completed',
-    title: 'completed "Take out trash"',
-    description: 'Earned 15 points',
-    memberId: 'member-1',
-    memberName: 'Emma',
-    createdAt: new Date(Date.now() - 1000 * 60 * 15),
-    metadata: { choreId: 'chore-1', points: 15 },
-  },
-  {
-    id: '2',
-    type: 'badge_earned',
-    title: 'earned the "Early Bird" badge',
-    description: 'Complete 5 chores before 9am',
-    memberId: 'member-2',
-    memberName: 'Jake',
-    createdAt: new Date(Date.now() - 1000 * 60 * 45),
-    metadata: { badgeId: 'early-bird' },
-  },
-  {
-    id: '3',
-    type: 'points_earned',
-    title: 'earned 50 bonus points',
-    description: 'Streak bonus for 7-day streak',
-    memberId: 'member-1',
-    memberName: 'Emma',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    metadata: { points: 50 },
-  },
-  {
-    id: '4',
-    type: 'reward_redeemed',
-    title: 'redeemed "Extra Screen Time"',
-    description: 'Cost: 100 points',
-    memberId: 'member-2',
-    memberName: 'Jake',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
-    metadata: { rewardId: 'reward-1', cost: 100 },
-  },
-  {
-    id: '5',
-    type: 'chore_approved',
-    title: 'approved "Clean bedroom" for Emma',
-    description: '',
-    memberId: 'member-3',
-    memberName: 'Mom',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
-  },
-  {
-    id: '6',
-    type: 'boss_damage',
-    title: 'dealt 25 damage to "The Dust Dragon"',
-    description: 'Boss HP: 175/500',
-    memberId: 'member-1',
-    memberName: 'Emma',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8),
-    metadata: { bossId: 'boss-1', damage: 25 },
-  },
-  {
-    id: '7',
-    type: 'streak_achieved',
-    title: 'achieved a 14-day streak',
-    description: 'Keep it going!',
-    memberId: 'member-2',
-    memberName: 'Jake',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    metadata: { streakDays: 14 },
-  },
-  {
-    id: '8',
-    type: 'chore_completed',
-    title: 'completed "Wash dishes"',
-    description: 'Earned 20 points',
-    memberId: 'member-3',
-    memberName: 'Mom',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26),
-    metadata: { choreId: 'chore-2', points: 20 },
-  },
-  {
-    id: '9',
-    type: 'reward_fulfilled',
-    title: 'fulfilled reward "Pizza Night" for Jake',
-    description: '',
-    memberId: 'member-3',
-    memberName: 'Mom',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-  },
-  {
-    id: '10',
-    type: 'goal_completed',
-    title: 'completed family goal "100 chores this month"',
-    description: 'The family earned a bonus reward!',
-    memberId: 'member-1',
-    memberName: 'Emma',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72),
-  },
-  {
-    id: '11',
-    type: 'member_joined',
-    title: 'joined the household',
-    description: 'Welcome to ChoreChamp!',
-    memberId: 'member-4',
-    memberName: 'Grandma',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 96),
-  },
-  {
-    id: '12',
-    type: 'boss_defeated',
-    title: 'defeated "The Laundry Monster"',
-    description: 'The family earned 500 bonus points!',
-    memberId: 'member-2',
-    memberName: 'Jake',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 120),
-    metadata: { bossId: 'boss-0', bonusPoints: 500 },
-  },
-];
-
-const demoMembers = [
-  { id: 'member-1', name: 'Emma' },
-  { id: 'member-2', name: 'Jake' },
-  { id: 'member-3', name: 'Mom' },
-  { id: 'member-4', name: 'Grandma' },
-];
+// Map API activity types to component activity types
+function mapApiActivityToComponent(item: ApiActivityItem): Activity {
+  return {
+    id: item.id,
+    type: item.type as ActivityType,
+    title: item.title,
+    description: item.description,
+    memberId: item.memberId,
+    memberName: item.memberName,
+    createdAt: new Date(item.timestamp),
+    metadata: item.metadata,
+  };
+}
 
 export default function Activity() {
   const { householdId } = useParams<{ householdId: string }>();
   const [selectedCategory, setSelectedCategory] = useState<ActivityCategory>('all');
   const [selectedMemberId, setSelectedMemberId] = useState<string | undefined>();
 
-  const filteredActivities = useMemo(() => {
-    let result = demoActivities;
+  const { data: activityData, isLoading: loadingActivity } = useActivityFeed(householdId!, {
+    limit: 100,
+    memberId: selectedMemberId,
+  });
+  const { data: members, isLoading: loadingMembers } = useMembers(householdId!);
 
-    // Filter by category
+  const isLoading = loadingActivity || loadingMembers;
+
+  // Transform API data to component format
+  const activities = useMemo(() => {
+    if (!activityData?.activities) return [];
+    return activityData.activities.map(mapApiActivityToComponent);
+  }, [activityData]);
+
+  const filteredActivities = useMemo(() => {
+    let result = activities;
+
+    // Filter by category (member filter is handled by API)
     const allowedTypes = categoryActivityTypes[selectedCategory];
     if (allowedTypes) {
       result = result.filter((a) => allowedTypes.includes(a.type));
     }
 
-    // Filter by member
-    if (selectedMemberId) {
-      result = result.filter((a) => a.memberId === selectedMemberId);
-    }
-
     return result;
-  }, [selectedCategory, selectedMemberId]);
+  }, [activities, selectedCategory]);
+
+  const memberOptions = useMemo(() => {
+    return members?.map((m) => ({ id: m.id, name: m.name })) || [];
+  }, [members]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white border-b border-gray-200">
+          <div className="max-w-6xl mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-8 w-16" />
+              <div>
+                <Skeleton className="h-7 w-40" />
+                <Skeleton className="h-4 w-56 mt-1" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-6xl mx-auto px-4 py-6">
+          <Skeleton className="h-24 rounded-xl mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <Skeleton className="h-16 rounded-xl" />
+              <Skeleton className="h-96 rounded-xl" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-48 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -183,7 +117,7 @@ export default function Activity() {
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         {/* Stats */}
-        <ActivityStats activities={demoActivities} className="mb-6" />
+        <ActivityStats activities={activities} className="mb-6" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main feed */}
@@ -195,7 +129,7 @@ export default function Activity() {
                 onCategoryChange={setSelectedCategory}
                 selectedMemberId={selectedMemberId}
                 onMemberChange={setSelectedMemberId}
-                members={demoMembers}
+                members={memberOptions}
               />
             </div>
 
@@ -210,7 +144,7 @@ export default function Activity() {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <MemberActivitySummary activities={demoActivities} />
+            <MemberActivitySummary activities={activities} />
 
             {/* Quick links */}
             <div className="bg-white rounded-xl border border-gray-200 p-4">
