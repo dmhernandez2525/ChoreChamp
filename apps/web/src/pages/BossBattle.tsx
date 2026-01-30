@@ -1,6 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
-import { useHousehold, useMembers } from '@chorechamp/api-client';
+import {
+  useHousehold,
+  useMembers,
+  useCurrentBossBattle,
+  useBossBattleHistory,
+} from '@chorechamp/api-client';
 import { useAuth } from '../context/AuthContext';
 import {
   BossCard,
@@ -9,48 +14,7 @@ import {
   ContributionLeaderboard,
 } from '../components/bossbattle';
 import { Skeleton } from '../components/common';
-import type { BossBattle as BossBattleType, FamilyParty } from '@chorechamp/types';
-
-// Mock data for demo - in real app, this would come from API
-const mockBoss: BossBattleType = {
-  id: 'boss-1',
-  householdId: 'household-1',
-  name: 'The Mess Monster',
-  description: 'A fearsome creature born from uncleaned rooms and dirty dishes!',
-  icon: '👹',
-  healthMax: 100,
-  healthCurrent: 35,
-  pointReward: 500,
-  startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-  endsAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
-  defeatedAt: null,
-};
-
-const mockParty: FamilyParty = {
-  householdId: 'household-1',
-  healthCurrent: 85,
-  healthMax: 100,
-  weeklyGoal: 20,
-  weeklyProgress: 14,
-  bossActive: true,
-  bossId: 'boss-1',
-};
-
-const mockPastBosses: BossBattleType[] = [
-  {
-    id: 'boss-0',
-    householdId: 'household-1',
-    name: 'Dust Bunny King',
-    description: 'Ruler of dusty corners!',
-    icon: '🐰',
-    healthMax: 80,
-    healthCurrent: 0,
-    pointReward: 300,
-    startedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-    endsAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    defeatedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-  },
-];
+import type { FamilyParty } from '@chorechamp/types';
 
 export default function BossBattle() {
   const { householdId } = useParams<{ householdId: string }>();
@@ -58,17 +22,30 @@ export default function BossBattle() {
 
   const { data: household, isLoading: loadingHousehold } = useHousehold(householdId!);
   const { data: members, isLoading: loadingMembers } = useMembers(householdId!);
+  const { data: currentBoss, isLoading: loadingBoss } = useCurrentBossBattle(householdId!);
+  const { data: bossHistory, isLoading: loadingHistory } = useBossBattleHistory(householdId!);
 
   const currentMember = members?.find((m) => m.userId === user?.id);
-  const isLoading = loadingHousehold || loadingMembers;
+  const isLoading = loadingHousehold || loadingMembers || loadingBoss || loadingHistory;
 
-  // Mock contributors based on members
-  const mockContributors = members?.map((member, i) => ({
+  // TODO: Get party stats from API when endpoint is available
+  const mockParty: FamilyParty = {
+    householdId: householdId || '',
+    healthCurrent: 85,
+    healthMax: 100,
+    weeklyGoal: 20,
+    weeklyProgress: 14,
+    bossActive: !!currentBoss,
+    bossId: currentBoss?.id || null,
+  };
+
+  // TODO: Get contributor damage stats from API when endpoint is available
+  const contributors = members?.map((member, i) => ({
     memberId: member.id,
     memberName: member.name,
     memberColor: member.color || '#3B82F6',
-    damage: Math.max(0, 30 - i * 8 + Math.floor(Math.random() * 10)),
-    chores: Math.max(1, 5 - i + Math.floor(Math.random() * 3)),
+    damage: Math.max(0, 30 - i * 8),
+    chores: Math.max(1, 5 - i),
   })) || [];
 
   if (isLoading) {
@@ -130,16 +107,29 @@ export default function BossBattle() {
       <main className="mx-auto max-w-4xl px-4 py-8">
         <div className="space-y-6">
           {/* Current Boss */}
-          <BossCard boss={mockBoss} />
+          {currentBoss ? (
+            <BossCard boss={currentBoss} />
+          ) : (
+            <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+              <p className="text-3xl mb-2">🎯</p>
+              <h3 className="font-semibold text-gray-900">No Active Boss Battle</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Parents can start a new boss battle for the family to tackle together!
+              </p>
+              {currentMember?.role === 'parent' && (
+                <Button className="mt-4">Start New Battle</Button>
+              )}
+            </div>
+          )}
 
           {/* How it works banner */}
           <div className="rounded-lg bg-blue-50 p-4">
             <h3 className="font-semibold text-blue-900">How Boss Battles Work</h3>
             <ul className="mt-2 text-sm text-blue-700 space-y-1">
-              <li>• Complete chores to deal damage to the boss</li>
-              <li>• Each chore completion deals damage based on point value</li>
-              <li>• Work together as a family to defeat the boss before time runs out!</li>
-              <li>• Victory rewards bonus points split among all contributors</li>
+              <li>Complete chores to deal damage to the boss</li>
+              <li>Each chore completion deals damage based on point value</li>
+              <li>Work together as a family to defeat the boss before time runs out!</li>
+              <li>Victory rewards bonus points split among all contributors</li>
             </ul>
           </div>
 
@@ -149,14 +139,14 @@ export default function BossBattle() {
             <div className="space-y-6">
               <FamilyGoalProgress party={mockParty} />
               <ContributionLeaderboard
-                contributors={mockContributors}
+                contributors={contributors}
                 currentUserId={currentMember?.id}
               />
             </div>
 
             {/* Right column */}
             <div className="space-y-6">
-              <BossHistoryList bosses={[mockBoss, ...mockPastBosses]} />
+              <BossHistoryList bosses={[...(currentBoss ? [currentBoss] : []), ...(bossHistory || [])]} />
             </div>
           </div>
         </div>
