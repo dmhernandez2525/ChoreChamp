@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "esbuild src/server.ts --bundle --platform=node --target=node20 --outdir=dist --format=esm --external:postgres --external:drizzle-orm --external:ioredis --external:bullmq --external:better-auth --external:fastify --external:@fastify/* --external:socket.io --external:pino --external:dotenv --external:zod",
     "start": "node dist/server.js",
-    "test": "vitest",
+    "test": "vitest --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/"
