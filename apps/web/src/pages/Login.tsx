@@ -20,8 +20,8 @@ export default function Login() {
     try {
       await signIn(email, password);
       navigate('/dashboard');
-    } catch {
-      setError(err instanceof Error ? err.message : 'Failed to sign in');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to sign in');
     } finally {
       setIsLoading(false);
     }

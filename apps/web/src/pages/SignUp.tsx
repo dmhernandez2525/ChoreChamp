@@ -33,8 +33,8 @@ export default function SignUp() {
     try {
       await signUp(email, password, name);
       navigate('/dashboard');
-    } catch {
-      setError(err instanceof Error ? err.message : 'Failed to create account');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to create account');
     } finally {
       setIsLoading(false);
     }
