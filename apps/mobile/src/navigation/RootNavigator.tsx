@@ -6,6 +6,7 @@ import { useNotificationStore } from '../stores/notification-store';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
 import { NotificationSettingsScreen, WidgetSettingsScreen, SoundsAndHapticsScreen, BiometricSettingsScreen } from '../screens/settings';
+import { ChoreDetailScreen, PendingApprovalsScreen } from '../screens/chores';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -76,6 +77,20 @@ export function RootNavigator() {
             options={{
               presentation: 'modal',
               animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="ChoreDetail"
+            component={ChoreDetailScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="PendingApprovals"
+            component={PendingApprovalsScreen}
+            options={{
+              animation: 'slide_from_right',
             }}
           />
         </>
