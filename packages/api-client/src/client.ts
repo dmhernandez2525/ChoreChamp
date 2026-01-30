@@ -25,6 +25,14 @@ import type {
   Reward,
   CreateRewardRequest,
   RewardRedemption,
+  BossBattle,
+  CreateBossBattleRequest,
+  DamageBossResponse,
+  ActivityFeedResponse,
+  ActivityStats,
+  ReportSummary,
+  ReportTrend,
+  ReportCategories,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -340,6 +348,134 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
+  }
+
+  // ===== Boss Battles =====
+  async getCurrentBossBattle(householdId: string): Promise<BossBattle | null> {
+    return this.request(`/households/${householdId}/boss-battles/current`);
+  }
+
+  async getBossBattleHistory(
+    householdId: string,
+    limit?: number
+  ): Promise<BossBattle[]> {
+    const query = limit ? `?limit=${limit}` : '';
+    return this.request(`/households/${householdId}/boss-battles/history${query}`);
+  }
+
+  async createBossBattle(
+    householdId: string,
+    data: CreateBossBattleRequest
+  ): Promise<BossBattle> {
+    return this.request(`/households/${householdId}/boss-battles`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async damageBoss(
+    householdId: string,
+    battleId: string,
+    damage: number
+  ): Promise<DamageBossResponse> {
+    return this.request(`/households/${householdId}/boss-battles/${battleId}/damage`, {
+      method: 'POST',
+      body: JSON.stringify({ damage }),
+    });
+  }
+
+  async getBossBattle(householdId: string, battleId: string): Promise<BossBattle> {
+    return this.request(`/households/${householdId}/boss-battles/${battleId}`);
+  }
+
+  // ===== Activity Feed =====
+  async getActivityFeed(
+    householdId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      memberId?: string;
+      type?: string;
+      since?: string;
+    }
+  ): Promise<ActivityFeedResponse> {
+    const params = new URLSearchParams();
+    if (options?.limit) params.set('limit', options.limit.toString());
+    if (options?.offset) params.set('offset', options.offset.toString());
+    if (options?.memberId) params.set('memberId', options.memberId);
+    if (options?.type) params.set('type', options.type);
+    if (options?.since) params.set('since', options.since);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/activity${query}`);
+  }
+
+  async getActivityStats(
+    householdId: string,
+    period?: 'day' | 'week' | 'month'
+  ): Promise<ActivityStats> {
+    const query = period ? `?period=${period}` : '';
+    return this.request(`/households/${householdId}/activity/stats${query}`);
+  }
+
+  // ===== Reports =====
+  async getReportSummary(
+    householdId: string,
+    options?: {
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<ReportSummary> {
+    const params = new URLSearchParams();
+    if (options?.startDate) params.set('startDate', options.startDate);
+    if (options?.endDate) params.set('endDate', options.endDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/reports/summary${query}`);
+  }
+
+  async getReportTrend(
+    householdId: string,
+    options?: {
+      startDate?: string;
+      endDate?: string;
+      memberId?: string;
+    }
+  ): Promise<ReportTrend> {
+    const params = new URLSearchParams();
+    if (options?.startDate) params.set('startDate', options.startDate);
+    if (options?.endDate) params.set('endDate', options.endDate);
+    if (options?.memberId) params.set('memberId', options.memberId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/reports/trend${query}`);
+  }
+
+  async getReportCategories(
+    householdId: string,
+    options?: {
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<ReportCategories> {
+    const params = new URLSearchParams();
+    if (options?.startDate) params.set('startDate', options.startDate);
+    if (options?.endDate) params.set('endDate', options.endDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/reports/categories${query}`);
+  }
+
+  async exportReport(
+    householdId: string,
+    options?: {
+      startDate?: string;
+      endDate?: string;
+      format?: 'json' | 'csv';
+    }
+  ): Promise<Blob | { period: { start: Date; end: Date }; completions: unknown[] }> {
+    const params = new URLSearchParams();
+    if (options?.startDate) params.set('startDate', options.startDate);
+    if (options?.endDate) params.set('endDate', options.endDate);
+    if (options?.format) params.set('format', options.format);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/reports/export${query}`);
   }
 }
 

@@ -11,6 +11,7 @@ import type {
   JoinHouseholdRequest,
   CreateRewardRequest,
   CreateInviteCodeRequest,
+  CreateBossBattleRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -40,6 +41,25 @@ export const queryKeys = {
     ['reward', householdId, rewardId] as const,
   pendingRedemptions: (householdId: string) =>
     ['pendingRedemptions', householdId] as const,
+  // Boss Battles
+  currentBossBattle: (householdId: string) =>
+    ['currentBossBattle', householdId] as const,
+  bossBattleHistory: (householdId: string) =>
+    ['bossBattleHistory', householdId] as const,
+  bossBattle: (householdId: string, battleId: string) =>
+    ['bossBattle', householdId, battleId] as const,
+  // Activity
+  activityFeed: (householdId: string, options?: Record<string, unknown>) =>
+    ['activityFeed', householdId, options] as const,
+  activityStats: (householdId: string, period?: string) =>
+    ['activityStats', householdId, period] as const,
+  // Reports
+  reportSummary: (householdId: string, options?: Record<string, unknown>) =>
+    ['reportSummary', householdId, options] as const,
+  reportTrend: (householdId: string, options?: Record<string, unknown>) =>
+    ['reportTrend', householdId, options] as const,
+  reportCategories: (householdId: string, options?: Record<string, unknown>) =>
+    ['reportCategories', householdId, options] as const,
 };
 
 // ===== Auth Hooks =====
@@ -466,5 +486,143 @@ export function useRejectRedemption(householdId: string) {
         queryKey: queryKeys.pendingRedemptions(householdId),
       });
     },
+  });
+}
+
+// ===== Boss Battle Hooks =====
+export function useCurrentBossBattle(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.currentBossBattle(householdId),
+    queryFn: () => apiClient.getCurrentBossBattle(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useBossBattleHistory(householdId: string, limit?: number) {
+  return useQuery({
+    queryKey: queryKeys.bossBattleHistory(householdId),
+    queryFn: () => apiClient.getBossBattleHistory(householdId, limit),
+    enabled: !!householdId,
+  });
+}
+
+export function useBossBattle(householdId: string, battleId: string) {
+  return useQuery({
+    queryKey: queryKeys.bossBattle(householdId, battleId),
+    queryFn: () => apiClient.getBossBattle(householdId, battleId),
+    enabled: !!householdId && !!battleId,
+  });
+}
+
+export function useCreateBossBattle(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateBossBattleRequest) =>
+      apiClient.createBossBattle(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.currentBossBattle(householdId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.bossBattleHistory(householdId),
+      });
+    },
+  });
+}
+
+export function useDamageBoss(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ battleId, damage }: { battleId: string; damage: number }) =>
+      apiClient.damageBoss(householdId, battleId, damage),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.currentBossBattle(householdId),
+      });
+      if (result.isDefeated) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.bossBattleHistory(householdId),
+        });
+        // Also refresh member stats since points were awarded
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.members(householdId),
+        });
+      }
+    },
+  });
+}
+
+// ===== Activity Feed Hooks =====
+export function useActivityFeed(
+  householdId: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+    memberId?: string;
+    type?: string;
+    since?: string;
+  }
+) {
+  return useQuery({
+    queryKey: queryKeys.activityFeed(householdId, options),
+    queryFn: () => apiClient.getActivityFeed(householdId, options),
+    enabled: !!householdId,
+  });
+}
+
+export function useActivityStats(
+  householdId: string,
+  period?: 'day' | 'week' | 'month'
+) {
+  return useQuery({
+    queryKey: queryKeys.activityStats(householdId, period),
+    queryFn: () => apiClient.getActivityStats(householdId, period),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Report Hooks =====
+export function useReportSummary(
+  householdId: string,
+  options?: {
+    startDate?: string;
+    endDate?: string;
+  }
+) {
+  return useQuery({
+    queryKey: queryKeys.reportSummary(householdId, options),
+    queryFn: () => apiClient.getReportSummary(householdId, options),
+    enabled: !!householdId,
+  });
+}
+
+export function useReportTrend(
+  householdId: string,
+  options?: {
+    startDate?: string;
+    endDate?: string;
+    memberId?: string;
+  }
+) {
+  return useQuery({
+    queryKey: queryKeys.reportTrend(householdId, options),
+    queryFn: () => apiClient.getReportTrend(householdId, options),
+    enabled: !!householdId,
+  });
+}
+
+export function useReportCategories(
+  householdId: string,
+  options?: {
+    startDate?: string;
+    endDate?: string;
+  }
+) {
+  return useQuery({
+    queryKey: queryKeys.reportCategories(householdId, options),
+    queryFn: () => apiClient.getReportCategories(householdId, options),
+    enabled: !!householdId,
   });
 }

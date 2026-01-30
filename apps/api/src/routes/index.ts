@@ -5,6 +5,9 @@ import { memberRoutes } from './members';
 import { choreRoutes } from './chores';
 import { templateRoutes } from './templates';
 import { scheduleRoutes } from './schedule';
+import { bossBattleRoutes } from './boss-battles';
+import { activityRoutes } from './activity';
+import { reportsRoutes } from './reports';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -20,6 +23,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(memberRoutes, { prefix: '/:householdId/members' });
       householdApi.register(choreRoutes, { prefix: '/:householdId/chores' });
       householdApi.register(scheduleRoutes, { prefix: '/:householdId/schedule' });
+      householdApi.register(bossBattleRoutes, { prefix: '/:householdId/boss-battles' });
+      householdApi.register(activityRoutes, { prefix: '/:householdId/activity' });
+      householdApi.register(reportsRoutes, { prefix: '/:householdId/reports' });
     });
 
     // Chore templates (public)
