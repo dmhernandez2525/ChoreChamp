@@ -10,16 +10,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { TodayChore } from '@chorechamp/types';
 import { useHouseholdStore } from '../../stores/household-store';
 import { useSyncStore } from '../../stores/sync-store';
 import { apiClient } from '../../lib/api-client';
 import { queueOfflineOperation, generateLocalId } from '../../sync';
 import { checkNetworkStatus } from '../../hooks/use-network-status';
+import type { RootStackParamList } from '../../navigation/types';
 
 type FilterType = 'all' | 'todo' | 'completed';
 
 export function ChoreListScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     todayChores,
     loadTodayChores,
@@ -33,6 +37,10 @@ export function ChoreListScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
+
+  const navigateToDetail = (item: TodayChore) => {
+    navigation.navigate('ChoreDetail', { chore: item });
+  };
 
   const filteredChores = todayChores.filter((item) => {
     // Filter by completion status
@@ -130,11 +138,7 @@ export function ChoreListScreen() {
           className={`bg-white p-4 flex-row items-center border-b border-gray-100 ${
             isCompleting ? 'opacity-50' : ''
           }`}
-          onPress={() => {
-            if (!item.isCompleted) {
-              handleCompleteChore(item);
-            }
-          }}
+          onPress={() => navigateToDetail(item)}
           disabled={isCompleting}
         >
           {/* Icon */}
