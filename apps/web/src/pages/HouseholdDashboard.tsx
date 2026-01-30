@@ -7,6 +7,7 @@ import {
   useTodaysChores,
   useCompleteChore,
   useApproveCompletion,
+  useRejectCompletion,
 } from '@chorechamp/api-client';
 import { useAuth } from '../context/AuthContext';
 import { useChoreStore } from '../stores/chore-store';
@@ -44,6 +45,7 @@ export default function HouseholdDashboard() {
   // Mutations
   const completeChore = useCompleteChore(householdId!);
   const approveCompletion = useApproveCompletion(householdId!);
+  const rejectCompletion = useRejectCompletion(householdId!);
 
   // Celebrations
   const { celebrateChoreCompleted } = useCelebration();
@@ -110,8 +112,12 @@ export default function HouseholdDashboard() {
   };
 
   const handleReject = async (completionId: string, reason: string) => {
-    // TODO: Implement reject mutation
-    console.log('Reject', completionId, reason);
+    setApprovingId(completionId);
+    try {
+      await rejectCompletion.mutateAsync({ completionId, reason });
+    } finally {
+      setApprovingId(null);
+    }
   };
 
   const handleSignOut = async () => {

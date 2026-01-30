@@ -7,8 +7,11 @@ import type {
   CreateHouseholdResponse,
   Member,
   AddMemberRequest,
+  UpdateMemberRequest,
   JoinHouseholdRequest,
   JoinHouseholdResponse,
+  InviteCode,
+  CreateInviteCodeRequest,
   Chore,
   CreateChoreRequest,
   ChoreCompletion,
@@ -93,6 +96,29 @@ class ApiClient {
     }
   }
 
+  async updateProfile(data: { name?: string }): Promise<AuthResponse> {
+    return this.request('/auth/update-user', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async changePassword(data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<void> {
+    return this.request('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAccount(): Promise<void> {
+    return this.request('/auth/delete-user', {
+      method: 'POST',
+    });
+  }
+
   // ===== Households =====
   async getHouseholds(): Promise<Household[]> {
     return this.request('/households');
@@ -123,6 +149,38 @@ class ApiClient {
 
   async addMember(householdId: string, data: AddMemberRequest): Promise<Member> {
     return this.request(`/households/${householdId}/members`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateMember(
+    householdId: string,
+    memberId: string,
+    data: UpdateMemberRequest
+  ): Promise<Member> {
+    return this.request(`/households/${householdId}/members/${memberId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteMember(householdId: string, memberId: string): Promise<void> {
+    return this.request(`/households/${householdId}/members/${memberId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ===== Invite Codes =====
+  async getInviteCodes(householdId: string): Promise<InviteCode[]> {
+    return this.request(`/households/${householdId}/invites`);
+  }
+
+  async createInviteCode(
+    householdId: string,
+    data: CreateInviteCodeRequest
+  ): Promise<InviteCode> {
+    return this.request(`/households/${householdId}/invites`, {
       method: 'POST',
       body: JSON.stringify(data),
     });

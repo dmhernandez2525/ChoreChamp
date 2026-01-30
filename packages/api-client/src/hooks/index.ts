@@ -5,10 +5,12 @@ import type {
   SignUpRequest,
   CreateHouseholdRequest,
   AddMemberRequest,
+  UpdateMemberRequest,
   CreateChoreRequest,
   CompleteChoreRequest,
   JoinHouseholdRequest,
   CreateRewardRequest,
+  CreateInviteCodeRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -17,6 +19,7 @@ export const queryKeys = {
   households: ['households'] as const,
   household: (id: string) => ['household', id] as const,
   members: (householdId: string) => ['members', householdId] as const,
+  inviteCodes: (householdId: string) => ['inviteCodes', householdId] as const,
   chores: (householdId: string) => ['chores', householdId] as const,
   todaysChores: (householdId: string, memberId?: string) =>
     ['todaysChores', householdId, memberId] as const,
@@ -82,6 +85,36 @@ export function useSignOut() {
   });
 }
 
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { name?: string }) => apiClient.updateProfile(data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.session, data);
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { currentPassword: string; newPassword: string }) =>
+      apiClient.changePassword(data),
+  });
+}
+
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.deleteAccount(),
+    onSuccess: () => {
+      queryClient.setQueryData(queryKeys.session, null);
+      queryClient.clear();
+    },
+  });
+}
+
 // ===== Household Hooks =====
 export function useHouseholds() {
   return useQuery({
@@ -140,6 +173,50 @@ export function useAddMember(householdId: string) {
   });
 }
 
+export function useUpdateMember(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ memberId, data }: { memberId: string; data: UpdateMemberRequest }) =>
+      apiClient.updateMember(householdId, memberId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.members(householdId) });
+    },
+  });
+}
+
+export function useDeleteMember(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (memberId: string) => apiClient.deleteMember(householdId, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.members(householdId) });
+    },
+  });
+}
+
+// ===== Invite Code Hooks =====
+export function useInviteCodes(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.inviteCodes(householdId),
+    queryFn: () => apiClient.getInviteCodes(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateInviteCode(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateInviteCodeRequest) =>
+      apiClient.createInviteCode(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inviteCodes(householdId) });
+    },
+  });
+}
+
 // ===== Chore Hooks =====
 export function useChores(householdId: string) {
   return useQuery({
@@ -187,6 +264,18 @@ export function useApproveCompletion(householdId: string) {
 
   return useMutation({
     mutationFn: (completionId: string) => apiClient.approveCompletion(householdId, completionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.todaysChores(householdId) });
+    },
+  });
+}
+
+export function useRejectCompletion(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ completionId, reason }: { completionId: string; reason: string }) =>
+      apiClient.rejectCompletion(householdId, completionId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.todaysChores(householdId) });
     },
