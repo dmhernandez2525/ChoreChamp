@@ -25,6 +25,7 @@ export type RootStackParamList = {
   BiometricSettings: undefined;
   ChoreDetail: { chore: TodayChore };
   PendingApprovals: undefined;
+  Leaderboard: undefined;
 };
 
 // Type helper for useNavigation hook
