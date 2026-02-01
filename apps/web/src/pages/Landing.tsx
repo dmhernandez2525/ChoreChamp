@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { DEMO_MODE } from '../lib/demo-mode';
 
 export default function Landing() {
   return (
@@ -44,12 +45,21 @@ export default function Landing() {
           >
             Start Free Trial
           </Link>
-          <a
-            href="#features"
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Learn More
-          </a>
+          {DEMO_MODE ? (
+            <Link
+              to="/login"
+              className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Try Demo
+            </Link>
+          ) : (
+            <a
+              href="#features"
+              className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Learn More
+            </a>
+          )}
         </div>
       </section>
 

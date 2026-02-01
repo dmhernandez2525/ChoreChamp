@@ -20,6 +20,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: VITE_DEMO_MODE
+        value: "true"
       - key: VITE_API_URL
         sync: false
     routes:
