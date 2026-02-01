@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { DEMO_ROLES, type DemoRole } from '../lib/demo-mode';
+import { useDemoAuth } from '../context/DemoAuthContext';
 
 interface DemoRoleSelectorProps {
   title?: string;
@@ -11,9 +12,12 @@ export function DemoRoleSelector({
   subtitle = 'Select a role to explore the app',
 }: DemoRoleSelectorProps) {
   const navigate = useNavigate();
+  const { enterDemo, demoHouseholdId } = useDemoAuth();
 
   const handleRoleSelect = (role: DemoRole) => {
-    navigate(`/demo/${role}`);
+    enterDemo(role);
+    // Navigate to actual app routes with demo household
+    navigate(`/households/${demoHouseholdId}`);
   };
 
   return (
@@ -59,7 +63,7 @@ export function DemoRoleSelector({
             to="/"
             className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
-            ← Back to home
+            Back to home
           </Link>
         </div>
       </div>

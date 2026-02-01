@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
 import { DemoProvider, useDemo } from '../context/DemoContext';
-import { useCelebration, CelebrationProvider } from '../components/celebrations';
+import { useDemoAuth } from '../context/DemoAuthContext';
+import { CelebrationProvider, useCelebration } from '../components/celebrations';
+import { DemoBanner } from '../components/DemoBanner';
 import {
   ChorePreviewList,
   ChoreList,
@@ -11,11 +13,10 @@ import {
   QuickStats,
 } from '../components/chores';
 import { NoChoresEmptyState } from '../components/common';
-import type { DemoRole } from '../lib/demo-mode';
 
-function DemoDashboardContent() {
-  const { role } = useParams<{ role: DemoRole }>();
+function DemoHouseholdDashboardContent() {
   const navigate = useNavigate();
+  const { demoRole, demoHouseholdId, exitDemo } = useDemoAuth();
   const {
     household,
     members,
@@ -37,19 +38,17 @@ function DemoDashboardContent() {
 
   // Set initial member based on role
   useEffect(() => {
-    if (role === 'parent') {
+    if (demoRole === 'parent') {
       setSelectedMemberId('demo-parent');
-    } else if (role === 'child') {
-      // Select Emma (first child) for child demo
+    } else if (demoRole === 'child') {
       setSelectedMemberId('demo-child-emma');
     }
-  }, [role, setSelectedMemberId]);
+  }, [demoRole, setSelectedMemberId]);
 
   // Get chores for the view
   const todayChores = useMemo(() => {
-    // Parents see all chores, children see their own
-    return role === 'parent' ? getTodayChores() : getTodayChores(selectedMemberId);
-  }, [role, selectedMemberId, getTodayChores]);
+    return demoRole === 'parent' ? getTodayChores() : getTodayChores(selectedMemberId);
+  }, [demoRole, selectedMemberId, getTodayChores]);
 
   // Check if current user is a parent
   const isParent = currentMember?.role === 'parent';
@@ -92,8 +91,9 @@ function DemoDashboardContent() {
     }
   };
 
-  const handleExitDemo = () => {
+  const handleSignOut = () => {
     resetDemo();
+    exitDemo();
     navigate('/');
   };
 
@@ -111,24 +111,13 @@ function DemoDashboardContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Demo Mode Banner */}
-      <div className="bg-blue-600 px-4 py-2 text-center text-sm text-white">
-        <span className="inline-flex items-center gap-2">
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white"></span>
-          Demo Mode - Viewing as {role === 'parent' ? 'Parent' : 'Child'}
-          <button
-            onClick={handleExitDemo}
-            className="ml-4 rounded bg-white/20 px-2 py-0.5 hover:bg-white/30 transition-colors"
-          >
-            Exit Demo
-          </button>
-        </span>
-      </div>
+      <DemoBanner />
 
       {/* Header */}
       <header className="border-b bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
-            <Link to="/" className="text-gray-500 hover:text-gray-700">
+            <Link to="/dashboard" className="text-gray-500 hover:text-gray-700">
               <span className="text-2xl">🏆</span>
             </Link>
             <div>
@@ -138,7 +127,7 @@ function DemoDashboardContent() {
           </div>
           <div className="flex items-center gap-4">
             {/* Member selector for child view */}
-            {role === 'child' && childMembers.length > 1 && (
+            {demoRole === 'child' && childMembers.length > 1 && (
               <select
                 value={selectedMemberId}
                 onChange={(e) => setSelectedMemberId(e.target.value)}
@@ -163,8 +152,8 @@ function DemoDashboardContent() {
                 <span className="text-sm font-medium">{displayMember.name}</span>
               </div>
             )}
-            <Button variant="ghost" size="sm" onClick={handleExitDemo}>
-              Exit Demo
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              Sign Out
             </Button>
           </div>
         </div>
@@ -269,20 +258,23 @@ function DemoDashboardContent() {
         <div className="mt-8 flex flex-wrap gap-4">
           {isParent && (
             <>
-              <Button variant="outline" disabled>
-                + Add Chore (Demo)
+              <Button variant="outline" asChild>
+                <Link to={`/households/${demoHouseholdId}/chores/new`}>+ Add Chore</Link>
               </Button>
-              <Button variant="outline" disabled>
-                Manage Family (Demo)
+              <Button variant="outline" asChild>
+                <Link to={`/households/${demoHouseholdId}/members`}>Manage Family</Link>
               </Button>
             </>
           )}
-          <Link to={`/demo/${role}/rewards`}>
-            <Button variant="outline">Rewards Store</Button>
-          </Link>
-          <Link to={`/demo/${role}/leaderboard`}>
-            <Button variant="outline">Leaderboard</Button>
-          </Link>
+          <Button variant="outline" asChild>
+            <Link to={`/households/${demoHouseholdId}/rewards`}>Rewards Store</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/households/${demoHouseholdId}/leaderboard`}>Leaderboard</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/households/${demoHouseholdId}/settings`}>Settings</Link>
+          </Button>
         </div>
 
         {/* Demo Info Card */}
@@ -316,11 +308,11 @@ function DemoDashboardContent() {
   );
 }
 
-export default function DemoDashboard() {
+export default function DemoHouseholdDashboard() {
   return (
     <DemoProvider>
       <CelebrationProvider>
-        <DemoDashboardContent />
+        <DemoHouseholdDashboardContent />
       </CelebrationProvider>
     </DemoProvider>
   );

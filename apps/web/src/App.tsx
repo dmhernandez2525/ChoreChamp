@@ -1,15 +1,15 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { DemoAuthProvider, useDemoAuth } from './context/DemoAuthContext';
 import { CelebrationProvider } from './components/celebrations';
 import { PWAProvider } from './components/pwa';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
-import DemoDashboard from './pages/DemoDashboard';
-import DemoRewards from './pages/DemoRewards';
-import DemoLeaderboard from './pages/DemoLeaderboard';
-import HouseholdDashboard from './pages/HouseholdDashboard';
+import HouseholdDashboardWrapper from './pages/HouseholdDashboardWrapper';
+import RewardsStoreWrapper from './pages/RewardsStoreWrapper';
+import LeaderboardWrapper from './pages/LeaderboardWrapper';
 import CreateHousehold from './pages/CreateHousehold';
 import JoinHousehold from './pages/JoinHousehold';
 import FamilyManagement from './pages/FamilyManagement';
@@ -19,20 +19,24 @@ import CreateChore from './pages/CreateChore';
 import EditChore from './pages/EditChore';
 import TemplateBrowser from './pages/TemplateBrowser';
 import MemberPoints from './pages/MemberPoints';
-import RewardsStore from './pages/RewardsStore';
 import CreateReward from './pages/CreateReward';
 import EditReward from './pages/EditReward';
 import MemberBadges from './pages/MemberBadges';
 import MemberStreaks from './pages/MemberStreaks';
-import Leaderboard from './pages/Leaderboard';
 import BossBattle from './pages/BossBattle';
 import NotificationCenter from './pages/NotificationCenter';
 import Activity from './pages/Activity';
 import Reports from './pages/Reports';
 
-// Protected route wrapper
+// Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const { isDemoMode } = useDemoAuth();
+
+  // Allow access if in demo mode
+  if (isDemoMode) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (
@@ -138,7 +142,7 @@ function AppRoutes() {
         path="/households/:householdId"
         element={
           <ProtectedRoute>
-            <HouseholdDashboard />
+            <HouseholdDashboardWrapper />
           </ProtectedRoute>
         }
       />
@@ -202,7 +206,7 @@ function AppRoutes() {
         path="/households/:householdId/rewards"
         element={
           <ProtectedRoute>
-            <RewardsStore />
+            <RewardsStoreWrapper />
           </ProtectedRoute>
         }
       />
@@ -242,7 +246,7 @@ function AppRoutes() {
         path="/households/:householdId/leaderboard"
         element={
           <ProtectedRoute>
-            <Leaderboard />
+            <LeaderboardWrapper />
           </ProtectedRoute>
         }
       />
@@ -279,11 +283,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Demo routes - accessible when VITE_DEMO_MODE is enabled */}
-      <Route path="/demo/:role" element={<DemoDashboard />} />
-      <Route path="/demo/:role/rewards" element={<DemoRewards />} />
-      <Route path="/demo/:role/leaderboard" element={<DemoLeaderboard />} />
-
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -292,12 +291,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CelebrationProvider>
-        <PWAProvider>
-          <AppRoutes />
-        </PWAProvider>
-      </CelebrationProvider>
-    </AuthProvider>
+    <DemoAuthProvider>
+      <AuthProvider>
+        <CelebrationProvider>
+          <PWAProvider>
+            <AppRoutes />
+          </PWAProvider>
+        </CelebrationProvider>
+      </AuthProvider>
+    </DemoAuthProvider>
   );
 }
