@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
 import { DemoProvider, useDemo } from '../context/DemoContext';
-import type { DemoRole } from '../lib/demo-mode';
+import { useDemoAuth } from '../context/DemoAuthContext';
+import { DemoBanner } from '../components/DemoBanner';
 
-function DemoRewardsContent() {
-  const { role } = useParams<{ role: DemoRole }>();
+function DemoRewardsStoreContent() {
   const navigate = useNavigate();
+  const { demoRole, demoHouseholdId, exitDemo } = useDemoAuth();
   const {
     household,
     members,
@@ -19,7 +20,7 @@ function DemoRewardsContent() {
 
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
 
-  const isParent = role === 'parent';
+  const isParent = demoRole === 'parent';
 
   // Get current member
   const currentMember = useMemo(() => {
@@ -46,39 +47,32 @@ function DemoRewardsContent() {
     }
   };
 
-  const handleExitDemo = () => {
+  const handleSignOut = () => {
     resetDemo();
+    exitDemo();
     navigate('/');
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Demo Mode Banner */}
-      <div className="bg-blue-600 px-4 py-2 text-center text-sm text-white">
-        <span className="inline-flex items-center gap-2">
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white"></span>
-          Demo Mode - Viewing as {role === 'parent' ? 'Parent' : 'Child'}
-          <button
-            onClick={handleExitDemo}
-            className="ml-4 rounded bg-white/20 px-2 py-0.5 hover:bg-white/30 transition-colors"
-          >
-            Exit Demo
-          </button>
-        </span>
-      </div>
+      <DemoBanner />
 
       {/* Header */}
       <header className="border-b bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
-            <Link to={`/demo/${role}`} className="text-gray-500 hover:text-gray-700">
-              ← Back
+            <Link
+              to={`/households/${demoHouseholdId}`}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              Back
             </Link>
             <h1 className="text-xl font-bold text-gray-900">Rewards Store</h1>
           </div>
           <div className="flex items-center gap-4">
             {/* Member selector for child view */}
-            {role === 'child' && childMembers.length > 1 && (
+            {demoRole === 'child' && childMembers.length > 1 && (
               <select
                 value={selectedMemberId}
                 onChange={(e) => setSelectedMemberId(e.target.value)}
@@ -93,12 +87,15 @@ function DemoRewardsContent() {
             )}
             {currentMember && !isParent && (
               <div className="flex items-center gap-2 rounded-full bg-yellow-100 px-4 py-2">
-                <span className="text-lg">⭐</span>
+                <span className="text-lg">*</span>
                 <span className="font-semibold text-yellow-700">
                   {currentMember.pointsCurrent} {household.pointsName}
                 </span>
               </div>
             )}
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>
@@ -113,7 +110,7 @@ function DemoRewardsContent() {
                 <p className="text-sm opacity-90">Available {household.pointsName}</p>
                 <p className="text-4xl font-bold">{currentMember.pointsCurrent}</p>
               </div>
-              <span className="text-6xl opacity-50">⭐</span>
+              <span className="text-6xl opacity-50">*</span>
             </div>
           </div>
         )}
@@ -137,7 +134,7 @@ function DemoRewardsContent() {
 
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center gap-1 text-yellow-600">
-                    <span>⭐</span>
+                    <span>*</span>
                     <span className="font-semibold">{reward.pointCost}</span>
                   </div>
                   {isLimited && (
@@ -185,10 +182,10 @@ function DemoRewardsContent() {
   );
 }
 
-export default function DemoRewards() {
+export default function DemoRewardsStore() {
   return (
     <DemoProvider>
-      <DemoRewardsContent />
+      <DemoRewardsStoreContent />
     </DemoProvider>
   );
 }
