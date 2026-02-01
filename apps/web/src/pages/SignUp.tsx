@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@chorechamp/ui';
+import { DEMO_MODE } from '../lib/demo-mode';
+import { DemoRoleSelector } from '../components/DemoRoleSelector';
 
-export default function SignUp() {
+function SignUpForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,8 +35,8 @@ export default function SignUp() {
     try {
       await signUp(email, password, name);
       navigate('/dashboard');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create account');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create account');
     } finally {
       setIsLoading(false);
     }
@@ -132,4 +134,13 @@ export default function SignUp() {
       </div>
     </div>
   );
+}
+
+export default function SignUp() {
+  // When in demo mode, show the role selector instead of signup form
+  if (DEMO_MODE) {
+    return <DemoRoleSelector title="ChoreChamp Demo" subtitle="Select a role to explore" />;
+  }
+
+  return <SignUpForm />;
 }

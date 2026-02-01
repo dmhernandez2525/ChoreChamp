@@ -6,6 +6,9 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
+import DemoDashboard from './pages/DemoDashboard';
+import DemoRewards from './pages/DemoRewards';
+import DemoLeaderboard from './pages/DemoLeaderboard';
 import HouseholdDashboard from './pages/HouseholdDashboard';
 import CreateHousehold from './pages/CreateHousehold';
 import JoinHousehold from './pages/JoinHousehold';
@@ -275,6 +278,11 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* Demo routes - accessible when VITE_DEMO_MODE is enabled */}
+      <Route path="/demo/:role" element={<DemoDashboard />} />
+      <Route path="/demo/:role/rewards" element={<DemoRewards />} />
+      <Route path="/demo/:role/leaderboard" element={<DemoLeaderboard />} />
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
