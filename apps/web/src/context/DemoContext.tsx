@@ -849,7 +849,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setCompletedChoreIds((prev) => new Set([...prev, choreId]));
 
     // Award points
-    const baseChoreId = choreId.split('-').slice(0, -1).join('-') || choreId.replace(/-\d{4}-\d{2}-\d{2}$/, '');
     const chore = DEMO_CHORES.find((c) => choreId.startsWith(c.id));
     if (chore) {
       setMembers((prev) =>
