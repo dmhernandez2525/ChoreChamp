@@ -106,12 +106,12 @@ export function AchievementShowcase({
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" role="alert">
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-          <AlertTriangle className="w-5 h-5" />
+          <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
         </div>
-        <button onClick={loadData} className="mt-3 text-sm text-red-600 hover:underline">
+        <button onClick={loadData} className="mt-3 text-sm text-red-600 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500">
           Try again
         </button>
       </div>
@@ -140,15 +140,15 @@ export function AchievementShowcase({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-              <Crown className="w-8 h-8" />
+              <Crown className="w-8 h-8" aria-hidden="true" />
             </div>
             <div>
               <h2 className="text-2xl font-bold">{showcase.memberName}</h2>
               <p className="text-white/80">{showcase.title}</p>
             </div>
           </div>
-          <button onClick={loadData} className="p-2 hover:bg-white/10 rounded-lg">
-            <RefreshCw className="w-5 h-5" />
+          <button onClick={loadData} className="p-2 hover:bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50" aria-label="Refresh achievements">
+            <RefreshCw className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -159,7 +159,14 @@ export function AchievementShowcase({
               <span className="text-sm">Level {levelProgress.level}</span>
               <span className="text-sm">{levelProgress.pointsToNext} pts to next level</span>
             </div>
-            <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-3 bg-white/20 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={levelProgress.progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Level ${levelProgress.level} progress: ${levelProgress.progress}%`}
+            >
               <div
                 className="h-full bg-white rounded-full transition-all"
                 style={{ width: `${levelProgress.progress}%` }}
@@ -193,7 +200,7 @@ export function AchievementShowcase({
       {showcase.featuredAchievements.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Star className="w-5 h-5 text-yellow-500" />
+            <Star className="w-5 h-5 text-yellow-500" aria-hidden="true" />
             Featured Achievements
           </h3>
           <div className="flex flex-wrap gap-4">
@@ -234,7 +241,7 @@ export function AchievementShowcase({
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                 }`}
               >
-                <IconComponent className="w-4 h-4" />
+                <IconComponent className="w-4 h-4" aria-hidden="true" />
                 {getAchievementCategoryLabel(category)}
               </button>
             );
@@ -246,7 +253,7 @@ export function AchievementShowcase({
       {filteredAchievements && filteredAchievements.unlocked.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500" />
+            <Trophy className="w-5 h-5 text-yellow-500" aria-hidden="true" />
             Unlocked ({filteredAchievements.unlocked.length})
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -265,7 +272,7 @@ export function AchievementShowcase({
       {filteredAchievements && filteredAchievements.inProgress.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-blue-500" />
+            <Zap className="w-5 h-5 text-blue-500" aria-hidden="true" />
             In Progress ({filteredAchievements.inProgress.length})
           </h3>
           <div className="space-y-3">
@@ -284,7 +291,7 @@ export function AchievementShowcase({
       {filteredAchievements && filteredAchievements.locked.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Lock className="w-5 h-5 text-gray-400" />
+            <Lock className="w-5 h-5 text-gray-400" aria-hidden="true" />
             Locked ({filteredAchievements.locked.length})
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -393,14 +400,21 @@ function AchievementProgressCard({
           </span>
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{achievement.description}</p>
-        <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+        <div
+          className="mt-2 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={achievement.progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${achievement.name} progress: ${achievement.progress}%`}
+        >
           <div
             className="h-full bg-indigo-600 rounded-full transition-all"
             style={{ width: `${achievement.progress}%` }}
           />
         </div>
       </div>
-      <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+      <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" aria-hidden="true" />
     </button>
   );
 }
