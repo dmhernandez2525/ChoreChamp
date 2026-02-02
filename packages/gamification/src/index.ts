@@ -9,3 +9,4 @@ export * from './character';
 export * from './pet';
 export * from './games';
 export * from './cards';
+export * from './story';
