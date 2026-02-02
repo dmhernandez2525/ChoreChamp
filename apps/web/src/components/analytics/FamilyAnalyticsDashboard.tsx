@@ -83,7 +83,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
           <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
         </div>
-        <button onClick={handleRefresh} className="mt-3 text-sm text-red-600 hover:underline">
+        <button onClick={handleRefresh} className="mt-3 text-sm text-red-600 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500">
           Try again
         </button>
       </div>
@@ -127,7 +127,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50"
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Refresh analytics"
           >
             <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
@@ -135,7 +135,8 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
           <div className="relative">
             <button
               onClick={() => handleExport('pdf')}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-label="Export analytics as PDF"
             >
               <Download className="w-4 h-4" aria-hidden="true" />
               Export
@@ -256,8 +257,8 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
           Workload Distribution
         </h3>
         <div className="flex items-center gap-6">
-          <div className="w-24 h-24 relative">
-            <svg className="w-full h-full transform -rotate-90">
+          <div className="w-24 h-24 relative" role="img" aria-label={`Fairness score: ${analytics.choreAnalysis.fairnessScore} out of 100`}>
+            <svg className="w-full h-full transform -rotate-90" aria-hidden="true">
               <circle
                 cx="48"
                 cy="48"
@@ -278,7 +279,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
                 className="text-green-500"
               />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
               <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {analytics.choreAnalysis.fairnessScore}
               </span>
