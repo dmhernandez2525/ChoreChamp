@@ -44,13 +44,13 @@ export function AchievementLeaderboard({ householdId }: AchievementLeaderboardPr
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="w-6 h-6 text-yellow-500" />;
+        return <Crown className="w-6 h-6 text-yellow-500" aria-hidden="true" />;
       case 2:
-        return <Medal className="w-6 h-6 text-gray-400" />;
+        return <Medal className="w-6 h-6 text-gray-400" aria-hidden="true" />;
       case 3:
-        return <Medal className="w-6 h-6 text-amber-600" />;
+        return <Medal className="w-6 h-6 text-amber-600" aria-hidden="true" />;
       default:
-        return <span className="w-6 h-6 flex items-center justify-center text-gray-500 font-bold">{rank}</span>;
+        return <span className="w-6 h-6 flex items-center justify-center text-gray-500 font-bold" aria-label={`Rank ${rank}`}>{rank}</span>;
     }
   };
 
@@ -70,7 +70,7 @@ export function AchievementLeaderboard({ householdId }: AchievementLeaderboardPr
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" role="alert">
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
           <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
@@ -102,7 +102,7 @@ export function AchievementLeaderboard({ householdId }: AchievementLeaderboardPr
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-yellow-500" />
+          <Trophy className="w-5 h-5 text-yellow-500" aria-hidden="true" />
           Achievement Leaderboard
         </h3>
         <button
@@ -183,7 +183,7 @@ function LeaderboardRow({
           )}
         </p>
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <Award className="w-4 h-4" />
+          <Award className="w-4 h-4" aria-hidden="true" />
           <span>{entry.achievementCount} achievements</span>
         </div>
       </div>
