@@ -77,6 +77,13 @@ import type {
   VoiceSession,
   VoiceSettings,
   VoiceCommandSample,
+  CalibrationSettings,
+  ChoreCalibrationAnalysis,
+  HouseholdCalibrationSummary,
+  CalibrationHistoryEntry,
+  UpdateCalibrationSettingsRequest,
+  ApplyCalibrationRequest,
+  BulkApplyCalibrationRequest,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1131,6 +1138,69 @@ class ApiClient {
     return this.request(`/households/${householdId}/voice/session/${sessionId}`, {
       method: 'DELETE',
     });
+  }
+
+  // ==================== Difficulty Calibration ====================
+
+  async getCalibrationSummary(householdId: string): Promise<HouseholdCalibrationSummary> {
+    return this.request(`/households/${householdId}/calibration`);
+  }
+
+  async getCalibrationSettings(householdId: string): Promise<CalibrationSettings> {
+    return this.request(`/households/${householdId}/calibration/settings`);
+  }
+
+  async updateCalibrationSettings(
+    householdId: string,
+    settings: UpdateCalibrationSettingsRequest
+  ): Promise<CalibrationSettings> {
+    return this.request(`/households/${householdId}/calibration/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async getChoreCalibration(
+    householdId: string,
+    choreId: string
+  ): Promise<ChoreCalibrationAnalysis> {
+    return this.request(`/households/${householdId}/calibration/chore/${choreId}`);
+  }
+
+  async applyCalibration(
+    householdId: string,
+    calibration: ApplyCalibrationRequest
+  ): Promise<{
+    success: boolean;
+    chore: unknown;
+    historyEntry: CalibrationHistoryEntry;
+  }> {
+    return this.request(`/households/${householdId}/calibration/apply`, {
+      method: 'POST',
+      body: JSON.stringify(calibration),
+    });
+  }
+
+  async bulkApplyCalibration(
+    householdId: string,
+    request: BulkApplyCalibrationRequest
+  ): Promise<{
+    applied: number;
+    failed: number;
+    results: Array<{ choreId: string; success: boolean; error?: string }>;
+  }> {
+    return this.request(`/households/${householdId}/calibration/bulk-apply`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getCalibrationHistory(
+    householdId: string,
+    limit?: number
+  ): Promise<CalibrationHistoryEntry[]> {
+    const query = limit ? `?limit=${limit}` : '';
+    return this.request(`/households/${householdId}/calibration/history${query}`);
   }
 }
 
