@@ -20,3 +20,4 @@ export * from './family-challenges';
 export * from './community-templates';
 export * from './achievement-showcase';
 export * from './seasonal-events';
+export * from './family-analytics';

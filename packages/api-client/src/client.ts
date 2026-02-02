@@ -117,6 +117,12 @@ import type {
   EventCalendar,
   EventParticipation,
   HouseholdEventStats,
+  FamilyAnalytics,
+  AnalyticsPeriod,
+  MemberInsight,
+  InsightRecommendation,
+  PeriodComparison,
+  AnalyticsExport,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1633,6 +1639,59 @@ class ApiClient {
     eventId: string
   ): Promise<HouseholdEventStats> {
     return this.request(`/households/${householdId}/events/${eventId}/leaderboard`);
+  }
+
+  // ===== Family Analytics =====
+
+  async getFamilyAnalytics(
+    householdId: string,
+    params?: { period?: AnalyticsPeriod; memberIds?: string[]; includeRecommendations?: boolean }
+  ): Promise<FamilyAnalytics> {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.set('period', params.period);
+    if (params?.memberIds) params.memberIds.forEach((id) => queryParams.append('memberIds', id));
+    if (params?.includeRecommendations !== undefined) queryParams.set('includeRecommendations', String(params.includeRecommendations));
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/analytics${query ? `?${query}` : ''}`);
+  }
+
+  async getMemberAnalytics(
+    householdId: string,
+    memberId: string,
+    period?: AnalyticsPeriod
+  ): Promise<{ member: MemberInsight; period: AnalyticsPeriod }> {
+    const queryParams = new URLSearchParams();
+    if (period) queryParams.set('period', period);
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/analytics/member/${memberId}${query ? `?${query}` : ''}`);
+  }
+
+  async compareAnalyticsPeriods(
+    householdId: string,
+    period1: AnalyticsPeriod,
+    period2: AnalyticsPeriod
+  ): Promise<PeriodComparison> {
+    return this.request(`/households/${householdId}/analytics/compare?period1=${period1}&period2=${period2}`);
+  }
+
+  async exportAnalytics(
+    householdId: string,
+    options: {
+      format: 'pdf' | 'csv' | 'json';
+      period: AnalyticsPeriod;
+      sections: ('overview' | 'members' | 'trends' | 'chores' | 'engagement')[];
+    }
+  ): Promise<{ success: boolean; export: AnalyticsExport }> {
+    return this.request(`/households/${householdId}/analytics/export`, {
+      method: 'POST',
+      body: JSON.stringify(options),
+    });
+  }
+
+  async getAnalyticsRecommendations(
+    householdId: string
+  ): Promise<{ recommendations: InsightRecommendation[] }> {
+    return this.request(`/households/${householdId}/analytics/recommendations`);
   }
 }
 
