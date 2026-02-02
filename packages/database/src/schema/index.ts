@@ -11,3 +11,4 @@ export * from './trades';
 export * from './allowance';
 export * from './rpg-character';
 export * from './virtual-pet';
+export * from './mini-games';
