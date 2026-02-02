@@ -53,6 +53,8 @@ import type {
   ParentDashboard,
   MemberDashboardData,
   DashboardQueryParams,
+  AgeGuideline,
+  AgeRecommendations,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -857,6 +859,67 @@ class ApiClient {
     if (params?.endDate) queryParams.set('endDate', params.endDate);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.request(`/households/${householdId}/dashboard/member/${memberId}${query}`);
+  }
+
+  // ==================== Age-Appropriate Chore Engine ====================
+
+  async getAgeGuidelines(householdId: string): Promise<AgeGuideline[]> {
+    return this.request(`/households/${householdId}/age-appropriate/guidelines`);
+  }
+
+  async getAgeRecommendations(
+    householdId: string,
+    memberId: string,
+    includeExisting?: boolean
+  ): Promise<AgeRecommendations> {
+    const query = includeExisting ? '?includeExisting=true' : '';
+    return this.request(`/households/${householdId}/age-appropriate/member/${memberId}${query}`);
+  }
+
+  async assessChoreForMember(
+    householdId: string,
+    choreId: string,
+    memberId: string
+  ): Promise<{
+    choreId: string;
+    choreTitle: string;
+    memberId: string;
+    memberName: string;
+    memberAge: number | null;
+    suitability: string;
+    message: string;
+    ageGroup: string | null;
+    inferredFromDifficulty?: boolean;
+  }> {
+    return this.request(`/households/${householdId}/age-appropriate/assess/${choreId}/${memberId}`);
+  }
+
+  async bulkAssessChoresForMember(
+    householdId: string,
+    memberId: string
+  ): Promise<{
+    memberId: string;
+    memberName: string;
+    memberAge: number | null;
+    ageGroup: string | null;
+    assessments: Array<{
+      choreId: string;
+      choreTitle: string;
+      choreIcon: string;
+      category: string;
+      difficulty: string;
+      suitability: string;
+      message: string;
+    }>;
+    summary: {
+      perfect: number;
+      suitable: number;
+      challenging: number;
+      tooYoung: number;
+      tooEasy: number;
+    };
+  }> {
+    return this.request(`/households/${householdId}/age-appropriate/bulk-assess/${memberId}`);
   }
 }
 

@@ -10,3 +10,4 @@ export * from './notification';
 export * from './trade';
 export * from './allowance';
 export * from './dashboard';
+export * from './age-appropriate';
