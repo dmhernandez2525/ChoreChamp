@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and, desc, sql, gt } from 'drizzle-orm';
+import { eq, and, desc, sql, gt, inArray } from 'drizzle-orm';
 import { db } from '../lib/db';
 import {
   miniGames,
@@ -26,6 +26,10 @@ import {
   getCategoryInfo,
 } from '@chorechamp/gamification';
 import type { GameDifficulty, UnlockType } from '@chorechamp/types';
+
+// Constants for pagination
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 20;
 
 // Validation schemas
 const startGameSchema = z.object({
@@ -607,79 +611,98 @@ export async function miniGamesRoutes(fastify: FastifyInstance) {
   fastify.get('/games/:gameId/leaderboard', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId, gameId } = request.params as { householdId: string; gameId: string };
-    const { difficulty, limit = 20 } = request.query as { difficulty?: string; limit?: number };
+    try {
+      const { user } = request as AuthenticatedRequest;
+      const { householdId, gameId } = request.params as { householdId: string; gameId: string };
+      const queryParams = request.query as { difficulty?: string; limit?: string };
 
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this household',
-      });
-    }
+      // Validate pagination
+      const limitNum = Math.min(
+        Math.max(1, parseInt(queryParams.limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+        MAX_LIMIT
+      );
 
-    // Build query conditions
-    const conditions = [
-      eq(gameScores.gameId, gameId),
-      eq(gameScores.householdId, householdId),
-    ];
+      const membership = await verifyMembership(user.id, householdId);
+      if (!membership) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'You are not a member of this household',
+        });
+      }
 
-    if (difficulty) {
-      conditions.push(eq(gameScores.difficulty, difficulty));
-    }
+      // Build query conditions
+      const conditions = [
+        eq(gameScores.gameId, gameId),
+        eq(gameScores.householdId, householdId),
+      ];
 
-    // Get top scores
-    const scores = await db
-      .select({
-        score: gameScores,
-        member: members,
-      })
-      .from(gameScores)
-      .innerJoin(members, eq(gameScores.memberId, members.id))
-      .where(and(...conditions))
-      .orderBy(desc(gameScores.score))
-      .limit(Number(limit));
+      if (queryParams.difficulty) {
+        conditions.push(eq(gameScores.difficulty, queryParams.difficulty));
+      }
 
-    // Get member's best score
-    const [memberBest] = await db
-      .select()
-      .from(gameScores)
-      .where(and(
+      // Get top scores
+      const scores = await db
+        .select({
+          score: gameScores,
+          member: members,
+        })
+        .from(gameScores)
+        .innerJoin(members, eq(gameScores.memberId, members.id))
+        .where(and(...conditions))
+        .orderBy(desc(gameScores.score))
+        .limit(limitNum);
+
+      // Get member's best score
+      const memberBestConditions = [
         eq(gameScores.gameId, gameId),
         eq(gameScores.memberId, membership.id),
-        difficulty ? eq(gameScores.difficulty, difficulty) : sql`1=1`
-      ))
-      .orderBy(desc(gameScores.score))
-      .limit(1);
-
-    // Find member's rank
-    let memberRank: number | null = null;
-    scores.forEach((entry, index) => {
-      if (entry.member.id === membership.id) {
-        memberRank = index + 1;
+      ];
+      if (queryParams.difficulty) {
+        memberBestConditions.push(eq(gameScores.difficulty, queryParams.difficulty));
       }
-    });
 
-    return reply.send({
-      leaderboard: scores.map((entry, index) => ({
-        rank: index + 1,
-        memberId: entry.member.id,
-        memberName: entry.member.name,
-        memberColor: entry.member.color,
-        score: entry.score.score,
-        difficulty: entry.score.difficulty,
-        stars: entry.score.stars,
-        playedAt: entry.score.createdAt,
-      })),
-      memberBest: memberBest ? {
-        score: memberBest.score,
-        difficulty: memberBest.difficulty,
-        stars: memberBest.stars,
-        playedAt: memberBest.createdAt,
-        rank: memberRank,
-      } : null,
-    });
+      const [memberBest] = await db
+        .select()
+        .from(gameScores)
+        .where(and(...memberBestConditions))
+        .orderBy(desc(gameScores.score))
+        .limit(1);
+
+      // Find member's rank
+      let memberRank: number | null = null;
+      scores.forEach((entry, index) => {
+        if (entry.member.id === membership.id) {
+          memberRank = index + 1;
+        }
+      });
+
+      return reply.send({
+        leaderboard: scores.map((entry, index) => ({
+          rank: index + 1,
+          memberId: entry.member.id,
+          memberName: entry.member.name,
+          memberColor: entry.member.color,
+          score: entry.score.score,
+          difficulty: entry.score.difficulty,
+          stars: entry.score.stars,
+          playedAt: entry.score.createdAt,
+        })),
+        memberBest: memberBest ? {
+          score: memberBest.score,
+          difficulty: memberBest.difficulty,
+          stars: memberBest.stars,
+          playedAt: memberBest.createdAt,
+          rank: memberRank,
+        } : null,
+        limit: limitNum,
+      });
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch game leaderboard');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch game leaderboard',
+      });
+    }
   });
 
   // Create family game night
@@ -702,7 +725,7 @@ export async function miniGamesRoutes(fastify: FastifyInstance) {
     const games = await db
       .select()
       .from(miniGames)
-      .where(sql`${miniGames.id} = ANY(${body.gameIds})`);
+      .where(inArray(miniGames.id, body.gameIds));
 
     if (games.length !== body.gameIds.length) {
       return reply.status(400).send({
@@ -717,7 +740,7 @@ export async function miniGamesRoutes(fastify: FastifyInstance) {
       .from(members)
       .where(and(
         eq(members.householdId, householdId),
-        sql`${members.id} = ANY(${body.participantIds})`
+        inArray(members.id, body.participantIds)
       ));
 
     if (participants.length !== body.participantIds.length) {
