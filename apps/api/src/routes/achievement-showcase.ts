@@ -9,9 +9,6 @@ import type {
   AchievementFeed,
   AchievementShare,
   EarnedAchievement,
-  UpdateShowcaseRequest,
-  ShareAchievementRequest,
-  ReactToShareRequest,
   AchievementCategory,
   AchievementRarity,
 } from '@chorechamp/types';
@@ -19,6 +16,9 @@ import {
   ACHIEVEMENT_DEFINITIONS,
   calculateLevel,
   getTitleForLevel,
+  UpdateShowcaseRequestSchema,
+  ShareAchievementRequestSchema,
+  ReactToShareRequestSchema,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomUUID } from 'crypto';
@@ -183,7 +183,17 @@ export async function achievementShowcaseRoutes(fastify: FastifyInstance) {
   fastify.patch('/showcase', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const body = request.body as UpdateShowcaseRequest;
+
+    // Validate request body
+    const parseResult = UpdateShowcaseRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -302,7 +312,17 @@ export async function achievementShowcaseRoutes(fastify: FastifyInstance) {
   fastify.post('/share', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const body = request.body as ShareAchievementRequest;
+
+    // Validate request body
+    const parseResult = ShareAchievementRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -331,7 +351,17 @@ export async function achievementShowcaseRoutes(fastify: FastifyInstance) {
   fastify.post('/share/:shareId/react', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, shareId } = request.params as { householdId: string; shareId: string };
-    const body = request.body as ReactToShareRequest;
+
+    // Validate request body
+    const parseResult = ReactToShareRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
