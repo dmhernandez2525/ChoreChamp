@@ -21,3 +21,4 @@ export * from './geofencing';
 export * from './screen-time';
 export * from './homework';
 export * from './educational-chores';
+export * from './report-cards';
