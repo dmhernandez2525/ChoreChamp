@@ -63,6 +63,15 @@ import type {
   CompletionPattern,
   ScheduleAnalytics,
   ScheduleSuggestion,
+  ReminderPreferences,
+  ReminderSuggestion,
+  ReminderEffectiveness,
+  SmartTimingAnalysis,
+  ReminderQueueStatus,
+  CreateReminderConfigRequest,
+  UpdateReminderPreferencesRequest,
+  ReminderChannel,
+  ReminderConfig,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -988,6 +997,80 @@ class ApiClient {
     if (params?.startDate) queryParams.set('startDate', params.startDate);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.request(`/households/${householdId}/ai-schedule/analytics${query}`);
+  }
+
+  // ==================== Smart Reminders ====================
+
+  async getReminderPreferences(
+    householdId: string,
+    memberId: string
+  ): Promise<ReminderPreferences> {
+    return this.request(`/households/${householdId}/reminders/preferences/${memberId}`);
+  }
+
+  async updateReminderPreferences(
+    householdId: string,
+    memberId: string,
+    data: UpdateReminderPreferencesRequest
+  ): Promise<ReminderPreferences> {
+    return this.request(`/households/${householdId}/reminders/preferences/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getReminderSuggestions(householdId: string): Promise<ReminderSuggestion[]> {
+    return this.request(`/households/${householdId}/reminders/suggestions`);
+  }
+
+  async getSmartTimingAnalysis(
+    householdId: string,
+    memberId: string
+  ): Promise<SmartTimingAnalysis> {
+    return this.request(`/households/${householdId}/reminders/smart-timing/${memberId}`);
+  }
+
+  async getReminderEffectiveness(householdId: string): Promise<ReminderEffectiveness[]> {
+    return this.request(`/households/${householdId}/reminders/effectiveness`);
+  }
+
+  async getReminderQueueStatus(householdId: string): Promise<ReminderQueueStatus> {
+    return this.request(`/households/${householdId}/reminders/queue-status`);
+  }
+
+  async createReminderConfig(
+    householdId: string,
+    data: CreateReminderConfigRequest
+  ): Promise<ReminderConfig> {
+    return this.request(`/households/${householdId}/reminders/configs`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getReminderConfigs(
+    householdId: string,
+    memberId?: string
+  ): Promise<ReminderConfig[]> {
+    const query = memberId ? `?memberId=${memberId}` : '';
+    return this.request(`/households/${householdId}/reminders/configs${query}`);
+  }
+
+  async deleteReminderConfig(householdId: string, configId: string): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/reminders/configs/${configId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async sendTestReminder(
+    householdId: string,
+    memberId: string,
+    channel: ReminderChannel
+  ): Promise<{ success: boolean; message: string; sentAt: string }> {
+    return this.request(`/households/${householdId}/reminders/test`, {
+      method: 'POST',
+      body: JSON.stringify({ memberId, channel }),
+    });
   }
 }
 

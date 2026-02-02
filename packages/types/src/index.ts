@@ -12,3 +12,4 @@ export * from './allowance';
 export * from './dashboard';
 export * from './age-appropriate';
 export * from './ai-scheduling';
+export * from './reminders';
