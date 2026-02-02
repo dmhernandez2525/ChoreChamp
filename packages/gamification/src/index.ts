@@ -7,3 +7,4 @@ export * from './badges';
 export * from './config';
 export * from './character';
 export * from './pet';
+export * from './games';

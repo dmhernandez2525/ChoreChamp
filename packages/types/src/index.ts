@@ -23,3 +23,4 @@ export * from './seasonal-events';
 export * from './family-analytics';
 export * from './rpg-character';
 export * from './virtual-pet';
+export * from './mini-games';
