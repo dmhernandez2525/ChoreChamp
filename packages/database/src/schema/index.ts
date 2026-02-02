@@ -9,3 +9,4 @@ export * from './rewards';
 export * from './notifications';
 export * from './trades';
 export * from './allowance';
+export * from './rpg-character';

@@ -5,3 +5,4 @@ export * from './points';
 export * from './streaks';
 export * from './badges';
 export * from './config';
+export * from './character';
