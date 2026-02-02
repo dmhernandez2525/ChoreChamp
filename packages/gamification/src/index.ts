@@ -6,3 +6,4 @@ export * from './streaks';
 export * from './badges';
 export * from './config';
 export * from './character';
+export * from './pet';

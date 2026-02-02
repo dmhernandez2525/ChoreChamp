@@ -25,6 +25,7 @@ import { achievementShowcaseRoutes } from './achievement-showcase';
 import { seasonalEventRoutes } from './seasonal-events';
 import { familyAnalyticsRoutes } from './family-analytics';
 import { rpgCharacterRoutes } from './rpg-character';
+import { virtualPetRoutes } from './virtual-pet';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -57,6 +58,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(seasonalEventRoutes, { prefix: '/:householdId/events' });
       householdApi.register(familyAnalyticsRoutes, { prefix: '/:householdId/analytics' });
       householdApi.register(rpgCharacterRoutes, { prefix: '/:householdId/characters' });
+      householdApi.register(virtualPetRoutes, { prefix: '/:householdId/pets' });
     });
 
     // Chore templates (public)
