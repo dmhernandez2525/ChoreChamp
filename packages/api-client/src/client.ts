@@ -72,6 +72,11 @@ import type {
   UpdateReminderPreferencesRequest,
   ReminderChannel,
   ReminderConfig,
+  VoiceCommand,
+  VoiceResponse,
+  VoiceSession,
+  VoiceSettings,
+  VoiceCommandSample,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1070,6 +1075,61 @@ class ApiClient {
     return this.request(`/households/${householdId}/reminders/test`, {
       method: 'POST',
       body: JSON.stringify({ memberId, channel }),
+    });
+  }
+
+  // ==================== Voice Assistant ====================
+
+  async processVoiceCommand(
+    householdId: string,
+    text: string,
+    sessionId?: string
+  ): Promise<{
+    sessionId: string;
+    command: VoiceCommand;
+    response: VoiceResponse;
+  }> {
+    return this.request(`/households/${householdId}/voice/process`, {
+      method: 'POST',
+      body: JSON.stringify({ text, sessionId }),
+    });
+  }
+
+  async getVoiceCommands(householdId: string): Promise<{
+    commands: VoiceCommandSample[];
+    byCategory: Record<string, VoiceCommandSample[]>;
+    totalCommands: number;
+  }> {
+    return this.request(`/households/${householdId}/voice/commands`);
+  }
+
+  async getVoiceSettings(householdId: string): Promise<VoiceSettings> {
+    return this.request(`/households/${householdId}/voice/settings`);
+  }
+
+  async updateVoiceSettings(
+    householdId: string,
+    settings: Partial<VoiceSettings>
+  ): Promise<VoiceSettings> {
+    return this.request(`/households/${householdId}/voice/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async getVoiceSession(
+    householdId: string,
+    sessionId: string
+  ): Promise<VoiceSession> {
+    return this.request(`/households/${householdId}/voice/session/${sessionId}`);
+  }
+
+  async endVoiceSession(
+    householdId: string,
+    sessionId: string
+  ): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/voice/session/${sessionId}`, {
+      method: 'DELETE',
     });
   }
 }
