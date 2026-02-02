@@ -16,3 +16,4 @@ export * from './reminders';
 export * from './voice-assistant';
 export * from './difficulty-calibration';
 export * from './streak-protection';
+export * from './family-challenges';

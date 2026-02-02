@@ -89,6 +89,12 @@ import type {
   StreakPrediction,
   StreakAnalytics,
   UpdateProtectionSettingsRequest,
+  FamilyChallenge,
+  ChallengeSummary,
+  HouseholdChallengesOverview,
+  CreateChallengeRequest,
+  UpdateChallengeRequest,
+  ChallengeTemplate,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1266,6 +1272,71 @@ class ApiClient {
     memberId: string
   ): Promise<StreakAnalytics> {
     return this.request(`/households/${householdId}/streak-protection/analytics/${memberId}`);
+  }
+
+  // ==================== Family Challenges ====================
+
+  async getChallengesOverview(householdId: string): Promise<HouseholdChallengesOverview> {
+    return this.request(`/households/${householdId}/challenges`);
+  }
+
+  async getChallengeTemplates(householdId: string): Promise<{ templates: ChallengeTemplate[] }> {
+    return this.request(`/households/${householdId}/challenges/templates`);
+  }
+
+  async createChallenge(
+    householdId: string,
+    challenge: CreateChallengeRequest
+  ): Promise<FamilyChallenge> {
+    return this.request(`/households/${householdId}/challenges`, {
+      method: 'POST',
+      body: JSON.stringify(challenge),
+    });
+  }
+
+  async getChallenge(householdId: string, challengeId: string): Promise<ChallengeSummary> {
+    return this.request(`/households/${householdId}/challenges/${challengeId}`);
+  }
+
+  async updateChallenge(
+    householdId: string,
+    challengeId: string,
+    updates: UpdateChallengeRequest
+  ): Promise<FamilyChallenge> {
+    return this.request(`/households/${householdId}/challenges/${challengeId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async joinChallenge(
+    householdId: string,
+    challengeId: string,
+    memberId: string,
+    teamId?: string
+  ): Promise<{ success: boolean; challenge: FamilyChallenge }> {
+    return this.request(`/households/${householdId}/challenges/${challengeId}/join`, {
+      method: 'POST',
+      body: JSON.stringify({ memberId, teamId }),
+    });
+  }
+
+  async updateChallengeProgress(
+    householdId: string,
+    challengeId: string,
+    memberId: string,
+    contribution: number
+  ): Promise<{ success: boolean; challenge: FamilyChallenge; progressPercentage: number }> {
+    return this.request(`/households/${householdId}/challenges/${challengeId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify({ memberId, contribution }),
+    });
+  }
+
+  async deleteChallenge(householdId: string, challengeId: string): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/challenges/${challengeId}`, {
+      method: 'DELETE',
+    });
   }
 }
 
