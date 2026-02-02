@@ -16,6 +16,7 @@ import { dashboardRoutes } from './dashboard';
 import { ageAppropriateRoutes } from './age-appropriate';
 import { aiSchedulingRoutes } from './ai-scheduling';
 import { reminderRoutes } from './reminders';
+import { voiceAssistantRoutes } from './voice-assistant';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -40,6 +41,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(ageAppropriateRoutes, { prefix: '/:householdId/age-appropriate' });
       householdApi.register(aiSchedulingRoutes, { prefix: '/:householdId/ai-schedule' });
       householdApi.register(reminderRoutes, { prefix: '/:householdId/reminders' });
+      householdApi.register(voiceAssistantRoutes, { prefix: '/:householdId/voice' });
     });
 
     // Chore templates (public)
