@@ -2,6 +2,7 @@
  * Community Templates - F8.2
  * Share and discover chore templates from the community
  */
+import { z } from 'zod';
 
 // Template visibility and sharing
 export type TemplateVisibility = 'private' | 'public' | 'unlisted';
@@ -261,3 +262,102 @@ export function isAgeAppropriate(ageRange: AgeRange, userAge: number): boolean {
   if (range.maxAge !== null && userAge > range.maxAge) return false;
   return true;
 }
+
+// Zod validation schemas
+export const TemplateVisibilitySchema = z.enum(['private', 'public', 'unlisted']);
+export const TemplateCategorySchema = z.enum([
+  'daily-routines',
+  'weekly-cleaning',
+  'seasonal',
+  'organization',
+  'outdoor',
+  'kids-friendly',
+  'pet-care',
+  'kitchen',
+  'bathroom',
+  'bedroom',
+  'living-areas',
+  'laundry',
+  'special-occasions',
+  'other',
+]);
+export const AgeRangeSchema = z.enum(['toddler', 'child', 'preteen', 'teen', 'adult', 'all-ages']);
+export const DifficultySchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+]);
+export const RatingSchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+]);
+
+export const TemplateStepInputSchema = z.object({
+  instruction: z.string().min(1).max(500),
+  tips: z.string().max(500).optional(),
+  imageUrl: z.string().url().optional(),
+});
+
+export const CreateCommunityTemplateRequestSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().min(1).max(1000),
+  category: TemplateCategorySchema,
+  ageRange: AgeRangeSchema,
+  estimatedDuration: z.number().min(1).max(480), // Max 8 hours
+  difficulty: DifficultySchema,
+  points: z.number().min(1).max(1000),
+  steps: z.array(TemplateStepInputSchema).min(1).max(50),
+  tips: z.array(z.string().max(500)).max(20),
+  supplies: z.array(z.string().max(100)).max(30),
+  visibility: TemplateVisibilitySchema,
+  tags: z.array(z.string().max(50)).max(10),
+});
+
+export const UpdateCommunityTemplateRequestSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().min(1).max(1000).optional(),
+  category: TemplateCategorySchema.optional(),
+  ageRange: AgeRangeSchema.optional(),
+  estimatedDuration: z.number().min(1).max(480).optional(),
+  difficulty: DifficultySchema.optional(),
+  points: z.number().min(1).max(1000).optional(),
+  steps: z.array(TemplateStepInputSchema).min(1).max(50).optional(),
+  tips: z.array(z.string().max(500)).max(20).optional(),
+  supplies: z.array(z.string().max(100)).max(30).optional(),
+  visibility: TemplateVisibilitySchema.optional(),
+  tags: z.array(z.string().max(50)).max(10).optional(),
+});
+
+export const SubmitReviewRequestSchema = z.object({
+  rating: RatingSchema,
+  review: z.string().max(2000).optional(),
+});
+
+export const ImportTemplateRequestSchema = z.object({
+  householdId: z.string().uuid(),
+  customizations: z
+    .object({
+      name: z.string().min(1).max(100).optional(),
+      points: z.number().min(1).max(1000).optional(),
+      assignedTo: z.string().uuid().optional(),
+    })
+    .optional(),
+});
+
+export const TemplateSearchParamsSchema = z.object({
+  query: z.string().max(200).optional(),
+  category: TemplateCategorySchema.optional(),
+  ageRange: AgeRangeSchema.optional(),
+  minRating: z.number().min(0).max(5).optional(),
+  maxDuration: z.number().min(1).max(480).optional(),
+  difficulty: z.number().min(1).max(5).optional(),
+  tags: z.array(z.string()).optional(),
+  sortBy: z.enum(['popular', 'recent', 'rating', 'downloads']).optional(),
+  page: z.number().min(1).optional(),
+  limit: z.number().min(1).max(100).optional(), // Enforce max limit
+});

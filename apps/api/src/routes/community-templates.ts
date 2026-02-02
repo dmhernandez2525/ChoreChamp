@@ -5,18 +5,24 @@ import { eq, and } from 'drizzle-orm';
 import type {
   CommunityTemplate,
   TemplateReview,
-  TemplateSearchParams,
   TemplateSearchResult,
   TemplateCollection,
   MyTemplatesOverview,
-  CreateCommunityTemplateRequest,
-  UpdateCommunityTemplateRequest,
-  SubmitReviewRequest,
-  ImportTemplateRequest,
 } from '@chorechamp/types';
-import { TEMPLATE_CATEGORIES, AGE_RANGES } from '@chorechamp/types';
+import {
+  TEMPLATE_CATEGORIES,
+  AGE_RANGES,
+  TemplateSearchParamsSchema,
+  CreateCommunityTemplateRequestSchema,
+  UpdateCommunityTemplateRequestSchema,
+  SubmitReviewRequestSchema,
+  ImportTemplateRequestSchema,
+} from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomUUID } from 'crypto';
+
+// Max pagination limit
+const MAX_PAGE_LIMIT = 100;
 
 // In-memory storage for templates
 const communityTemplates = new Map<string, CommunityTemplate>();
@@ -206,10 +212,19 @@ async function verifyMembership(
 
 export async function communityTemplateRoutes(fastify: FastifyInstance) {
   // GET /api/community-templates - Search/browse templates
-  fastify.get('/', { preHandler: [requireAuth] }, async (request) => {
-    const params = request.query as TemplateSearchParams;
+  fastify.get('/', { preHandler: [requireAuth] }, async (request, reply) => {
+    // Validate query params
+    const parseResult = TemplateSearchParamsSchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid query parameters',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const params = parseResult.data;
     const page = params.page || 1;
-    const limit = params.limit || 20;
+    const limit = Math.min(params.limit || 20, MAX_PAGE_LIMIT);
 
     let templates = Array.from(communityTemplates.values()).filter(
       (t) => t.visibility === 'public'
@@ -390,9 +405,19 @@ export async function communityTemplateRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/community-templates - Create template
-  fastify.post('/', { preHandler: [requireAuth] }, async (request) => {
+  fastify.post('/', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
-    const body = request.body as CreateCommunityTemplateRequest;
+
+    // Validate request body
+    const parseResult = CreateCommunityTemplateRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const template: CommunityTemplate = {
       id: randomUUID(),
@@ -427,7 +452,17 @@ export async function communityTemplateRoutes(fastify: FastifyInstance) {
   fastify.patch('/:templateId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { templateId } = request.params as { templateId: string };
     const { user } = request as AuthenticatedRequest;
-    const body = request.body as UpdateCommunityTemplateRequest;
+
+    // Validate request body
+    const parseResult = UpdateCommunityTemplateRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const template = communityTemplates.get(templateId);
     if (!template) {
@@ -504,7 +539,17 @@ export async function communityTemplateRoutes(fastify: FastifyInstance) {
   fastify.post('/:templateId/download', { preHandler: [requireAuth] }, async (request, reply) => {
     const { templateId } = request.params as { templateId: string };
     const { user } = request as AuthenticatedRequest;
-    const body = request.body as ImportTemplateRequest;
+
+    // Validate request body
+    const parseResult = ImportTemplateRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const template = communityTemplates.get(templateId);
     if (!template) {
@@ -547,7 +592,17 @@ export async function communityTemplateRoutes(fastify: FastifyInstance) {
   fastify.post('/:templateId/reviews', { preHandler: [requireAuth] }, async (request, reply) => {
     const { templateId } = request.params as { templateId: string };
     const { user } = request as AuthenticatedRequest;
-    const body = request.body as SubmitReviewRequest;
+
+    // Validate request body
+    const parseResult = SubmitReviewRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const template = communityTemplates.get(templateId);
     if (!template) {

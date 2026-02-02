@@ -38,13 +38,16 @@ type ViewMode = 'grid' | 'list';
 type SortOption = 'popular' | 'recent' | 'rating' | 'downloads';
 
 export function CommunityTemplateBrowser({
-  householdId,
+  householdId: _householdId,
   onSelectTemplate,
   onImportTemplate,
 }: CommunityTemplateBrowserProps) {
+  // householdId is available for parent callbacks but not directly used here
+  void _householdId;
   const [templates, setTemplates] = useState<CommunityTemplate[]>([]);
   const [featured, setFeatured] = useState<(TemplateCollection & { templates: CommunityTemplate[] })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -58,9 +61,13 @@ export function CommunityTemplateBrowser({
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
-  const loadTemplates = useCallback(async () => {
+  const loadTemplates = useCallback(async (isRefresh = false) => {
     try {
-      setIsLoading(true);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
 
       const params: TemplateSearchParams = {
@@ -81,6 +88,7 @@ export function CommunityTemplateBrowser({
       setError(err instanceof Error ? err.message : 'Failed to load templates');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [searchQuery, selectedCategory, selectedAgeRange, sortBy, page]);
 
@@ -94,7 +102,11 @@ export function CommunityTemplateBrowser({
   }, []);
 
   useEffect(() => {
-    loadTemplates();
+    loadTemplates(false);
+  }, [loadTemplates]);
+
+  const handleRefresh = useCallback(() => {
+    loadTemplates(true);
   }, [loadTemplates]);
 
   useEffect(() => {
@@ -104,7 +116,7 @@ export function CommunityTemplateBrowser({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    loadTemplates();
+    loadTemplates(false);
   };
 
   const handleToggleFavorite = async (template: CommunityTemplate) => {
@@ -137,7 +149,10 @@ export function CommunityTemplateBrowser({
           <AlertTriangle className="w-5 h-5" />
           <span>{error}</span>
         </div>
-        <button onClick={loadTemplates} className="mt-3 text-sm text-red-600 hover:underline">
+        <button
+          onClick={() => loadTemplates(false)}
+          className="mt-3 text-sm text-red-600 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
           Try again
         </button>
       </div>
@@ -164,10 +179,12 @@ export function CommunityTemplateBrowser({
             {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
           </button>
           <button
-            onClick={loadTemplates}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label="Refresh templates"
           >
-            <RefreshCw className="w-5 h-5" />
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -321,7 +338,6 @@ export function CommunityTemplateBrowser({
               onSelect={onSelectTemplate}
               onFavorite={() => handleToggleFavorite(template)}
               onImport={() => handleImport(template)}
-              householdId={householdId}
             />
           ))}
         </div>
@@ -334,7 +350,6 @@ export function CommunityTemplateBrowser({
               onSelect={onSelectTemplate}
               onFavorite={() => handleToggleFavorite(template)}
               onImport={() => handleImport(template)}
-              householdId={householdId}
             />
           ))}
         </div>
@@ -386,20 +401,27 @@ function TemplateCard({
   onSelect?: (template: CommunityTemplate) => void;
   onFavorite: () => void;
   onImport: () => void;
-  householdId: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+    <article
+      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow focus-within:ring-2 focus-within:ring-indigo-500"
+      aria-label={`Template: ${template.name}`}
+    >
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h4
-            className="font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-indigo-600"
+          <button
+            className="font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-indigo-600 text-left focus:outline-none focus:underline"
             onClick={() => onSelect?.(template)}
+            aria-label={`View details for ${template.name}`}
           >
             {template.name}
-          </h4>
-          <button onClick={onFavorite} className="text-gray-400 hover:text-red-500">
-            <Heart className="w-5 h-5" />
+          </button>
+          <button
+            onClick={onFavorite}
+            className="text-gray-400 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 rounded p-1"
+            aria-label={`Add ${template.name} to favorites`}
+          >
+            <Heart className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">
@@ -432,18 +454,19 @@ function TemplateCard({
 
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-            <Users className="w-3 h-3" />
+            <Users className="w-3 h-3" aria-hidden="true" />
             {template.authorName}
           </span>
           <button
             onClick={onImport}
-            className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            aria-label={`Import ${template.name} template`}
           >
             Import
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -457,17 +480,20 @@ function TemplateListItem({
   onSelect?: (template: CommunityTemplate) => void;
   onFavorite: () => void;
   onImport: () => void;
-  householdId: string;
 }) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
+    <article
+      className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-indigo-500"
+      aria-label={`Template: ${template.name}`}
+    >
       <div className="flex-1 min-w-0">
-        <h4
-          className="font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-indigo-600 truncate"
+        <button
+          className="font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-indigo-600 truncate text-left w-full focus:outline-none focus:underline"
           onClick={() => onSelect?.(template)}
+          aria-label={`View details for ${template.name}`}
         >
           {template.name}
-        </h4>
+        </button>
         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{template.description}</p>
         <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
@@ -480,16 +506,21 @@ function TemplateListItem({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={onFavorite} className="p-2 text-gray-400 hover:text-red-500">
-          <Heart className="w-5 h-5" />
+        <button
+          onClick={onFavorite}
+          className="p-2 text-gray-400 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+          aria-label={`Add ${template.name} to favorites`}
+        >
+          <Heart className="w-5 h-5" aria-hidden="true" />
         </button>
         <button
           onClick={onImport}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          aria-label={`Import ${template.name} template`}
         >
           Import
         </button>
       </div>
-    </div>
+    </article>
   );
 }
