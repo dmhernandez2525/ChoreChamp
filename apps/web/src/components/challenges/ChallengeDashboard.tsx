@@ -80,7 +80,7 @@ export function ChallengeDashboard({ householdId, onCreateChallenge }: Challenge
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-            <Trophy className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            <Trophy className="w-6 h-6 text-yellow-600 dark:text-yellow-400" aria-hidden="true" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -183,7 +183,7 @@ function ChallengeCard({ challenge }: { challenge: FamilyChallenge }) {
       className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-inset"
       tabIndex={0}
       role="button"
-      aria-label={`Challenge: ${challenge.title}, ${progress}% complete`}
+      aria-label={`Challenge: ${challenge.title}, Status: ${challenge.status}, ${progress}% complete`}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
