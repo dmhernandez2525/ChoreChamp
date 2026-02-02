@@ -95,6 +95,16 @@ import type {
   CreateChallengeRequest,
   UpdateChallengeRequest,
   ChallengeTemplate,
+  CommunityTemplate,
+  TemplateSearchParams,
+  TemplateSearchResult,
+  TemplateCollection,
+  MyTemplatesOverview,
+  CreateCommunityTemplateRequest,
+  UpdateCommunityTemplateRequest,
+  SubmitReviewRequest,
+  ImportTemplateRequest,
+  TemplateReview,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1337,6 +1347,139 @@ class ApiClient {
     return this.request(`/households/${householdId}/challenges/${challengeId}`, {
       method: 'DELETE',
     });
+  }
+
+  // ===== Community Templates =====
+
+  async searchCommunityTemplates(
+    params?: TemplateSearchParams
+  ): Promise<TemplateSearchResult> {
+    const queryParams = new URLSearchParams();
+    if (params?.query) queryParams.set('query', params.query);
+    if (params?.category) queryParams.set('category', params.category);
+    if (params?.ageRange) queryParams.set('ageRange', params.ageRange);
+    if (params?.minRating) queryParams.set('minRating', String(params.minRating));
+    if (params?.maxDuration) queryParams.set('maxDuration', String(params.maxDuration));
+    if (params?.difficulty) queryParams.set('difficulty', String(params.difficulty));
+    if (params?.tags) params.tags.forEach((tag) => queryParams.append('tags', tag));
+    if (params?.sortBy) queryParams.set('sortBy', params.sortBy);
+    if (params?.page) queryParams.set('page', String(params.page));
+    if (params?.limit) queryParams.set('limit', String(params.limit));
+    const query = queryParams.toString();
+    return this.request(`/community-templates${query ? `?${query}` : ''}`);
+  }
+
+  async getCommunityTemplateCategories(): Promise<{
+    categories: { value: string; label: string; icon: string }[];
+    ageRanges: { value: string; label: string; minAge: number; maxAge: number | null }[];
+  }> {
+    return this.request('/community-templates/categories');
+  }
+
+  async getFeaturedCollections(): Promise<{
+    collections: (TemplateCollection & { templates: CommunityTemplate[] })[];
+  }> {
+    return this.request('/community-templates/featured');
+  }
+
+  async getMyCommunityTemplates(): Promise<MyTemplatesOverview> {
+    return this.request('/community-templates/my-templates');
+  }
+
+  async getFavoriteTemplates(): Promise<{ templates: CommunityTemplate[] }> {
+    return this.request('/community-templates/favorites');
+  }
+
+  async getCommunityTemplate(templateId: string): Promise<{
+    template: CommunityTemplate;
+    reviews: TemplateReview[];
+    totalReviews: number;
+    isFavorite: boolean;
+    hasDownloaded: boolean;
+  }> {
+    return this.request(`/community-templates/${templateId}`);
+  }
+
+  async createCommunityTemplate(
+    template: CreateCommunityTemplateRequest
+  ): Promise<CommunityTemplate> {
+    return this.request('/community-templates', {
+      method: 'POST',
+      body: JSON.stringify(template),
+    });
+  }
+
+  async updateCommunityTemplate(
+    templateId: string,
+    updates: UpdateCommunityTemplateRequest
+  ): Promise<CommunityTemplate> {
+    return this.request(`/community-templates/${templateId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteCommunityTemplate(templateId: string): Promise<{ success: boolean }> {
+    return this.request(`/community-templates/${templateId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async toggleTemplateFavorite(
+    templateId: string
+  ): Promise<{ isFavorite: boolean; favorites: number }> {
+    return this.request(`/community-templates/${templateId}/favorite`, {
+      method: 'POST',
+    });
+  }
+
+  async downloadCommunityTemplate(
+    templateId: string,
+    options: ImportTemplateRequest
+  ): Promise<{
+    success: boolean;
+    template: {
+      name: string;
+      description: string;
+      points: number;
+      estimatedDuration: number;
+      difficulty: number;
+      steps: { order: number; instruction: string; tips?: string }[];
+      tips: string[];
+      supplies: string[];
+      category: string;
+    };
+  }> {
+    return this.request(`/community-templates/${templateId}/download`, {
+      method: 'POST',
+      body: JSON.stringify(options),
+    });
+  }
+
+  async submitTemplateReview(
+    templateId: string,
+    review: SubmitReviewRequest
+  ): Promise<{ success: boolean; ratings: CommunityTemplate['ratings'] }> {
+    return this.request(`/community-templates/${templateId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(review),
+    });
+  }
+
+  async getTemplateReviews(
+    templateId: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<{
+    reviews: TemplateReview[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', String(params.page));
+    if (params?.limit) queryParams.set('limit', String(params.limit));
+    const query = queryParams.toString();
+    return this.request(`/community-templates/${templateId}/reviews${query ? `?${query}` : ''}`);
   }
 }
 
