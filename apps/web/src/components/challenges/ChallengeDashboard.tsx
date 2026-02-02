@@ -12,11 +12,16 @@ interface ChallengeDashboardProps {
 export function ChallengeDashboard({ householdId, onCreateChallenge }: ChallengeDashboardProps) {
   const [overview, setOverview] = useState<HouseholdChallengesOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadOverview = useCallback(async () => {
+  const loadOverview = useCallback(async (isRefresh = false) => {
     try {
-      setIsLoading(true);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
       const data = await apiClient.getChallengesOverview(householdId);
       setOverview(data);
@@ -25,11 +30,16 @@ export function ChallengeDashboard({ householdId, onCreateChallenge }: Challenge
       setError(err instanceof Error ? err.message : 'Failed to load challenges');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [householdId]);
 
   useEffect(() => {
-    loadOverview();
+    loadOverview(false);
+  }, [loadOverview]);
+
+  const handleRefresh = useCallback(() => {
+    loadOverview(true);
   }, [loadOverview]);
 
   if (isLoading) {
@@ -52,7 +62,10 @@ export function ChallengeDashboard({ householdId, onCreateChallenge }: Challenge
           <AlertTriangle className="w-5 h-5" />
           <span>{error}</span>
         </div>
-        <button onClick={loadOverview} className="mt-3 text-sm text-red-600 hover:underline">
+        <button
+          onClick={() => loadOverview(false)}
+          className="mt-3 text-sm text-red-600 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
           Try again
         </button>
       </div>
@@ -80,18 +93,23 @@ export function ChallengeDashboard({ householdId, onCreateChallenge }: Challenge
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={loadOverview}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            aria-label="Refresh challenges"
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-lg"
           >
-            <RefreshCw className="w-5 h-5" />
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
-          <button
-            onClick={onCreateChallenge}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            <Plus className="w-4 h-4" />
-            New Challenge
-          </button>
+          {onCreateChallenge && (
+            <button
+              onClick={onCreateChallenge}
+              aria-label="Create new challenge"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              New Challenge
+            </button>
+          )}
         </div>
       </div>
 
@@ -161,7 +179,18 @@ function ChallengeCard({ challenge }: { challenge: FamilyChallenge }) {
   const timeRemaining = getChallengeTimeRemaining(challenge.endDate);
 
   return (
-    <div className="p-4">
+    <article
+      className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-inset"
+      tabIndex={0}
+      role="button"
+      aria-label={`Challenge: ${challenge.title}, ${progress}% complete`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          // Would navigate to challenge detail page
+        }
+      }}
+    >
       <div className="flex items-start justify-between mb-3">
         <div>
           <h4 className="font-medium text-gray-900 dark:text-gray-100">{challenge.title}</h4>
@@ -186,7 +215,14 @@ function ChallengeCard({ challenge }: { challenge: FamilyChallenge }) {
           </span>
           <span className="font-medium text-gray-900 dark:text-gray-100">{progress}%</span>
         </div>
-        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div
+          className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Challenge progress: ${progress}%`}
+        >
           <div
             className="h-full bg-indigo-600 rounded-full transition-all"
             style={{ width: `${progress}%` }}
@@ -197,18 +233,18 @@ function ChallengeCard({ challenge }: { challenge: FamilyChallenge }) {
       {/* Footer */}
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4" aria-hidden="true" />
           <span>{challenge.participants.length} participants</span>
         </div>
         {timeRemaining && (
           <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-            <Clock className="w-4 h-4" />
+            <Clock className="w-4 h-4" aria-hidden="true" />
             <span>
               {timeRemaining.days}d {timeRemaining.hours}h remaining
             </span>
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }

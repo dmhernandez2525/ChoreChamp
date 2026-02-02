@@ -1,4 +1,5 @@
 // Family Challenges Types
+import { z } from 'zod';
 
 // Challenge types
 export type ChallengeType = 'collaborative' | 'competitive' | 'individual' | 'team';
@@ -304,3 +305,82 @@ export function getChallengeStatusColor(status: ChallengeStatus): string {
   };
   return colors[status];
 }
+
+// Zod validation schemas
+export const ChallengeTypeSchema = z.enum(['collaborative', 'competitive', 'individual', 'team']);
+export const ChallengeStatusSchema = z.enum(['draft', 'active', 'paused', 'completed', 'expired', 'cancelled']);
+export const GoalTypeSchema = z.enum([
+  'total_chores',
+  'streak_days',
+  'total_points',
+  'category_chores',
+  'perfect_days',
+  'on_time_completion',
+  'custom',
+]);
+export const RewardTypeSchema = z.enum(['points', 'badge', 'custom', 'streak_freeze']);
+export const DistributionTypeSchema = z.enum(['all', 'winner', 'top_3', 'proportional']);
+
+export const ChallengeRewardSchema = z.object({
+  type: RewardTypeSchema,
+  title: z.string().min(1).max(100),
+  description: z.string().min(1).max(500),
+  value: z.number().optional(),
+  badgeId: z.string().optional(),
+  distributionType: DistributionTypeSchema,
+});
+
+export const ChallengeGoalInputSchema = z.object({
+  type: GoalTypeSchema,
+  target: z.number().min(1),
+  unit: z.string().min(1).max(50),
+  category: z.string().optional(),
+  description: z.string().min(1).max(500),
+});
+
+export const ChallengeSettingsSchema = z.object({
+  allowLateJoin: z.boolean(),
+  showProgress: z.boolean(),
+  showLeaderboard: z.boolean(),
+  notifyOnProgress: z.boolean(),
+  notifyOnMilestone: z.boolean(),
+  milestonePercentages: z.array(z.number().min(0).max(100)),
+});
+
+export const TeamInputSchema = z.object({
+  name: z.string().min(1).max(50),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  memberIds: z.array(z.string().uuid()),
+});
+
+export const CreateChallengeRequestSchema = z.object({
+  title: z.string().min(1).max(100),
+  description: z.string().min(1).max(1000),
+  type: ChallengeTypeSchema,
+  goal: ChallengeGoalInputSchema,
+  rewards: z.array(ChallengeRewardSchema).min(1),
+  participantIds: z.array(z.string().uuid()).min(1),
+  teams: z.array(TeamInputSchema).optional(),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  settings: ChallengeSettingsSchema.partial().optional(),
+});
+
+export const UpdateChallengeRequestSchema = z.object({
+  title: z.string().min(1).max(100).optional(),
+  description: z.string().min(1).max(1000).optional(),
+  status: ChallengeStatusSchema.optional(),
+  rewards: z.array(ChallengeRewardSchema).optional(),
+  endDate: z.string().datetime().optional(),
+  settings: ChallengeSettingsSchema.partial().optional(),
+});
+
+export const JoinChallengeRequestSchema = z.object({
+  memberId: z.string().uuid(),
+  teamId: z.string().uuid().optional(),
+});
+
+export const UpdateProgressRequestSchema = z.object({
+  memberId: z.string().uuid(),
+  contribution: z.number().min(0),
+});

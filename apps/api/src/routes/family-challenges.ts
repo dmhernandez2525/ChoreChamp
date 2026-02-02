@@ -8,12 +8,17 @@ import type {
   ChallengeSummary,
   ChallengeLeaderboardEntry,
   HouseholdChallengesOverview,
-  CreateChallengeRequest,
-  UpdateChallengeRequest,
-  JoinChallengeRequest,
   ChallengeSettings,
 } from '@chorechamp/types';
-import { getChallengeProgress, getChallengeTimeRemaining, CHALLENGE_TEMPLATES } from '@chorechamp/types';
+import {
+  getChallengeProgress,
+  getChallengeTimeRemaining,
+  CHALLENGE_TEMPLATES,
+  CreateChallengeRequestSchema,
+  UpdateChallengeRequestSchema,
+  JoinChallengeRequestSchema,
+  UpdateProgressRequestSchema,
+} from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomUUID } from 'crypto';
 
@@ -56,18 +61,46 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
     }
 
     const householdChallenges = challenges.get(householdId) || [];
-    const now = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // Update status for any expired challenges
+    householdChallenges.forEach((c) => {
+      if (c.status === 'active' && new Date(c.endDate) < now) {
+        c.status = c.goal.current >= c.goal.target ? 'completed' : 'expired';
+        c.updatedAt = nowIso;
+      }
+      if (c.status === 'draft' && new Date(c.startDate) <= now) {
+        c.status = 'active';
+        c.updatedAt = nowIso;
+      }
+    });
+    challenges.set(householdId, householdChallenges);
+
+    // Calculate actual statistics
+    const completedChallenges = householdChallenges.filter((c) => c.status === 'completed');
+    const challengesWithGoalMet = completedChallenges.filter((c) => c.goal.current >= c.goal.target);
+
+    // Calculate average participation rate
+    const totalParticipants = householdChallenges.reduce((sum, c) => sum + c.participants.length, 0);
+    const householdMemberCount = await db.query.members.findMany({
+      where: eq(members.householdId, householdId),
+    });
+    const maxPossibleParticipants = householdChallenges.length * householdMemberCount.length;
+    const avgParticipation = maxPossibleParticipants > 0
+      ? Math.round((totalParticipants / maxPossibleParticipants) * 100)
+      : 0;
 
     const overview: HouseholdChallengesOverview = {
       householdId,
       activeChallenges: householdChallenges.filter((c) => c.status === 'active'),
-      upcomingChallenges: householdChallenges.filter((c) => c.status === 'draft' && c.startDate > now),
-      completedChallenges: householdChallenges.filter((c) => c.status === 'completed').slice(0, 5),
+      upcomingChallenges: householdChallenges.filter((c) => c.status === 'draft' && c.startDate > nowIso),
+      completedChallenges: completedChallenges.slice(0, 5),
       stats: {
         totalChallengesCreated: householdChallenges.length,
-        totalChallengesCompleted: householdChallenges.filter((c) => c.status === 'completed').length,
-        totalChallengesWon: Math.floor(householdChallenges.filter((c) => c.status === 'completed').length * 0.7),
-        averageParticipation: 85,
+        totalChallengesCompleted: completedChallenges.length,
+        totalChallengesWon: challengesWithGoalMet.length,
+        averageParticipation: avgParticipation,
       },
     };
 
@@ -91,11 +124,31 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
   fastify.post('/', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const body = request.body as CreateChallengeRequest;
+
+    // Validate request body
+    const parseResult = CreateChallengeRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership || (membership.role !== 'parent' && membership.role !== 'admin')) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can create challenges' });
+    }
+
+    // Validate dates
+    const startDate = new Date(body.startDate);
+    const endDate = new Date(body.endDate);
+    if (endDate <= startDate) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'End date must be after start date',
+      });
     }
 
     // Get participant names
@@ -196,7 +249,17 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
   fastify.patch('/:challengeId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, challengeId } = request.params as { householdId: string; challengeId: string };
-    const body = request.body as UpdateChallengeRequest;
+
+    // Validate request body
+    const parseResult = UpdateChallengeRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership || (membership.role !== 'parent' && membership.role !== 'admin')) {
@@ -227,7 +290,17 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
   fastify.post('/:challengeId/join', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, challengeId } = request.params as { householdId: string; challengeId: string };
-    const body = request.body as JoinChallengeRequest;
+
+    // Validate request body
+    const parseResult = JoinChallengeRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -241,8 +314,38 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Challenge not found' });
     }
 
-    if (challenge.status !== 'active' && !challenge.settings.allowLateJoin) {
-      return reply.status(400).send({ error: 'Cannot join this challenge' });
+    // Check if challenge accepts new participants
+    const isJoinableStatus = challenge.status === 'draft' || challenge.status === 'active';
+
+    if (!isJoinableStatus) {
+      return reply.status(400).send({
+        error: 'Cannot join challenge',
+        message: `Challenge is ${challenge.status} and does not accept new participants`,
+      });
+    }
+
+    // Check late join policy for active challenges
+    if (challenge.status === 'active' && !challenge.settings.allowLateJoin) {
+      const challengeStartTime = new Date(challenge.startDate).getTime();
+      const now = Date.now();
+      const hoursSinceStart = (now - challengeStartTime) / (1000 * 60 * 60);
+
+      // Allow late join only within first 24 hours if late join is disabled
+      if (hoursSinceStart > 24) {
+        return reply.status(400).send({
+          error: 'Late join not allowed',
+          message: 'This challenge does not accept late participants after 24 hours',
+        });
+      }
+    }
+
+    // Check if already a participant
+    const existingParticipant = challenge.participants.find((p) => p.memberId === body.memberId);
+    if (existingParticipant) {
+      return reply.status(400).send({
+        error: 'Already participating',
+        message: 'Member is already a participant in this challenge',
+      });
     }
 
     const [joiningMember] = await db.query.members.findMany({
@@ -272,7 +375,17 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
   fastify.post('/:challengeId/progress', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, challengeId } = request.params as { householdId: string; challengeId: string };
-    const body = request.body as { memberId: string; contribution: number };
+
+    // Validate request body
+    const parseResult = UpdateProgressRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
