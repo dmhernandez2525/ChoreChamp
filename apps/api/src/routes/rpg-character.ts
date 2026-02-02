@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray, gte } from 'drizzle-orm';
 import { db } from '../lib/db';
 import {
   characterProfiles,
@@ -24,6 +24,10 @@ import {
   CHARACTER_CONFIG,
 } from '@chorechamp/gamification';
 import type { CharacterClass, CharacterStat, AvatarCustomization } from '@chorechamp/types';
+
+// Constants for validation
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 50;
 
 // Validation schemas
 const createCharacterSchema = z.object({
@@ -149,16 +153,28 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
   fastify.get('/avatar-items', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { category } = request.query as { category?: string };
+    try {
+      const { category } = request.query as { category?: string };
 
-    let query = db.select().from(avatarItems);
+      const items = category
+        ? await db
+            .select()
+            .from(avatarItems)
+            .where(eq(avatarItems.category, category))
+            .orderBy(avatarItems.category, avatarItems.sortOrder)
+        : await db
+            .select()
+            .from(avatarItems)
+            .orderBy(avatarItems.category, avatarItems.sortOrder);
 
-    if (category) {
-      query = query.where(eq(avatarItems.category, category)) as typeof query;
+      return reply.send(items);
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch avatar items');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch avatar items',
+      });
     }
-
-    const items = await query.orderBy(avatarItems.category, avatarItems.sortOrder);
-    return reply.send(items);
   });
 
   // Get character profile for a member
@@ -370,13 +386,15 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
       newAvatar.outfitColor,
       newAvatar.background,
       newAvatar.frame,
-      ...newAvatar.accessories,
-    ].filter(Boolean);
+      ...(newAvatar.accessories || []),
+    ].filter((item): item is string => Boolean(item));
 
-    const itemsData = await db
-      .select()
-      .from(avatarItems)
-      .where(sql`${avatarItems.id} = ANY(${allItems})`);
+    const itemsData = allItems.length > 0
+      ? await db
+          .select()
+          .from(avatarItems)
+          .where(inArray(avatarItems.id, allItems))
+      : [];
 
     for (const item of itemsData) {
       if (!item.isDefault && !(profile.unlockedItems || []).includes(item.id)) {
@@ -601,60 +619,72 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
   fastify.get('/leaderboard', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId } = request.params as { householdId: string };
-    const { period = 'week' } = request.query as { period?: 'week' | 'month' | 'all-time' };
+    try {
+      const { user } = request as AuthenticatedRequest;
+      const { householdId } = request.params as { householdId: string };
+      const { period = 'week' } = request.query as { period?: 'week' | 'month' | 'all-time' };
 
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this household',
-      });
-    }
+      const membership = await verifyMembership(user.id, householdId);
+      if (!membership) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'You are not a member of this household',
+        });
+      }
 
-    // Get all character profiles for household
-    const profiles = await db
-      .select({
-        profile: characterProfiles,
-        member: members,
-        class: characterClasses,
-      })
-      .from(characterProfiles)
-      .innerJoin(members, eq(characterProfiles.memberId, members.id))
-      .innerJoin(characterClasses, eq(characterProfiles.classId, characterClasses.id))
-      .where(eq(characterProfiles.householdId, householdId))
-      .orderBy(desc(characterProfiles.level), desc(characterProfiles.xpLifetime));
-
-    // Calculate XP gained in period
-    let startDate: Date;
-    const now = new Date();
-
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        startDate = new Date(0); // All time
-    }
-
-    const entries = await Promise.all(profiles.map(async (p, index) => {
-      // Get XP earned in period
-      const [xpInPeriod] = await db
+      // Get all character profiles for household
+      const profiles = await db
         .select({
-          total: sql<number>`COALESCE(SUM(${xpTransactions.amount}), 0)`,
+          profile: characterProfiles,
+          member: members,
+          class: characterClasses,
         })
-        .from(xpTransactions)
-        .where(and(
-          eq(xpTransactions.memberId, p.profile.memberId),
-          sql`${xpTransactions.createdAt} >= ${startDate}`,
-          sql`${xpTransactions.amount} > 0`
-        ));
+        .from(characterProfiles)
+        .innerJoin(members, eq(characterProfiles.memberId, members.id))
+        .innerJoin(characterClasses, eq(characterProfiles.classId, characterClasses.id))
+        .where(eq(characterProfiles.householdId, householdId))
+        .orderBy(desc(characterProfiles.level), desc(characterProfiles.xpLifetime));
 
-      return {
+      // Calculate period start date
+      const now = new Date();
+      let startDate: Date;
+
+      switch (period) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(0); // All time
+      }
+
+      // Batch query: Get XP earned by all members in period (avoids N+1)
+      const memberIds = profiles.map(p => p.profile.memberId);
+      const xpByMember: Record<string, number> = {};
+
+      if (memberIds.length > 0) {
+        const xpTotals = await db
+          .select({
+            memberId: xpTransactions.memberId,
+            total: sql<number>`COALESCE(SUM(${xpTransactions.amount}), 0)`,
+          })
+          .from(xpTransactions)
+          .where(and(
+            inArray(xpTransactions.memberId, memberIds),
+            gte(xpTransactions.createdAt, startDate),
+            sql`${xpTransactions.amount} > 0`
+          ))
+          .groupBy(xpTransactions.memberId);
+
+        for (const row of xpTotals) {
+          xpByMember[row.memberId] = Number(row.total);
+        }
+      }
+
+      // Build leaderboard entries
+      const entries = profiles.map((p, index) => ({
         rank: index + 1,
         card: {
           memberId: p.member.id,
@@ -670,23 +700,29 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
             consistency: p.profile.statConsistency,
             teamwork: p.profile.statTeamwork,
           },
-          topSkills: [], // Would need to fetch separately
+          topSkills: [],
           achievements: (p.member.badges || []).length,
           streakCurrent: p.member.streakCurrent || 0,
         },
-        xpThisWeek: Number(xpInPeriod?.total || 0),
-        levelsGained: 0, // Would need historical tracking
-      };
-    }));
+        xpThisWeek: xpByMember[p.profile.memberId] || 0,
+        levelsGained: 0,
+      }));
 
-    // Find current user's rank
-    const myRank = entries.findIndex(e => e.card.memberId === membership.id) + 1;
+      // Find current user's rank
+      const myRank = entries.findIndex(e => e.card.memberId === membership.id) + 1;
 
-    return reply.send({
-      entries,
-      myRank: myRank > 0 ? myRank : null,
-      period,
-    });
+      return reply.send({
+        entries,
+        myRank: myRank > 0 ? myRank : null,
+        period,
+      });
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch leaderboard');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch leaderboard',
+      });
+    }
   });
 
   // Award XP to a member (internal use, called when chores are completed)
@@ -785,35 +821,54 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
   fastify.get('/:memberId/xp-history', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
-    const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number };
+    try {
+      const { user } = request as AuthenticatedRequest;
+      const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+      const queryParams = request.query as { limit?: string; offset?: string };
 
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this household',
+      // Validate and sanitize pagination params
+      const limitNum = Math.min(
+        Math.max(1, parseInt(queryParams.limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+        MAX_LIMIT
+      );
+      const offsetNum = Math.max(0, parseInt(queryParams.offset || '0', 10) || 0);
+
+      const membership = await verifyMembership(user.id, householdId);
+      if (!membership) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'You are not a member of this household',
+        });
+      }
+
+      const transactions = await db
+        .select()
+        .from(xpTransactions)
+        .where(eq(xpTransactions.memberId, memberId))
+        .orderBy(desc(xpTransactions.createdAt))
+        .limit(limitNum)
+        .offset(offsetNum);
+
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(xpTransactions)
+        .where(eq(xpTransactions.memberId, memberId));
+
+      const total = Number(countResult?.count || 0);
+
+      return reply.send({
+        transactions,
+        total,
+        limit: limitNum,
+        offset: offsetNum,
+        hasMore: offsetNum + transactions.length < total,
+      });
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch XP history');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch XP history',
       });
     }
-
-    const transactions = await db
-      .select()
-      .from(xpTransactions)
-      .where(eq(xpTransactions.memberId, memberId))
-      .orderBy(desc(xpTransactions.createdAt))
-      .limit(Number(limit))
-      .offset(Number(offset));
-
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(xpTransactions)
-      .where(eq(xpTransactions.memberId, memberId));
-
-    return reply.send({
-      transactions,
-      total: Number(countResult?.count || 0),
-      hasMore: Number(offset) + transactions.length < Number(countResult?.count || 0),
-    });
   });
 }
