@@ -19,3 +19,4 @@ export * from './chore-detection';
 export * from './qr-verification';
 export * from './geofencing';
 export * from './screen-time';
+export * from './homework';
