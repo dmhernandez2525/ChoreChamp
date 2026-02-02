@@ -22,3 +22,4 @@ export * from './achievement-showcase';
 export * from './seasonal-events';
 export * from './family-analytics';
 export * from './rpg-character';
+export * from './virtual-pet';
