@@ -32,6 +32,7 @@ import { storyModeRoutes } from './story-mode';
 import { smartHomeRoutes } from './smart-home';
 import { choreDetectionRoutes } from './chore-detection';
 import { qrVerificationRoutes } from './qr-verification';
+import { geofencingRoutes } from './geofencing';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -71,6 +72,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(smartHomeRoutes, { prefix: '/:householdId/smart-home' });
       householdApi.register(choreDetectionRoutes, { prefix: '/:householdId/detection' });
       householdApi.register(qrVerificationRoutes, { prefix: '/:householdId' });
+      householdApi.register(geofencingRoutes, { prefix: '/:householdId' });
     });
 
     // Chore templates (public)
