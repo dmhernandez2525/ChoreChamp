@@ -87,7 +87,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 rounded-lg">
-            <Calendar className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            <Calendar className="w-6 h-6 text-orange-600 dark:text-orange-400" aria-hidden="true" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -104,7 +104,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
           className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50"
           aria-label="Refresh events"
         >
-          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
         </button>
       </div>
 
@@ -112,7 +112,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
       {calendar.currentEvents.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-yellow-500" />
+            <Sparkles className="w-5 h-5 text-yellow-500" aria-hidden="true" />
             Active Events
           </h3>
           {calendar.currentEvents.map((event) => (
@@ -131,7 +131,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
       {calendar.upcomingEvents.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-500" />
+            <Clock className="w-5 h-5 text-blue-500" aria-hidden="true" />
             Upcoming Events
           </h3>
           <div className="grid md:grid-cols-2 gap-4">
@@ -150,7 +150,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
       {calendar.pastEvents.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-gray-400" />
+            <Trophy className="w-5 h-5 text-gray-400" aria-hidden="true" />
             Past Events
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
@@ -163,7 +163,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
 
       {calendar.currentEvents.length === 0 && calendar.upcomingEvents.length === 0 && (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <Calendar className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <Calendar className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" aria-hidden="true" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Active Events</h3>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Check back soon for new seasonal events!</p>
         </div>
@@ -269,11 +269,11 @@ function ActiveEventCard({
         {/* Stats */}
         <div className="flex items-center gap-4 mb-4 text-sm text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
-            <Trophy className="w-4 h-4" />
+            <Trophy className="w-4 h-4" aria-hidden="true" />
             {event.challenges.length} Challenges
           </span>
           <span className="flex items-center gap-1">
-            <Gift className="w-4 h-4" />
+            <Gift className="w-4 h-4" aria-hidden="true" />
             {event.rewards.length} Rewards
           </span>
         </div>
@@ -285,7 +285,7 @@ function ActiveEventCard({
               className="text-sm font-medium flex items-center gap-1"
               style={{ color: event.theme.primaryColor }}
             >
-              <Star className="w-4 h-4" />
+              <Star className="w-4 h-4" aria-hidden="true" />
               Participating
             </span>
           ) : (
@@ -327,7 +327,7 @@ function UpcomingEventCard({
           className="p-2 rounded-lg"
           style={{ backgroundColor: `${event.theme.primaryColor}20` }}
         >
-          <Calendar className="w-5 h-5" style={{ color: event.theme.primaryColor }} />
+          <Calendar className="w-5 h-5" style={{ color: event.theme.primaryColor }} aria-hidden="true" />
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-gray-900 dark:text-gray-100">{event.name}</h4>
