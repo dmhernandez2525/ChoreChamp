@@ -33,6 +33,9 @@ import type {
   ReportSummary,
   ReportTrend,
   ReportCategories,
+  CaregiverPermissions,
+  UserHouseholdsResponse,
+  CrossHouseholdPointsSummary,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -564,6 +567,134 @@ class ApiClient {
     if (options?.offset) params.set('offset', options.offset.toString());
     const query = params.toString() ? `?${params.toString()}` : '';
     return this.request(`/notifications/history${query}`);
+  }
+
+  // ===== Multi-Household =====
+  async getHouseholdContext(): Promise<UserHouseholdsResponse> {
+    return this.request('/households/context');
+  }
+
+  async switchHousehold(
+    householdId: string,
+    setAsDefault?: boolean
+  ): Promise<{ activeHouseholdId: string; isDefault: boolean }> {
+    return this.request('/households/switch', {
+      method: 'POST',
+      body: JSON.stringify({ householdId, setAsDefault }),
+    });
+  }
+
+  async updateCaregiverPermissions(
+    householdId: string,
+    memberId: string,
+    permissions: Partial<CaregiverPermissions>
+  ): Promise<Member> {
+    return this.request(
+      `/${householdId}/members/${memberId}/caregiver-permissions`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ memberId, permissions }),
+      }
+    );
+  }
+
+  async createMemberLink(
+    householdId: string,
+    sourceMemberId: string,
+    targetHouseholdId: string,
+    targetMemberName: string,
+    shareSettings?: {
+      sharePoints?: boolean;
+      shareStreaks?: boolean;
+      shareBadges?: boolean;
+      shareChoreView?: boolean;
+    }
+  ): Promise<{
+    link: {
+      id: string;
+      primaryMemberId: string;
+      linkedMemberId: string;
+      isActive: boolean;
+    };
+    targetMember: Member;
+    requiresApproval: boolean;
+  }> {
+    return this.request(`/${householdId}/member-links`, {
+      method: 'POST',
+      body: JSON.stringify({
+        sourceMemberId,
+        targetHouseholdId,
+        targetMemberName,
+        shareSettings,
+      }),
+    });
+  }
+
+  async approveMemberLink(
+    householdId: string,
+    linkId: string
+  ): Promise<{
+    id: string;
+    isActive: boolean;
+    approvedByLinkedHousehold: boolean;
+  }> {
+    return this.request(`/${householdId}/member-links/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ linkId }),
+    });
+  }
+
+  async getPendingMemberLinks(
+    householdId: string
+  ): Promise<Array<{
+    link: {
+      id: string;
+      primaryMemberId: string;
+      linkedMemberId: string;
+      sharePoints: boolean;
+      shareStreaks: boolean;
+    };
+    primaryMember: Member;
+    primaryHousehold: Household;
+  }>> {
+    return this.request(`/${householdId}/member-links/pending`);
+  }
+
+  async updateMemberLink(
+    householdId: string,
+    linkId: string,
+    shareSettings: {
+      sharePoints?: boolean;
+      shareStreaks?: boolean;
+      shareBadges?: boolean;
+      shareChoreView?: boolean;
+    }
+  ): Promise<{
+    id: string;
+    sharePoints: boolean;
+    shareStreaks: boolean;
+    shareBadges: boolean;
+    shareChoreView: boolean;
+  }> {
+    return this.request(`/${householdId}/member-links/${linkId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ linkId, shareSettings }),
+    });
+  }
+
+  async deleteMemberLink(householdId: string, linkId: string): Promise<void> {
+    return this.request(`/${householdId}/member-links/${linkId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getCrossHouseholdSummary(
+    householdId: string,
+    memberId: string
+  ): Promise<CrossHouseholdPointsSummary> {
+    return this.request(
+      `/${householdId}/members/${memberId}/cross-household-summary`
+    );
   }
 }
 

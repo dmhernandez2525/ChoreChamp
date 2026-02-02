@@ -23,9 +23,21 @@ const updateHouseholdSchema = z.object({
 });
 
 const createInviteSchema = z.object({
-  role: z.enum(['parent', 'child', 'teen', 'viewer']).default('child'),
+  role: z.enum(['parent', 'child', 'teen', 'viewer', 'caregiver']).default('child'),
   maxUses: z.number().min(1).max(100).optional(),
   expiresInDays: z.number().min(1).max(30).default(7),
+  // Caregiver-specific permissions (only used when role = 'caregiver')
+  caregiverPermissions: z.object({
+    canViewChores: z.boolean().optional(),
+    canCompleteChores: z.boolean().optional(),
+    canApproveChores: z.boolean().optional(),
+    canCreateChores: z.boolean().optional(),
+    canEditChores: z.boolean().optional(),
+    canViewPoints: z.boolean().optional(),
+    canViewRewards: z.boolean().optional(),
+    canRedeemRewards: z.boolean().optional(),
+    canViewActivity: z.boolean().optional(),
+  }).optional(),
 });
 
 function generateInviteCode(): string {
@@ -239,6 +251,19 @@ export async function householdRoutes(fastify: FastifyInstance) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + body.expiresInDays);
 
+    // Default caregiver permissions if role is caregiver
+    const defaultCaregiverPermissions = {
+      canViewChores: true,
+      canCompleteChores: true,
+      canApproveChores: false,
+      canCreateChores: false,
+      canEditChores: false,
+      canViewPoints: true,
+      canViewRewards: false,
+      canRedeemRewards: false,
+      canViewActivity: true,
+    };
+
     const [invite] = await db
       .insert(inviteCodes)
       .values({
@@ -248,6 +273,9 @@ export async function householdRoutes(fastify: FastifyInstance) {
         createdBy: user.id,
         expiresAt,
         maxUses: body.maxUses,
+        caregiverPermissions: body.role === 'caregiver'
+          ? { ...defaultCaregiverPermissions, ...body.caregiverPermissions }
+          : null,
       })
       .returning();
 
@@ -363,6 +391,12 @@ export async function householdRoutes(fastify: FastifyInstance) {
         name: user.name || user.email.split('@')[0],
         role: invite.role || 'child',
         color: randomColor,
+        // Apply caregiver permissions if joining as caregiver
+        caregiverPermissions: invite.role === 'caregiver' ? invite.caregiverPermissions : null,
+        // Caregivers don't redeem rewards by default
+        canRedeemRewards: invite.role !== 'caregiver',
+        // Caregivers don't require approval
+        requiresApproval: invite.role !== 'caregiver' && invite.role !== 'parent',
       })
       .returning();
 

@@ -54,7 +54,7 @@ export const cachedMembers = sqliteTable('cached_members', {
   householdId: text('household_id').notNull(),
   userId: text('user_id'),
   name: text('name').notNull(),
-  role: text('role').$type<'parent' | 'child' | 'teen' | 'viewer'>().notNull(),
+  role: text('role').$type<'parent' | 'child' | 'teen' | 'viewer' | 'caregiver'>().notNull(),
   color: text('color'),
   avatarUrl: text('avatar_url'),
   pointsCurrent: integer('points_current').default(0),
@@ -64,6 +64,11 @@ export const cachedMembers = sqliteTable('cached_members', {
   streakLastCompletedDate: text('streak_last_completed_date'),
   streakFreezesAvailable: integer('streak_freezes_available').default(1),
   badges: text('badges'), // JSON array string
+  // Caregiver-specific permissions (JSON string)
+  caregiverPermissions: text('caregiver_permissions'),
+  // Cross-household linking
+  linkedMemberId: text('linked_member_id'),
+  crossHouseholdSettings: text('cross_household_settings'), // JSON string
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
   cachedAt: text('cached_at').notNull(),
   syncVersion: integer('sync_version').default(0),

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, smallint, integer, timestamp, boolean, text, date, index, unique } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, smallint, integer, timestamp, boolean, text, date, index, unique, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
 import { households } from './households';
@@ -15,7 +15,7 @@ export const members = pgTable(
     userId: text('user_id').references(() => users.id), // NULL for child profiles
 
     name: varchar('name', { length: 100 }).notNull(),
-    role: varchar('role', { length: 20 }).notNull(), // 'parent', 'child', 'teen', 'viewer'
+    role: varchar('role', { length: 20 }).notNull(), // 'parent', 'child', 'teen', 'viewer', 'caregiver'
     color: varchar('color', { length: 7 }).notNull(), // Hex color
     avatarUrl: text('avatar_url'),
     birthYear: smallint('birth_year'),
@@ -38,6 +38,13 @@ export const members = pgTable(
     canRedeemRewards: boolean('can_redeem_rewards').default(true),
     requiresApproval: boolean('requires_approval').default(true),
 
+    // Caregiver permissions (JSON) - only used when role = 'caregiver'
+    caregiverPermissions: jsonb('caregiver_permissions'),
+
+    // Cross-household linking
+    linkedMemberId: uuid('linked_member_id'), // Links to member in another household
+    crossHouseholdSettings: jsonb('cross_household_settings'),
+
     // Notification tracking
     lastReminderAt: timestamp('last_reminder_at', { withTimezone: true }),
 
@@ -48,6 +55,7 @@ export const members = pgTable(
   (table) => [
     index('idx_members_household').on(table.householdId),
     index('idx_members_user').on(table.userId),
+    index('idx_members_linked').on(table.linkedMemberId),
     unique('unique_user_household').on(table.householdId, table.userId),
   ]
 );
