@@ -112,7 +112,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -130,14 +130,14 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50"
             aria-label="Refresh analytics"
           >
-            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
           <div className="relative">
             <button
               onClick={() => handleExport('pdf')}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4" aria-hidden="true" />
               Export
             </button>
           </div>
@@ -197,7 +197,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
       {analytics.recommendations.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-yellow-500" />
+            <Lightbulb className="w-5 h-5 text-yellow-500" aria-hidden="true" />
             Insights & Recommendations
           </h3>
           <div className="space-y-3">
@@ -211,7 +211,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
       {/* Member Performance */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-500" />
+          <Users className="w-5 h-5 text-blue-500" aria-hidden="true" />
           Member Performance
         </h3>
         <div className="space-y-4">
@@ -226,7 +226,11 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Completion Trends
         </h3>
-        <div className="h-64 flex items-end gap-2">
+        <div
+          className="h-64 flex items-end gap-2"
+          role="img"
+          aria-label={`Completion trend chart showing ${analytics.trends.dailyCompletions.slice(-14).reduce((sum, p) => sum + p.value, 0)} total chores completed over the last 14 days`}
+        >
           {analytics.trends.dailyCompletions.slice(-14).map((point, index) => (
             <div
               key={index}
@@ -236,6 +240,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
                 minHeight: '4px',
               }}
               title={`${point.date}: ${point.value} chores`}
+              aria-hidden="true"
             />
           ))}
         </div>
@@ -337,7 +342,7 @@ function StatCard({
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
-          <Icon className="w-5 h-5" />
+          <Icon className="w-5 h-5" aria-hidden="true" />
         </div>
         <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
       </div>
@@ -345,7 +350,7 @@ function StatCard({
         <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</span>
         {change !== undefined && (
           <span className={`text-sm flex items-center gap-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {change >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+            {change >= 0 ? <TrendingUp className="w-4 h-4" aria-hidden="true" /> : <TrendingDown className="w-4 h-4" aria-hidden="true" />}
             {formatPercentageChange(change)}
           </span>
         )}
@@ -375,7 +380,7 @@ function MemberPerformanceRow({ member }: { member: FamilyAnalytics['memberInsig
           className="text-sm flex items-center gap-1 justify-end"
           style={{ color: getTrendColor(member.performanceTrend) }}
         >
-          <TrendIcon className="w-4 h-4" />
+          <TrendIcon className="w-4 h-4" aria-hidden="true" />
           {member.performanceTrend}
         </p>
       </div>
@@ -387,13 +392,13 @@ function RecommendationCard({ recommendation }: { recommendation: InsightRecomme
   const getIcon = () => {
     switch (recommendation.type) {
       case 'celebration':
-        return <PartyPopper className="w-5 h-5 text-green-500" />;
+        return <PartyPopper className="w-5 h-5 text-green-500" aria-hidden="true" />;
       case 'warning':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
+        return <AlertCircle className="w-5 h-5 text-red-500" aria-hidden="true" />;
       case 'improvement':
-        return <TrendingUp className="w-5 h-5 text-blue-500" />;
+        return <TrendingUp className="w-5 h-5 text-blue-500" aria-hidden="true" />;
       default:
-        return <Lightbulb className="w-5 h-5 text-yellow-500" />;
+        return <Lightbulb className="w-5 h-5 text-yellow-500" aria-hidden="true" />;
     }
   };
 
