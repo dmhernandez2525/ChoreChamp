@@ -59,7 +59,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
           <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
         </div>
-        <button onClick={handleRefresh} className="mt-3 text-sm text-red-600 hover:underline">
+        <button onClick={handleRefresh} className="mt-3 text-sm text-red-600 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500">
           Try again
         </button>
       </div>
@@ -101,7 +101,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50"
+          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           aria-label="Refresh events"
         >
           <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
@@ -318,9 +318,13 @@ function UpcomingEventCard({
   const daysUntil = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
   return (
-    <div
+    <article
       onClick={onSelect}
-      className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-all"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Upcoming event: ${event.name}, starts in ${daysUntil} days`}
+      className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
     >
       <div className="flex items-start gap-3">
         <div
@@ -341,7 +345,7 @@ function UpcomingEventCard({
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -355,9 +359,13 @@ function PastEventCard({
   const progress = event.isParticipating ? getEventProgress(event) : 0;
 
   return (
-    <div
+    <article
       onClick={onSelect}
-      className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all opacity-75"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Past event: ${event.name}, ended ${formatEventDate(event.endDate)}${event.isParticipating ? `, completed ${progress}%` : ''}`}
+      className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-500"
     >
       <h4 className="font-medium text-gray-700 dark:text-gray-300">{event.name}</h4>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -368,6 +376,6 @@ function PastEventCard({
           Completed {progress}%
         </p>
       )}
-    </div>
+    </article>
   );
 }
