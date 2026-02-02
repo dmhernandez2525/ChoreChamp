@@ -42,6 +42,14 @@ import type {
   TradeWithDetails,
   TradeListResponse,
   TradeStatsResponse,
+  AllowanceSettings,
+  AllowanceSummary,
+  AllowancePayout,
+  AllowancePayoutWithMember,
+  HouseholdAllowanceSummary,
+  CreateAllowanceSettingsRequest,
+  UpdateAllowanceSettingsRequest,
+  MarkPayoutPaidRequest,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -752,6 +760,74 @@ class ApiClient {
 
   async getTradeStats(householdId: string): Promise<TradeStatsResponse> {
     return this.request(`/households/${householdId}/trades/stats`);
+  }
+
+  // ===== Allowance Management =====
+  async getHouseholdAllowanceSummary(householdId: string): Promise<HouseholdAllowanceSummary> {
+    return this.request(`/households/${householdId}/allowance`);
+  }
+
+  async getMemberAllowanceSummary(
+    householdId: string,
+    memberId: string
+  ): Promise<AllowanceSummary> {
+    return this.request(`/households/${householdId}/allowance/${memberId}`);
+  }
+
+  async createAllowanceSettings(
+    householdId: string,
+    data: CreateAllowanceSettingsRequest
+  ): Promise<AllowanceSettings> {
+    return this.request(`/households/${householdId}/allowance`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAllowanceSettings(
+    householdId: string,
+    memberId: string,
+    data: UpdateAllowanceSettingsRequest
+  ): Promise<AllowanceSettings> {
+    return this.request(`/households/${householdId}/allowance/${memberId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async generatePayout(householdId: string, memberId: string): Promise<AllowancePayout> {
+    return this.request(`/households/${householdId}/allowance/${memberId}/generate-payout`, {
+      method: 'POST',
+    });
+  }
+
+  async markPayoutPaid(
+    householdId: string,
+    payoutId: string,
+    data?: MarkPayoutPaidRequest
+  ): Promise<AllowancePayout> {
+    return this.request(`/households/${householdId}/allowance/payouts/${payoutId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  async cancelPayout(householdId: string, payoutId: string): Promise<AllowancePayout> {
+    return this.request(`/households/${householdId}/allowance/payouts/${payoutId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  async getPayouts(
+    householdId: string,
+    options?: { status?: string; memberId?: string; limit?: number }
+  ): Promise<AllowancePayoutWithMember[]> {
+    const params = new URLSearchParams();
+    if (options?.status) params.set('status', options.status);
+    if (options?.memberId) params.set('memberId', options.memberId);
+    if (options?.limit) params.set('limit', options.limit.toString());
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/allowance/payouts${query}`);
   }
 }
 
