@@ -105,6 +105,14 @@ import type {
   SubmitReviewRequest,
   ImportTemplateRequest,
   TemplateReview,
+  Achievement,
+  AchievementShowcase,
+  AchievementLeaderboard,
+  AchievementFeed,
+  AchievementShare,
+  AchievementCategory,
+  UpdateShowcaseRequest,
+  ShareAchievementRequest,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1480,6 +1488,93 @@ class ApiClient {
     if (params?.limit) queryParams.set('limit', String(params.limit));
     const query = queryParams.toString();
     return this.request(`/community-templates/${templateId}/reviews${query ? `?${query}` : ''}`);
+  }
+
+  // ===== Achievement Showcase =====
+
+  async getAchievements(
+    householdId: string,
+    params?: { memberId?: string; category?: AchievementCategory }
+  ): Promise<{
+    unlocked: Achievement[];
+    inProgress: Achievement[];
+    locked: Achievement[];
+    secret: number;
+    stats: { total: number; unlocked: number; totalPoints: number };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.memberId) queryParams.set('memberId', params.memberId);
+    if (params?.category) queryParams.set('category', params.category);
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/achievements${query ? `?${query}` : ''}`);
+  }
+
+  async getAchievementShowcase(
+    householdId: string,
+    memberId: string
+  ): Promise<{
+    showcase: AchievementShowcase;
+    levelProgress: { level: number; progress: number; pointsToNext: number };
+  }> {
+    return this.request(`/households/${householdId}/achievements/showcase/${memberId}`);
+  }
+
+  async updateAchievementShowcase(
+    householdId: string,
+    updates: UpdateShowcaseRequest
+  ): Promise<{ success: boolean; settings: { featuredIds: string[]; title?: string } }> {
+    return this.request(`/households/${householdId}/achievements/showcase`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async getAchievementLeaderboard(
+    householdId: string,
+    timeframe?: 'week' | 'month' | 'all-time'
+  ): Promise<AchievementLeaderboard> {
+    const queryParams = new URLSearchParams();
+    if (timeframe) queryParams.set('timeframe', timeframe);
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/achievements/leaderboard${query ? `?${query}` : ''}`);
+  }
+
+  async getAchievementFeed(
+    householdId: string,
+    params?: { cursor?: string; limit?: number }
+  ): Promise<AchievementFeed> {
+    const queryParams = new URLSearchParams();
+    if (params?.cursor) queryParams.set('cursor', params.cursor);
+    if (params?.limit) queryParams.set('limit', String(params.limit));
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/achievements/feed${query ? `?${query}` : ''}`);
+  }
+
+  async shareAchievement(
+    householdId: string,
+    data: ShareAchievementRequest
+  ): Promise<{ success: boolean; share: AchievementShare }> {
+    return this.request(`/households/${householdId}/achievements/share`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async reactToAchievementShare(
+    householdId: string,
+    shareId: string,
+    emoji: string
+  ): Promise<{ success: boolean; reactions: AchievementShare['reactions'] }> {
+    return this.request(`/households/${householdId}/achievements/share/${shareId}/react`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
+    });
+  }
+
+  async getAchievementShares(
+    householdId: string
+  ): Promise<{ shares: (AchievementShare & { achievement?: Achievement })[] }> {
+    return this.request(`/households/${householdId}/achievements/shares`);
   }
 }
 
