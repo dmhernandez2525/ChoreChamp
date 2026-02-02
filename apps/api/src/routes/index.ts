@@ -29,6 +29,7 @@ import { virtualPetRoutes } from './virtual-pet';
 import { miniGamesRoutes } from './mini-games';
 import { collectibleCardsRoutes } from './collectible-cards';
 import { storyModeRoutes } from './story-mode';
+import { smartHomeRoutes } from './smart-home';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -65,6 +66,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(miniGamesRoutes, { prefix: '/:householdId/games' });
       householdApi.register(collectibleCardsRoutes, { prefix: '/:householdId/cards' });
       householdApi.register(storyModeRoutes, { prefix: '/:householdId/story' });
+      householdApi.register(smartHomeRoutes, { prefix: '/:householdId/smart-home' });
     });
 
     // Chore templates (public)
