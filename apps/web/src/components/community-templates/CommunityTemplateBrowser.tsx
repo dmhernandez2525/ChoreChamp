@@ -194,7 +194,7 @@ export function CommunityTemplateBrowser({
       <div className="space-y-4">
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
             <input
               type="text"
               value={searchQuery}
@@ -212,7 +212,7 @@ export function CommunityTemplateBrowser({
                 : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
             }`}
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-4 h-4" aria-hidden="true" />
             Filters
           </button>
           <button
@@ -431,15 +431,15 @@ function TemplateCard({
 
         <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
           <span className="flex items-center gap-1">
-            <Star className="w-4 h-4 text-yellow-500" />
+            <Star className="w-4 h-4 text-yellow-500" aria-hidden="true" />
             {template.ratings.average.toFixed(1)}
           </span>
           <span className="flex items-center gap-1">
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4" aria-hidden="true" />
             {template.downloads}
           </span>
           <span className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
+            <Clock className="w-4 h-4" aria-hidden="true" />
             {formatDuration(template.estimatedDuration)}
           </span>
         </div>
@@ -498,7 +498,7 @@ function TemplateListItem({
         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{template.description}</p>
         <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
-            <Star className="w-3 h-3 text-yellow-500" />
+            <Star className="w-3 h-3 text-yellow-500" aria-hidden="true" />
             {template.ratings.average.toFixed(1)} ({template.ratings.count})
           </span>
           <span>{formatDuration(template.estimatedDuration)}</span>
