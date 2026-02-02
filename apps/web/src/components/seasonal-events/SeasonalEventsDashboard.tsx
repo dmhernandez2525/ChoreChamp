@@ -22,11 +22,16 @@ interface SeasonalEventsDashboardProps {
 export function SeasonalEventsDashboard({ householdId, onSelectEvent }: SeasonalEventsDashboardProps) {
   const [calendar, setCalendar] = useState<EventCalendar | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCalendar = useCallback(async () => {
+  const loadCalendar = useCallback(async (refresh = false) => {
     try {
-      setIsLoading(true);
+      if (refresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
       const data = await apiClient.getEventCalendar(householdId);
       setCalendar(data);
@@ -35,21 +40,26 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
       setError(err instanceof Error ? err.message : 'Failed to load events');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [householdId]);
 
   useEffect(() => {
-    loadCalendar();
+    loadCalendar(false);
+  }, [loadCalendar]);
+
+  const handleRefresh = useCallback(() => {
+    loadCalendar(true);
   }, [loadCalendar]);
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" role="alert">
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-          <AlertTriangle className="w-5 h-5" />
+          <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
         </div>
-        <button onClick={loadCalendar} className="mt-3 text-sm text-red-600 hover:underline">
+        <button onClick={handleRefresh} className="mt-3 text-sm text-red-600 hover:underline">
           Try again
         </button>
       </div>
@@ -89,10 +99,12 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
           </div>
         </div>
         <button
-          onClick={loadCalendar}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50"
+          aria-label="Refresh events"
         >
-          <RefreshCw className="w-5 h-5" />
+          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
@@ -109,7 +121,7 @@ export function SeasonalEventsDashboard({ householdId, onSelectEvent }: Seasonal
               event={event}
               onSelect={() => onSelectEvent?.(event)}
               householdId={householdId}
-              onJoin={loadCalendar}
+              onJoin={handleRefresh}
             />
           ))}
         </div>
@@ -189,10 +201,14 @@ function ActiveEventCard({
   };
 
   return (
-    <div
+    <article
       onClick={onSelect}
       className="relative overflow-hidden rounded-lg border-2 cursor-pointer hover:shadow-lg transition-all"
       style={{ borderColor: event.theme.primaryColor }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(); }}
+      aria-label={`${event.name} event - ${event.isParticipating ? 'Participating' : 'Not participating'}`}
     >
       {/* Banner gradient */}
       <div
@@ -234,7 +250,14 @@ function ActiveEventCard({
                 {progress}%
               </span>
             </div>
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Event progress: ${progress}%`}
+            >
               <div
                 className="h-full rounded-full transition-all"
                 style={{ width: `${progress}%`, backgroundColor: event.theme.primaryColor }}
@@ -271,14 +294,15 @@ function ActiveEventCard({
               disabled={isJoining}
               className="px-4 py-2 text-white rounded-lg disabled:opacity-50"
               style={{ backgroundColor: event.theme.primaryColor }}
+              aria-label={`Join ${event.name}`}
             >
               {isJoining ? 'Joining...' : 'Join Event'}
             </button>
           )}
-          <ChevronRight className="w-5 h-5 text-gray-400" />
+          <ChevronRight className="w-5 h-5 text-gray-400" aria-hidden="true" />
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 

@@ -8,10 +8,13 @@ import type {
   EventParticipation,
   HouseholdEventStats,
   EventLeaderboardEntry,
-  ClaimRewardRequest,
-  UpdateChallengeProgressRequest,
 } from '@chorechamp/types';
-import { SEASONAL_EVENTS, getEventStatus } from '@chorechamp/types';
+import {
+  SEASONAL_EVENTS,
+  getEventStatus,
+  ClaimRewardRequestSchema,
+  UpdateChallengeProgressRequestSchema,
+} from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 
 // In-memory storage
@@ -208,7 +211,16 @@ export async function seasonalEventRoutes(fastify: FastifyInstance) {
   fastify.post('/:eventId/progress', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, eventId } = request.params as { householdId: string; eventId: string };
-    const body = request.body as UpdateChallengeProgressRequest;
+
+    const parseResult = UpdateChallengeProgressRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -253,7 +265,16 @@ export async function seasonalEventRoutes(fastify: FastifyInstance) {
   fastify.post('/:eventId/claim', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, eventId } = request.params as { householdId: string; eventId: string };
-    const body = request.body as ClaimRewardRequest;
+
+    const parseResult = ClaimRewardRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
