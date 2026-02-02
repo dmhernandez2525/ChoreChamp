@@ -9,6 +9,7 @@ import { bossBattleRoutes } from './boss-battles';
 import { activityRoutes } from './activity';
 import { reportsRoutes } from './reports';
 import { notificationRoutes } from './notifications';
+import { multiHouseholdRoutes } from './multi-household';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -34,6 +35,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
     // Notification routes
     api.register(notificationRoutes, { prefix: '/notifications' });
+
+    // Multi-household routes (household switching, member links, etc.)
+    api.register(multiHouseholdRoutes);
 
     // Health/status check at API level
     api.get('/status', async () => {

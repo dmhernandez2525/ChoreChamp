@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, smallint, integer, timestamp, boolean, index, text } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, smallint, integer, timestamp, boolean, index, text, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
 import { members } from './members';
@@ -45,10 +45,12 @@ export const inviteCodes = pgTable(
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
     code: varchar('code', { length: 8 }).unique().notNull(),
-    role: varchar('role', { length: 20 }).default('child'),
+    role: varchar('role', { length: 20 }).default('child'), // includes 'caregiver'
     createdBy: text('created_by')
       .notNull()
       .references(() => users.id),
+    // Caregiver-specific permissions (only used when role = 'caregiver')
+    caregiverPermissions: jsonb('caregiver_permissions'),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
     maxUses: integer('max_uses'),
     useCount: integer('use_count').default(0),
@@ -71,6 +73,44 @@ export const userHouseholds = pgTable('user_households', {
     .references(() => households.id, { onDelete: 'cascade' }),
 });
 
+// Cross-household member links (for shared custody scenarios)
+export const memberLinks = pgTable(
+  'member_links',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // Primary member (the "source" member being linked)
+    primaryMemberId: uuid('primary_member_id')
+      .notNull()
+      .references(() => members.id, { onDelete: 'cascade' }),
+    primaryHouseholdId: uuid('primary_household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    // Linked member (the "target" member in another household)
+    linkedMemberId: uuid('linked_member_id')
+      .notNull()
+      .references(() => members.id, { onDelete: 'cascade' }),
+    linkedHouseholdId: uuid('linked_household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    // Settings for this link
+    sharePoints: boolean('share_points').default(false),
+    shareStreaks: boolean('share_streaks').default(false),
+    shareBadges: boolean('share_badges').default(false),
+    shareChoreView: boolean('share_chore_view').default(false),
+    // Link status
+    isActive: boolean('is_active').default(true),
+    // Approval tracking (both households must approve)
+    approvedByPrimaryHousehold: boolean('approved_by_primary_household').default(false),
+    approvedByLinkedHousehold: boolean('approved_by_linked_household').default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_member_links_primary').on(table.primaryMemberId),
+    index('idx_member_links_linked').on(table.linkedMemberId),
+  ]
+);
+
 // Relations
 export const householdsRelations = relations(households, ({ one, many }) => ({
   creator: one(users, {
@@ -90,5 +130,28 @@ export const inviteCodesRelations = relations(inviteCodes, ({ one }) => ({
   creator: one(users, {
     fields: [inviteCodes.createdBy],
     references: [users.id],
+  }),
+}));
+
+export const memberLinksRelations = relations(memberLinks, ({ one }) => ({
+  primaryMember: one(members, {
+    fields: [memberLinks.primaryMemberId],
+    references: [members.id],
+    relationName: 'primaryMemberLinks',
+  }),
+  primaryHousehold: one(households, {
+    fields: [memberLinks.primaryHouseholdId],
+    references: [households.id],
+    relationName: 'primaryHouseholdLinks',
+  }),
+  linkedMember: one(members, {
+    fields: [memberLinks.linkedMemberId],
+    references: [members.id],
+    relationName: 'linkedMemberLinks',
+  }),
+  linkedHousehold: one(households, {
+    fields: [memberLinks.linkedHouseholdId],
+    references: [households.id],
+    relationName: 'linkedHouseholdLinks',
   }),
 }));

@@ -1,8 +1,42 @@
 // Household and member types
 
-export type MemberRole = 'parent' | 'child' | 'teen' | 'viewer';
+export type MemberRole = 'parent' | 'child' | 'teen' | 'viewer' | 'caregiver';
 export type SubscriptionTier = 'free' | 'premium';
 export type SubscriptionProvider = 'apple' | 'google' | 'stripe';
+
+// Caregiver permission levels
+export interface CaregiverPermissions {
+  canViewChores: boolean;
+  canCompleteChores: boolean;
+  canApproveChores: boolean;
+  canCreateChores: boolean;
+  canEditChores: boolean;
+  canViewPoints: boolean;
+  canViewRewards: boolean;
+  canRedeemRewards: boolean;
+  canViewActivity: boolean;
+}
+
+// Default caregiver permissions (view + complete only)
+export const DEFAULT_CAREGIVER_PERMISSIONS: CaregiverPermissions = {
+  canViewChores: true,
+  canCompleteChores: true,
+  canApproveChores: false,
+  canCreateChores: false,
+  canEditChores: false,
+  canViewPoints: true,
+  canViewRewards: false,
+  canRedeemRewards: false,
+  canViewActivity: true,
+};
+
+// Cross-household visibility settings
+export interface CrossHouseholdSettings {
+  sharePointsAcrossHouseholds: boolean;
+  shareStreaksAcrossHouseholds: boolean;
+  shareBadgesAcrossHouseholds: boolean;
+  allowCrossHouseholdChoreView: boolean;
+}
 
 export interface Household {
   id: string;
@@ -63,9 +97,33 @@ export interface Member {
   canRedeemRewards: boolean;
   requiresApproval: boolean;
 
+  // Caregiver-specific
+  caregiverPermissions: CaregiverPermissions | null;
+
+  // Cross-household linking
+  linkedMemberId: string | null; // Links to member in another household (same person)
+  crossHouseholdSettings: CrossHouseholdSettings | null;
+
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Member with cross-household data
+export interface MemberWithCrossHousehold extends Member {
+  linkedHouseholds: LinkedHouseholdInfo[];
+  aggregatedPoints?: number; // Combined points across linked households
+  aggregatedStreak?: number; // Best streak across linked households
+}
+
+// Linked household info for cross-household view
+export interface LinkedHouseholdInfo {
+  householdId: string;
+  householdName: string;
+  memberId: string;
+  memberRole: MemberRole;
+  pointsCurrent: number;
+  streakCurrent: number;
 }
 
 export interface InviteCode {
@@ -132,4 +190,89 @@ export interface CreateInviteCodeRequest {
 
 export interface HouseholdWithMembers extends Household {
   members: Member[];
+}
+
+// Multi-household API types
+
+// Request to create a caregiver invite
+export interface CreateCaregiverInviteRequest {
+  permissions?: Partial<CaregiverPermissions>;
+  maxUses?: number;
+  expiresInDays?: number;
+}
+
+// Request to link a member across households
+export interface LinkMemberRequest {
+  sourceMemberId: string; // Member in current household
+  targetHouseholdId: string; // Household to link to
+  shareSettings?: Partial<CrossHouseholdSettings>;
+}
+
+// Response for linking a member
+export interface LinkMemberResponse {
+  linkedMemberId: string;
+  targetHouseholdMember: Member;
+  shareSettings: CrossHouseholdSettings;
+}
+
+// Request to update cross-household settings
+export interface UpdateCrossHouseholdSettingsRequest {
+  memberId: string;
+  settings: Partial<CrossHouseholdSettings>;
+}
+
+// Request to update caregiver permissions
+export interface UpdateCaregiverPermissionsRequest {
+  memberId: string;
+  permissions: Partial<CaregiverPermissions>;
+}
+
+// Response for user's households with context
+export interface UserHouseholdsResponse {
+  households: HouseholdContext[];
+  activeHouseholdId: string | null;
+}
+
+// Household with user's context
+export interface HouseholdContext {
+  household: Household;
+  member: Member;
+  role: MemberRole;
+  isDefault: boolean;
+  linkedMembers: LinkedHouseholdInfo[];
+}
+
+// Request to switch active household
+export interface SwitchHouseholdRequest {
+  householdId: string;
+  setAsDefault?: boolean;
+}
+
+// Cross-household points summary
+export interface CrossHouseholdPointsSummary {
+  memberId: string;
+  memberName: string;
+  totalPoints: number;
+  totalLifetimePoints: number;
+  householdBreakdown: {
+    householdId: string;
+    householdName: string;
+    pointsCurrent: number;
+    pointsLifetime: number;
+  }[];
+}
+
+// Cross-household streak summary
+export interface CrossHouseholdStreakSummary {
+  memberId: string;
+  memberName: string;
+  bestCurrentStreak: number;
+  bestHouseholdId: string;
+  bestHouseholdName: string;
+  householdBreakdown: {
+    householdId: string;
+    householdName: string;
+    streakCurrent: number;
+    streakLongest: number;
+  }[];
 }

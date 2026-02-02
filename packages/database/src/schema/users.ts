@@ -73,11 +73,31 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
+// User preferences
+export const userPreferences = pgTable('user_preferences', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  activeHouseholdId: uuid('active_household_id'), // Current active household
+  defaultHouseholdId: uuid('default_household_id'), // Default household on login
+  theme: varchar('theme', { length: 20 }).default('system'), // 'light', 'dark', 'system'
+  notificationsEnabled: boolean('notifications_enabled').default(true),
+  emailDigestFrequency: varchar('email_digest_frequency', { length: 20 }).default('weekly'), // 'daily', 'weekly', 'never'
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
   coppaConsents: many(coppaConsents),
+  preferences: one(userPreferences, {
+    fields: [users.id],
+    references: [userPreferences.userId],
+  }),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
