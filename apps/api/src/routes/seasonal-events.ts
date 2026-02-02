@@ -289,6 +289,18 @@ export async function seasonalEventRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Not participating in this event' });
     }
 
+    // Verify reward belongs to this event
+    const events = generateActiveEvents();
+    const event = events.find((e) => e.id === eventId);
+    if (!event) {
+      return reply.status(404).send({ error: 'Event not found' });
+    }
+
+    const reward = event.rewards.find((r) => r.id === body.rewardId);
+    if (!reward) {
+      return reply.status(404).send({ error: 'Reward not found in this event' });
+    }
+
     // Check if reward already claimed
     const memberClaimed = claimedRewards.get(membership.id) || new Set();
     if (memberClaimed.has(body.rewardId)) {
