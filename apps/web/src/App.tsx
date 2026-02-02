@@ -30,6 +30,7 @@ import Reports from './pages/Reports';
 import MemberCharacter from './pages/MemberCharacter';
 import MemberPets from './pages/MemberPets';
 import Arcade from './pages/Arcade';
+import Collection from './pages/Collection';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -306,6 +307,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Arcade />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/collection"
+        element={
+          <ProtectedRoute>
+            <Collection />
           </ProtectedRoute>
         }
       />

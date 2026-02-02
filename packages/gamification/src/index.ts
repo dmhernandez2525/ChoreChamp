@@ -8,3 +8,4 @@ export * from './config';
 export * from './character';
 export * from './pet';
 export * from './games';
+export * from './cards';

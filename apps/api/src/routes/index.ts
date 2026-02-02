@@ -27,6 +27,7 @@ import { familyAnalyticsRoutes } from './family-analytics';
 import { rpgCharacterRoutes } from './rpg-character';
 import { virtualPetRoutes } from './virtual-pet';
 import { miniGamesRoutes } from './mini-games';
+import { collectibleCardsRoutes } from './collectible-cards';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -61,6 +62,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(rpgCharacterRoutes, { prefix: '/:householdId/characters' });
       householdApi.register(virtualPetRoutes, { prefix: '/:householdId/pets' });
       householdApi.register(miniGamesRoutes, { prefix: '/:householdId/games' });
+      householdApi.register(collectibleCardsRoutes, { prefix: '/:householdId/cards' });
     });
 
     // Chore templates (public)
