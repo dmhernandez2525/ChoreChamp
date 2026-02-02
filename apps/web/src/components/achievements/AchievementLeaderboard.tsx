@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Trophy, Medal, Crown, Award, RefreshCw } from 'lucide-react';
+import { Trophy, Medal, Crown, Award, RefreshCw, AlertTriangle } from 'lucide-react';
 import { apiClient } from '@chorechamp/api-client';
 import type { AchievementLeaderboard as LeaderboardType, AchievementLeaderboardEntry } from '@chorechamp/types';
 
@@ -11,21 +11,34 @@ export function AchievementLeaderboard({ householdId }: AchievementLeaderboardPr
   const [leaderboard, setLeaderboard] = useState<LeaderboardType | null>(null);
   const [timeframe, setTimeframe] = useState<'week' | 'month' | 'all-time'>('all-time');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadLeaderboard = useCallback(async () => {
+  const loadLeaderboard = useCallback(async (isRefresh = false) => {
     try {
-      setIsLoading(true);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      setError(null);
       const data = await apiClient.getAchievementLeaderboard(householdId, timeframe);
       setLeaderboard(data);
     } catch (err) {
       console.error('Failed to load leaderboard:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [householdId, timeframe]);
 
   useEffect(() => {
-    loadLeaderboard();
+    loadLeaderboard(false);
+  }, [loadLeaderboard]);
+
+  const handleRefresh = useCallback(() => {
+    loadLeaderboard(true);
   }, [loadLeaderboard]);
 
   const getRankIcon = (rank: number) => {
@@ -55,9 +68,26 @@ export function AchievementLeaderboard({ householdId }: AchievementLeaderboardPr
     }
   };
 
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+          <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+        <button
+          onClick={() => loadLeaderboard(false)}
+          className="mt-3 text-sm text-red-600 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="animate-pulse space-y-4">
+      <div className="animate-pulse space-y-4" aria-label="Loading leaderboard">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg" />
         ))}
@@ -75,8 +105,13 @@ export function AchievementLeaderboard({ householdId }: AchievementLeaderboardPr
           <Trophy className="w-5 h-5 text-yellow-500" />
           Achievement Leaderboard
         </h3>
-        <button onClick={loadLeaderboard} className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400">
-          <RefreshCw className="w-5 h-5" />
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
+          aria-label="Refresh leaderboard"
+        >
+          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
         </button>
       </div>
 

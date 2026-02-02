@@ -2,6 +2,7 @@
  * Achievement Showcase - F8.3
  * Display and share achievements, badges, and accomplishments
  */
+import { z } from 'zod';
 
 // Achievement categories
 export type AchievementCategory =
@@ -502,3 +503,42 @@ export function getTitleForLevel(level: number): string {
   };
   return titles[Math.min(level, 10)] || 'Ultimate Champion';
 }
+
+// Zod validation schemas
+export const AchievementCategorySchema = z.enum([
+  'milestones',
+  'streaks',
+  'challenges',
+  'special',
+  'seasonal',
+  'social',
+  'mastery',
+]);
+
+export const UpdateShowcaseRequestSchema = z.object({
+  featuredAchievementIds: z.array(z.string()).max(5).optional(),
+  title: z.string().min(1).max(50).optional(),
+});
+
+export const ShareAchievementRequestSchema = z.object({
+  achievementId: z.string().min(1),
+  message: z.string().max(500).optional(),
+});
+
+export const ReactToShareRequestSchema = z.object({
+  emoji: z.string().min(1).max(10), // Single emoji or short emoji sequence
+});
+
+export const AchievementQuerySchema = z.object({
+  memberId: z.string().optional(),
+  category: AchievementCategorySchema.optional(),
+});
+
+export const LeaderboardQuerySchema = z.object({
+  timeframe: z.enum(['week', 'month', 'all-time']).optional(),
+});
+
+export const FeedQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.number().min(1).max(50).optional(),
+});
