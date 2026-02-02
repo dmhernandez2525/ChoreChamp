@@ -10,6 +10,7 @@ import { activityRoutes } from './activity';
 import { reportsRoutes } from './reports';
 import { notificationRoutes } from './notifications';
 import { multiHouseholdRoutes } from './multi-household';
+import { tradeRoutes } from './trades';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -28,6 +29,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(bossBattleRoutes, { prefix: '/:householdId/boss-battles' });
       householdApi.register(activityRoutes, { prefix: '/:householdId/activity' });
       householdApi.register(reportsRoutes, { prefix: '/:householdId/reports' });
+      householdApi.register(tradeRoutes, { prefix: '/:householdId/trades' });
     });
 
     // Chore templates (public)

@@ -7,3 +7,4 @@ export * from './completions';
 export * from './gamification';
 export * from './rewards';
 export * from './notifications';
+export * from './trades';
