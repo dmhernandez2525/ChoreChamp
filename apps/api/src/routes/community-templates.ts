@@ -523,7 +523,7 @@ export async function communityTemplateRoutes(fastify: FastifyInstance) {
 
     if (isFavorite) {
       favorites.delete(templateId);
-      template.favorites--;
+      template.favorites = Math.max(0, template.favorites - 1);
     } else {
       favorites.add(templateId);
       template.favorites++;

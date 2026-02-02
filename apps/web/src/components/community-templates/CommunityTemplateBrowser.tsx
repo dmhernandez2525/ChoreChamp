@@ -144,9 +144,9 @@ export function CommunityTemplateBrowser({
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" role="alert">
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-          <AlertTriangle className="w-5 h-5" />
+          <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
         </div>
         <button
@@ -175,8 +175,9 @@ export function CommunityTemplateBrowser({
           <button
             onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
           >
-            {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
+            {viewMode === 'grid' ? <List className="w-5 h-5" aria-hidden="true" /> : <Grid className="w-5 h-5" aria-hidden="true" />}
           </button>
           <button
             onClick={handleRefresh}
@@ -307,7 +308,7 @@ export function CommunityTemplateBrowser({
                   <span className="text-xs text-indigo-600 dark:text-indigo-400">
                     {collection.templates.length} templates
                   </span>
-                  <ChevronRight className="w-4 h-4 text-indigo-400" />
+                  <ChevronRight className="w-4 h-4 text-indigo-400" aria-hidden="true" />
                 </div>
               </div>
             ))}
@@ -380,7 +381,7 @@ export function CommunityTemplateBrowser({
 
       {templates.length === 0 && !isLoading && (
         <div className="text-center py-12">
-          <Search className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <Search className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" aria-hidden="true" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No templates found</h3>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Try adjusting your search or filters
