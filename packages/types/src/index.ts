@@ -26,3 +26,4 @@ export * from './virtual-pet';
 export * from './mini-games';
 export * from './collectible-cards';
 export * from './story-mode';
+export * from './smart-home';
