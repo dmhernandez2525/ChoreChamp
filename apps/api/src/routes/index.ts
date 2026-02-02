@@ -13,6 +13,7 @@ import { multiHouseholdRoutes } from './multi-household';
 import { tradeRoutes } from './trades';
 import { allowanceRoutes } from './allowance';
 import { dashboardRoutes } from './dashboard';
+import { ageAppropriateRoutes } from './age-appropriate';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -34,6 +35,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(tradeRoutes, { prefix: '/:householdId/trades' });
       householdApi.register(allowanceRoutes, { prefix: '/:householdId/allowance' });
       householdApi.register(dashboardRoutes, { prefix: '/:householdId/dashboard' });
+      householdApi.register(ageAppropriateRoutes, { prefix: '/:householdId/age-appropriate' });
     });
 
     // Chore templates (public)
