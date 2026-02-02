@@ -551,19 +551,38 @@ export async function difficultyCalibrationRoutes(fastify: FastifyInstance) {
   fastify.get('/history', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId } = request.params as { householdId: string };
-    const { limit = 20 } = request.query as { limit?: number };
+    try {
+      const { user } = request as AuthenticatedRequest;
+      const { householdId } = request.params as { householdId: string };
+      const queryParams = request.query as { limit?: string };
 
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this household',
+      // Validate pagination
+      const MAX_LIMIT = 100;
+      const DEFAULT_LIMIT = 20;
+      const limitNum = Math.min(
+        Math.max(1, parseInt(queryParams.limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+        MAX_LIMIT
+      );
+
+      const membership = await verifyMembership(user.id, householdId);
+      if (!membership) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'You are not a member of this household',
+        });
+      }
+
+      const history = calibrationHistory.get(householdId) || [];
+      return reply.send({
+        history: history.slice(0, limitNum),
+        limit: limitNum,
+      });
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch calibration history');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch calibration history',
       });
     }
-
-    const history = calibrationHistory.get(householdId) || [];
-    return history.slice(0, limit);
   });
 }
