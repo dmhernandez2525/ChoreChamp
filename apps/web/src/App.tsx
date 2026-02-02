@@ -27,6 +27,8 @@ import BossBattle from './pages/BossBattle';
 import NotificationCenter from './pages/NotificationCenter';
 import Activity from './pages/Activity';
 import Reports from './pages/Reports';
+import MemberCharacter from './pages/MemberCharacter';
+import MemberPets from './pages/MemberPets';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -279,6 +281,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Reports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/members/:memberId/character"
+        element={
+          <ProtectedRoute>
+            <MemberCharacter />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/members/:memberId/pets"
+        element={
+          <ProtectedRoute>
+            <MemberPets />
           </ProtectedRoute>
         }
       />
