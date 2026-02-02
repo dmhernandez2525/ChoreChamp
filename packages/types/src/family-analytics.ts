@@ -2,6 +2,7 @@
  * Family Analytics & Insights - F8.5
  * Comprehensive analytics and insights for household chore management
  */
+import { z } from 'zod';
 
 // Time periods for analytics
 export type AnalyticsPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'all-time';
@@ -240,6 +241,28 @@ export interface PeriodComparison {
   };
   insights: string[];
 }
+
+// Zod validation schemas
+const AnalyticsPeriodSchema = z.enum(['day', 'week', 'month', 'quarter', 'year', 'all-time']);
+const ExportFormatSchema = z.enum(['pdf', 'csv', 'json']);
+const ExportSectionSchema = z.enum(['overview', 'members', 'trends', 'chores', 'engagement']);
+
+export const GetAnalyticsRequestSchema = z.object({
+  period: AnalyticsPeriodSchema.optional(),
+  memberIds: z.array(z.string().uuid()).optional(),
+  includeRecommendations: z.boolean().optional(),
+});
+
+export const ExportAnalyticsRequestSchema = z.object({
+  format: ExportFormatSchema,
+  period: AnalyticsPeriodSchema,
+  sections: z.array(ExportSectionSchema).min(1),
+});
+
+export const ComparePeriodsRequestSchema = z.object({
+  period1: AnalyticsPeriodSchema.optional(),
+  period2: AnalyticsPeriodSchema.optional(),
+});
 
 // Helper constants
 export const ANALYTICS_PERIODS: { value: AnalyticsPeriod; label: string; days: number }[] = [
