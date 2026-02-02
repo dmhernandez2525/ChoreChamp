@@ -18,6 +18,7 @@ import { aiSchedulingRoutes } from './ai-scheduling';
 import { reminderRoutes } from './reminders';
 import { voiceAssistantRoutes } from './voice-assistant';
 import { difficultyCalibrationRoutes } from './difficulty-calibration';
+import { streakProtectionRoutes } from './streak-protection';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -44,6 +45,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(reminderRoutes, { prefix: '/:householdId/reminders' });
       householdApi.register(voiceAssistantRoutes, { prefix: '/:householdId/voice' });
       householdApi.register(difficultyCalibrationRoutes, { prefix: '/:householdId/calibration' });
+      householdApi.register(streakProtectionRoutes, { prefix: '/:householdId/streak-protection' });
     });
 
     // Chore templates (public)

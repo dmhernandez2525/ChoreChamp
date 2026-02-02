@@ -84,6 +84,11 @@ import type {
   UpdateCalibrationSettingsRequest,
   ApplyCalibrationRequest,
   BulkApplyCalibrationRequest,
+  StreakProtectionSettings,
+  HouseholdStreakSummary,
+  StreakPrediction,
+  StreakAnalytics,
+  UpdateProtectionSettingsRequest,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1201,6 +1206,66 @@ class ApiClient {
   ): Promise<CalibrationHistoryEntry[]> {
     const query = limit ? `?limit=${limit}` : '';
     return this.request(`/households/${householdId}/calibration/history${query}`);
+  }
+
+  // ==================== Streak Protection ====================
+
+  async getStreakProtectionSummary(householdId: string): Promise<HouseholdStreakSummary> {
+    return this.request(`/households/${householdId}/streak-protection`);
+  }
+
+  async getStreakPrediction(
+    householdId: string,
+    memberId: string
+  ): Promise<StreakPrediction> {
+    return this.request(`/households/${householdId}/streak-protection/member/${memberId}`);
+  }
+
+  async getStreakProtectionSettings(householdId: string): Promise<StreakProtectionSettings> {
+    return this.request(`/households/${householdId}/streak-protection/settings`);
+  }
+
+  async updateStreakProtectionSettings(
+    householdId: string,
+    settings: UpdateProtectionSettingsRequest
+  ): Promise<StreakProtectionSettings> {
+    return this.request(`/households/${householdId}/streak-protection/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async useStreakFreeze(
+    householdId: string,
+    memberId: string,
+    reason?: string
+  ): Promise<{
+    success: boolean;
+    member: unknown;
+    freezesRemaining: number;
+    message: string;
+  }> {
+    return this.request(`/households/${householdId}/streak-protection/use-freeze`, {
+      method: 'POST',
+      body: JSON.stringify({ memberId, reason }),
+    });
+  }
+
+  async dismissStreakAlert(
+    householdId: string,
+    alertId: string
+  ): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/streak-protection/dismiss-alert`, {
+      method: 'POST',
+      body: JSON.stringify({ alertId }),
+    });
+  }
+
+  async getStreakAnalytics(
+    householdId: string,
+    memberId: string
+  ): Promise<StreakAnalytics> {
+    return this.request(`/households/${householdId}/streak-protection/analytics/${memberId}`);
   }
 }
 
