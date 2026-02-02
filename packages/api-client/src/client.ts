@@ -113,6 +113,10 @@ import type {
   AchievementCategory,
   UpdateShowcaseRequest,
   ShareAchievementRequest,
+  SeasonalEvent,
+  EventCalendar,
+  EventParticipation,
+  HouseholdEventStats,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -1575,6 +1579,60 @@ class ApiClient {
     householdId: string
   ): Promise<{ shares: (AchievementShare & { achievement?: Achievement })[] }> {
     return this.request(`/households/${householdId}/achievements/shares`);
+  }
+
+  // ===== Seasonal Events =====
+
+  async getEventCalendar(householdId: string): Promise<EventCalendar> {
+    return this.request(`/households/${householdId}/events`);
+  }
+
+  async getEvent(householdId: string, eventId: string): Promise<{ event: SeasonalEvent }> {
+    return this.request(`/households/${householdId}/events/${eventId}`);
+  }
+
+  async joinEvent(
+    householdId: string,
+    eventId: string
+  ): Promise<{ success: boolean; participation: EventParticipation }> {
+    return this.request(`/households/${householdId}/events/${eventId}/join`, {
+      method: 'POST',
+    });
+  }
+
+  async updateEventProgress(
+    householdId: string,
+    eventId: string,
+    challengeId: string,
+    increment: number
+  ): Promise<{
+    success: boolean;
+    challengeProgress: { challengeId: string; current: number; target: number };
+    challengeCompleted: boolean;
+    totalProgress: EventParticipation['progress'];
+  }> {
+    return this.request(`/households/${householdId}/events/${eventId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify({ challengeId, increment }),
+    });
+  }
+
+  async claimEventReward(
+    householdId: string,
+    eventId: string,
+    rewardId: string
+  ): Promise<{ success: boolean; rewardId: string }> {
+    return this.request(`/households/${householdId}/events/${eventId}/claim`, {
+      method: 'POST',
+      body: JSON.stringify({ rewardId }),
+    });
+  }
+
+  async getEventLeaderboard(
+    householdId: string,
+    eventId: string
+  ): Promise<HouseholdEventStats> {
+    return this.request(`/households/${householdId}/events/${eventId}/leaderboard`);
   }
 }
 

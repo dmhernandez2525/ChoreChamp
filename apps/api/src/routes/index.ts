@@ -22,6 +22,7 @@ import { streakProtectionRoutes } from './streak-protection';
 import { familyChallengeRoutes } from './family-challenges';
 import { communityTemplateRoutes } from './community-templates';
 import { achievementShowcaseRoutes } from './achievement-showcase';
+import { seasonalEventRoutes } from './seasonal-events';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -51,6 +52,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(streakProtectionRoutes, { prefix: '/:householdId/streak-protection' });
       householdApi.register(familyChallengeRoutes, { prefix: '/:householdId/challenges' });
       householdApi.register(achievementShowcaseRoutes, { prefix: '/:householdId/achievements' });
+      householdApi.register(seasonalEventRoutes, { prefix: '/:householdId/events' });
     });
 
     // Chore templates (public)
