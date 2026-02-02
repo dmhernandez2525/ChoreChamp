@@ -25,3 +25,4 @@ export * from './rpg-character';
 export * from './virtual-pet';
 export * from './mini-games';
 export * from './collectible-cards';
+export * from './story-mode';
