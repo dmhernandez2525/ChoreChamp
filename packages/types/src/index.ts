@@ -7,3 +7,4 @@ export * from './chore';
 export * from './gamification';
 export * from './reward';
 export * from './notification';
+export * from './trade';
