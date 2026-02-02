@@ -17,3 +17,4 @@ export * from './story-mode';
 export * from './smart-home';
 export * from './chore-detection';
 export * from './qr-verification';
+export * from './geofencing';
