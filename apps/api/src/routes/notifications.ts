@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../lib/db';
 import {
   deviceTokens,
@@ -7,6 +7,10 @@ import {
   notificationLog,
 } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+
+// Pagination constants
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 50;
 
 export async function notificationRoutes(fastify: FastifyInstance) {
   // Register push token
@@ -153,21 +157,37 @@ export async function notificationRoutes(fastify: FastifyInstance) {
   fastify.get('/history', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { limit = 50, offset = 0 } = request.query as {
-      limit?: number;
-      offset?: number;
-    };
+    try {
+      const { user } = request as AuthenticatedRequest;
+      const queryParams = request.query as { limit?: string; offset?: string };
 
-    const notifications = await db
-      .select()
-      .from(notificationLog)
-      .where(eq(notificationLog.userId, user.id))
-      .orderBy(notificationLog.createdAt)
-      .limit(Number(limit))
-      .offset(Number(offset));
+      // Validate pagination
+      const limitNum = Math.min(
+        Math.max(1, parseInt(queryParams.limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+        MAX_LIMIT
+      );
+      const offsetNum = Math.max(0, parseInt(queryParams.offset || '0', 10) || 0);
 
-    return reply.send(notifications);
+      const notifications = await db
+        .select()
+        .from(notificationLog)
+        .where(eq(notificationLog.userId, user.id))
+        .orderBy(desc(notificationLog.createdAt))
+        .limit(limitNum)
+        .offset(offsetNum);
+
+      return reply.send({
+        notifications,
+        limit: limitNum,
+        offset: offsetNum,
+      });
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch notification history');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch notification history',
+      });
+    }
   });
 
   // Mark notification as clicked (for analytics)

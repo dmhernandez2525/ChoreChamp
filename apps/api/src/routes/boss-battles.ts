@@ -5,6 +5,10 @@ import { db } from '../lib/db';
 import { bossBattles, members } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 
+// Pagination constants
+const MAX_LIMIT = 50;
+const DEFAULT_LIMIT = 10;
+
 // Validation schemas
 const createBossBattleSchema = z.object({
   name: z.string().min(1).max(100),
@@ -86,26 +90,43 @@ export async function bossBattleRoutes(fastify: FastifyInstance) {
   fastify.get('/history', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId } = request.params as { householdId: string };
-    const { limit = 10 } = request.query as { limit?: number };
+    try {
+      const { user } = request as AuthenticatedRequest;
+      const { householdId } = request.params as { householdId: string };
+      const queryParams = request.query as { limit?: string };
 
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this household',
+      // Validate pagination
+      const limitNum = Math.min(
+        Math.max(1, parseInt(queryParams.limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+        MAX_LIMIT
+      );
+
+      const membership = await verifyMembership(user.id, householdId);
+      if (!membership) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'You are not a member of this household',
+        });
+      }
+
+      const battles = await db
+        .select()
+        .from(bossBattles)
+        .where(eq(bossBattles.householdId, householdId))
+        .orderBy(desc(bossBattles.createdAt))
+        .limit(limitNum);
+
+      return reply.send({
+        battles,
+        limit: limitNum,
+      });
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch boss battle history');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch boss battle history',
       });
     }
-
-    const battles = await db
-      .select()
-      .from(bossBattles)
-      .where(eq(bossBattles.householdId, householdId))
-      .orderBy(desc(bossBattles.createdAt))
-      .limit(Number(limit));
-
-    return reply.send(battles);
   });
 
   // Create new boss battle (parents only)
