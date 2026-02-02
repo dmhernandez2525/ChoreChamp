@@ -969,17 +969,33 @@ export async function smartHomeRoutes(app: FastifyInstance) {
       }),
     },
   }, async (request, reply) => {
-    const { automationId } = request.params as { automationId: string };
-    const { limit } = request.query as { limit?: string };
+    try {
+      const { automationId } = request.params as { automationId: string };
+      const { limit } = request.query as { limit?: string };
 
-    const logs = await db
-      .select()
-      .from(automationLogs)
-      .where(eq(automationLogs.automationId, automationId))
-      .orderBy(desc(automationLogs.triggeredAt))
-      .limit(Number(limit) || 50);
+      // Validate pagination
+      const MAX_LIMIT = 100;
+      const DEFAULT_LIMIT = 50;
+      const limitNum = Math.min(
+        Math.max(1, parseInt(limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+        MAX_LIMIT
+      );
 
-    return reply.send({ logs });
+      const logs = await db
+        .select()
+        .from(automationLogs)
+        .where(eq(automationLogs.automationId, automationId))
+        .orderBy(desc(automationLogs.triggeredAt))
+        .limit(limitNum);
+
+      return reply.send({ logs, limit: limitNum });
+    } catch (error) {
+      app.log.error(error, 'Failed to fetch automation logs');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch automation logs',
+      });
+    }
   });
 
   // --- Zone Management ---
