@@ -29,6 +29,10 @@ import {
 } from '@chorechamp/gamification';
 import type { PetAction, PetStats } from '@chorechamp/types';
 
+// Constants for pagination
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 50;
+
 // Validation schemas
 const adoptPetSchema = z.object({
   name: z.string().min(1).max(50),
@@ -230,16 +234,28 @@ export async function virtualPetRoutes(fastify: FastifyInstance) {
   fastify.get('/accessories', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { category } = request.query as { category?: string };
+    try {
+      const { category } = request.query as { category?: string };
 
-    let query = db.select().from(petAccessories);
+      const accessories = category
+        ? await db
+            .select()
+            .from(petAccessories)
+            .where(eq(petAccessories.category, category))
+            .orderBy(petAccessories.category, petAccessories.sortOrder)
+        : await db
+            .select()
+            .from(petAccessories)
+            .orderBy(petAccessories.category, petAccessories.sortOrder);
 
-    if (category) {
-      query = query.where(eq(petAccessories.category, category)) as typeof query;
+      return reply.send(accessories);
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch pet accessories');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch pet accessories',
+      });
     }
-
-    const accessories = await query.orderBy(petAccessories.category, petAccessories.sortOrder);
-    return reply.send(accessories);
   });
 
   // Get all pets for a member
@@ -1344,36 +1360,55 @@ export async function virtualPetRoutes(fastify: FastifyInstance) {
   fastify.get('/:petId/events', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId, petId } = request.params as { householdId: string; petId: string };
-    const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number };
+    try {
+      const { user } = request as AuthenticatedRequest;
+      const { householdId, petId } = request.params as { householdId: string; petId: string };
+      const queryParams = request.query as { limit?: string; offset?: string };
 
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this household',
+      // Validate and sanitize pagination params
+      const limitNum = Math.min(
+        Math.max(1, parseInt(queryParams.limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+        MAX_LIMIT
+      );
+      const offsetNum = Math.max(0, parseInt(queryParams.offset || '0', 10) || 0);
+
+      const membership = await verifyMembership(user.id, householdId);
+      if (!membership) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'You are not a member of this household',
+        });
+      }
+
+      const events = await db
+        .select()
+        .from(petEvents)
+        .where(eq(petEvents.petId, petId))
+        .orderBy(desc(petEvents.createdAt))
+        .limit(limitNum)
+        .offset(offsetNum);
+
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(petEvents)
+        .where(eq(petEvents.petId, petId));
+
+      const total = Number(countResult?.count || 0);
+
+      return reply.send({
+        events,
+        total,
+        limit: limitNum,
+        offset: offsetNum,
+        hasMore: offsetNum + events.length < total,
+      });
+    } catch (error) {
+      fastify.log.error(error, 'Failed to fetch pet events');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to fetch pet events',
       });
     }
-
-    const events = await db
-      .select()
-      .from(petEvents)
-      .where(eq(petEvents.petId, petId))
-      .orderBy(desc(petEvents.createdAt))
-      .limit(Number(limit))
-      .offset(Number(offset));
-
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(petEvents)
-      .where(eq(petEvents.petId, petId));
-
-    return reply.send({
-      events,
-      total: Number(countResult?.count || 0),
-      hasMore: Number(offset) + events.length < Number(countResult?.count || 0),
-    });
   });
 
   // Get all household pets (for playdate selection, etc.)
