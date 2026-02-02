@@ -14,6 +14,7 @@ import { tradeRoutes } from './trades';
 import { allowanceRoutes } from './allowance';
 import { dashboardRoutes } from './dashboard';
 import { ageAppropriateRoutes } from './age-appropriate';
+import { aiSchedulingRoutes } from './ai-scheduling';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -36,6 +37,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(allowanceRoutes, { prefix: '/:householdId/allowance' });
       householdApi.register(dashboardRoutes, { prefix: '/:householdId/dashboard' });
       householdApi.register(ageAppropriateRoutes, { prefix: '/:householdId/age-appropriate' });
+      householdApi.register(aiSchedulingRoutes, { prefix: '/:householdId/ai-schedule' });
     });
 
     // Chore templates (public)

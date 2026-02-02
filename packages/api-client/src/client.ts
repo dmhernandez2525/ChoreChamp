@@ -55,6 +55,14 @@ import type {
   DashboardQueryParams,
   AgeGuideline,
   AgeRecommendations,
+  AISchedule,
+  GenerateScheduleRequest,
+  ApplyScheduleRequest,
+  ApplyScheduleResult,
+  WorkloadData,
+  CompletionPattern,
+  ScheduleAnalytics,
+  ScheduleSuggestion,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -920,6 +928,66 @@ class ApiClient {
     };
   }> {
     return this.request(`/households/${householdId}/age-appropriate/bulk-assess/${memberId}`);
+  }
+
+  // ==================== AI Scheduling ====================
+
+  async generateAISchedule(
+    householdId: string,
+    params?: GenerateScheduleRequest
+  ): Promise<AISchedule> {
+    return this.request(`/households/${householdId}/ai-schedule/generate`, {
+      method: 'POST',
+      body: JSON.stringify(params || {}),
+    });
+  }
+
+  async applyAISchedule(
+    householdId: string,
+    scheduleId: string,
+    suggestionIds: string[],
+    suggestions: ScheduleSuggestion[]
+  ): Promise<ApplyScheduleResult> {
+    return this.request(`/households/${householdId}/ai-schedule/apply`, {
+      method: 'POST',
+      body: JSON.stringify({
+        scheduleId,
+        suggestionIds,
+        suggestions,
+      } as ApplyScheduleRequest & { suggestions: ScheduleSuggestion[] }),
+    });
+  }
+
+  async getWorkloadAnalysis(
+    householdId: string,
+    params?: { period?: string; startDate?: string }
+  ): Promise<{
+    period: { start: string; end: string };
+    workload: WorkloadData[];
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.set('period', params.period);
+    if (params?.startDate) queryParams.set('startDate', params.startDate);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/households/${householdId}/ai-schedule/workload${query}`);
+  }
+
+  async getMemberPatterns(
+    householdId: string,
+    memberId: string
+  ): Promise<CompletionPattern> {
+    return this.request(`/households/${householdId}/ai-schedule/patterns/${memberId}`);
+  }
+
+  async getScheduleAnalytics(
+    householdId: string,
+    params?: { period?: string; startDate?: string }
+  ): Promise<ScheduleAnalytics> {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.set('period', params.period);
+    if (params?.startDate) queryParams.set('startDate', params.startDate);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/households/${householdId}/ai-schedule/analytics${query}`);
   }
 }
 
