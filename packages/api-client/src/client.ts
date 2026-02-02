@@ -36,6 +36,12 @@ import type {
   CaregiverPermissions,
   UserHouseholdsResponse,
   CrossHouseholdPointsSummary,
+  CreateTradeRequest,
+  RespondToTradeRequest,
+  ApproveTradeRequest,
+  TradeWithDetails,
+  TradeListResponse,
+  TradeStatsResponse,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -695,6 +701,57 @@ class ApiClient {
     return this.request(
       `/${householdId}/members/${memberId}/cross-household-summary`
     );
+  }
+
+  // ===== Chore Trades =====
+  async getTrades(householdId: string): Promise<TradeListResponse> {
+    return this.request(`/households/${householdId}/trades`);
+  }
+
+  async getTrade(householdId: string, tradeId: string): Promise<TradeWithDetails> {
+    return this.request(`/households/${householdId}/trades/${tradeId}`);
+  }
+
+  async createTrade(
+    householdId: string,
+    data: CreateTradeRequest
+  ): Promise<TradeWithDetails> {
+    return this.request(`/households/${householdId}/trades`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async respondToTrade(
+    householdId: string,
+    tradeId: string,
+    data: RespondToTradeRequest
+  ): Promise<TradeWithDetails> {
+    return this.request(`/households/${householdId}/trades/${tradeId}/respond`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async approveTrade(
+    householdId: string,
+    tradeId: string,
+    data: ApproveTradeRequest
+  ): Promise<TradeWithDetails> {
+    return this.request(`/households/${householdId}/trades/${tradeId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cancelTrade(householdId: string, tradeId: string): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/trades/${tradeId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getTradeStats(householdId: string): Promise<TradeStatsResponse> {
+    return this.request(`/households/${householdId}/trades/stats`);
   }
 }
 
