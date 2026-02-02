@@ -57,9 +57,9 @@ export function ChallengeDashboard({ householdId, onCreateChallenge }: Challenge
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" role="alert">
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-          <AlertTriangle className="w-5 h-5" />
+          <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
         </div>
         <button
@@ -137,7 +137,7 @@ export function ChallengeDashboard({ householdId, onCreateChallenge }: Challenge
 
       {overview.activeChallenges.length === 0 && (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <Trophy className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <Trophy className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" aria-hidden="true" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Active Challenges</h3>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Create a challenge to get started!</p>
         </div>
@@ -163,7 +163,7 @@ function StatCard({ icon: Icon, label, value, color }: {
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${colors[color]}`}>
-          <Icon className="w-5 h-5" />
+          <Icon className="w-5 h-5" aria-hidden="true" />
         </div>
         <div>
           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>

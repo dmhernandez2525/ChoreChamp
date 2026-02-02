@@ -404,6 +404,16 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Not a participant' });
     }
 
+    // Authorization: Only the participant themselves or parents/admins can update progress
+    const isOwnProgress = body.memberId === membership.id;
+    const isParentOrAdmin = membership.role === 'parent' || membership.role === 'admin';
+    if (!isOwnProgress && !isParentOrAdmin) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You can only update your own progress',
+      });
+    }
+
     participant.contribution += body.contribution;
     participant.progress = Math.min(100, (participant.contribution / challenge.goal.target) * 100);
     challenge.goal.current += body.contribution;
