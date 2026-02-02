@@ -50,6 +50,9 @@ import type {
   CreateAllowanceSettingsRequest,
   UpdateAllowanceSettingsRequest,
   MarkPayoutPaidRequest,
+  ParentDashboard,
+  MemberDashboardData,
+  DashboardQueryParams,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -828,6 +831,32 @@ class ApiClient {
     if (options?.limit) params.set('limit', options.limit.toString());
     const query = params.toString() ? `?${params.toString()}` : '';
     return this.request(`/households/${householdId}/allowance/payouts${query}`);
+  }
+
+  // ===== Parent Dashboard =====
+  async getParentDashboard(
+    householdId: string,
+    params?: DashboardQueryParams
+  ): Promise<ParentDashboard> {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.set('period', params.period);
+    if (params?.startDate) queryParams.set('startDate', params.startDate);
+    if (params?.endDate) queryParams.set('endDate', params.endDate);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/households/${householdId}/dashboard${query}`);
+  }
+
+  async getMemberDashboard(
+    householdId: string,
+    memberId: string,
+    params?: DashboardQueryParams
+  ): Promise<MemberDashboardData> {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.set('period', params.period);
+    if (params?.startDate) queryParams.set('startDate', params.startDate);
+    if (params?.endDate) queryParams.set('endDate', params.endDate);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/households/${householdId}/dashboard/member/${memberId}${query}`);
   }
 }
 
