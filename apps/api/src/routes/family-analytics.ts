@@ -7,13 +7,16 @@ import type {
   AnalyticsPeriod,
   MemberInsight,
   InsightRecommendation,
-  GetAnalyticsRequest,
-  ExportAnalyticsRequest,
   AnalyticsExport,
   PeriodComparison,
-  ComparePeriodsRequest,
 } from '@chorechamp/types';
-import { calculateFairnessScore, getPeriodDays } from '@chorechamp/types';
+import {
+  calculateFairnessScore,
+  getPeriodDays,
+  GetAnalyticsRequestSchema,
+  ExportAnalyticsRequestSchema,
+  ComparePeriodsRequestSchema,
+} from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomUUID } from 'crypto';
 
@@ -252,7 +255,16 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const query = request.query as GetAnalyticsRequest;
+
+    const parseResult = GetAnalyticsRequestSchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid query parameters',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const query = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -310,7 +322,16 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/compare', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const query = request.query as ComparePeriodsRequest;
+
+    const parseResult = ComparePeriodsRequestSchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid query parameters',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const query = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership || (membership.role !== 'parent' && membership.role !== 'admin')) {
@@ -369,7 +390,16 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
   fastify.post('/export', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const body = request.body as ExportAnalyticsRequest;
+
+    const parseResult = ExportAnalyticsRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Invalid request body',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const body = parseResult.data;
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership || (membership.role !== 'parent' && membership.role !== 'admin')) {

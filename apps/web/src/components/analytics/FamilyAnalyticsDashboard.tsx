@@ -32,11 +32,16 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
   const [analytics, setAnalytics] = useState<FamilyAnalytics | null>(null);
   const [period, setPeriod] = useState<AnalyticsPeriod>('month');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadAnalytics = useCallback(async () => {
+  const loadAnalytics = useCallback(async (refresh = false) => {
     try {
-      setIsLoading(true);
+      if (refresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
       const data = await apiClient.getFamilyAnalytics(householdId, { period });
       setAnalytics(data);
@@ -45,11 +50,16 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
       setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [householdId, period]);
 
   useEffect(() => {
-    loadAnalytics();
+    loadAnalytics(false);
+  }, [loadAnalytics]);
+
+  const handleRefresh = useCallback(() => {
+    loadAnalytics(true);
   }, [loadAnalytics]);
 
   const handleExport = async (format: 'pdf' | 'csv' | 'json') => {
@@ -68,12 +78,12 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" role="alert">
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-          <AlertTriangle className="w-5 h-5" />
+          <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           <span>{error}</span>
         </div>
-        <button onClick={loadAnalytics} className="mt-3 text-sm text-red-600 hover:underline">
+        <button onClick={handleRefresh} className="mt-3 text-sm text-red-600 hover:underline">
           Try again
         </button>
       </div>
@@ -114,8 +124,13 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={loadAnalytics} className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400">
-            <RefreshCw className="w-5 h-5" />
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 disabled:opacity-50"
+            aria-label="Refresh analytics"
+          >
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
           <div className="relative">
             <button
@@ -272,7 +287,14 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
               {analytics.choreAnalysis.choreDistribution.map((dist) => (
                 <div key={dist.memberId} className="flex items-center gap-2">
                   <span className="text-sm text-gray-700 dark:text-gray-300 w-24 truncate">{dist.memberName}</span>
-                  <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={dist.percentage}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${dist.memberName}'s workload: ${dist.percentage}%`}
+                  >
                     <div
                       className="h-full bg-blue-500 rounded-full"
                       style={{ width: `${dist.percentage}%` }}
