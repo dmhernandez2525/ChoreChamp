@@ -20,6 +20,7 @@ import { voiceAssistantRoutes } from './voice-assistant';
 import { difficultyCalibrationRoutes } from './difficulty-calibration';
 import { streakProtectionRoutes } from './streak-protection';
 import { familyChallengeRoutes } from './family-challenges';
+import { communityTemplateRoutes } from './community-templates';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -52,6 +53,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
     // Chore templates (public)
     api.register(templateRoutes, { prefix: '/chore-templates' });
+
+    // Community templates
+    api.register(communityTemplateRoutes, { prefix: '/community-templates' });
 
     // Notification routes
     api.register(notificationRoutes, { prefix: '/notifications' });
