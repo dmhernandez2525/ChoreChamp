@@ -2,6 +2,7 @@
  * Seasonal Events - F8.4
  * Holiday and seasonal themed events with special challenges and rewards
  */
+import { z } from 'zod';
 
 // Event types
 export type SeasonalEventType =
@@ -410,3 +411,17 @@ export function formatEventDate(date: string): string {
     year: 'numeric',
   });
 }
+
+// Zod validation schemas
+export const JoinEventRequestSchema = z.object({
+  eventId: z.string().min(1),
+});
+
+export const ClaimRewardRequestSchema = z.object({
+  rewardId: z.string().min(1),
+});
+
+export const UpdateChallengeProgressRequestSchema = z.object({
+  challengeId: z.string().min(1),
+  increment: z.number().min(1).max(1000),
+});
