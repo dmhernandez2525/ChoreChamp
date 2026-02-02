@@ -22,3 +22,4 @@ export * from './screen-time';
 export * from './homework';
 export * from './educational-chores';
 export * from './report-cards';
+export * from './skill-building';
