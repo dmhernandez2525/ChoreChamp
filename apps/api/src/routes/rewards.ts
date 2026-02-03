@@ -497,50 +497,55 @@ export async function rewardRoutes(fastify: FastifyInstance) {
 
     const refundedBalance = (member.pointsCurrent || 0) + redemption.pointsSpent;
 
-    const [updated] = await db
-      .update(rewardRedemptions)
-      .set({
-        status: 'rejected',
-        rejectedBy: membership.id,
-        rejectedAt: new Date(),
-        rejectionReason: body.reason,
-      })
-      .where(eq(rewardRedemptions.id, redemption.id))
-      .returning();
+    // Wrap all rejection operations in a transaction for atomicity
+    const updated = await db.transaction(async (tx) => {
+      const [rejectedRedemption] = await tx
+        .update(rewardRedemptions)
+        .set({
+          status: 'rejected',
+          rejectedBy: membership.id,
+          rejectedAt: new Date(),
+          rejectionReason: body.reason,
+        })
+        .where(eq(rewardRedemptions.id, redemption.id))
+        .returning();
 
-    await db
-      .update(members)
-      .set({
-        pointsCurrent: refundedBalance,
-      })
-      .where(eq(members.id, member.id));
+      await tx
+        .update(members)
+        .set({
+          pointsCurrent: refundedBalance,
+        })
+        .where(eq(members.id, member.id));
 
-    await db
-      .insert(pointTransactions)
-      .values({
-        householdId,
-        memberId: member.id,
-        amount: redemption.pointsSpent,
-        balanceAfter: refundedBalance,
-        transactionType: 'reward_refund',
-        referenceId: redemption.id,
-        referenceType: 'reward',
-        description: `Refunded reward redemption`,
-      });
+      await tx
+        .insert(pointTransactions)
+        .values({
+          householdId,
+          memberId: member.id,
+          amount: redemption.pointsSpent,
+          balanceAfter: refundedBalance,
+          transactionType: 'reward_refund',
+          referenceId: redemption.id,
+          referenceType: 'reward',
+          description: `Refunded reward redemption`,
+        });
 
-    if (redemption.rewardId) {
-      const [reward] = await db
-        .select()
-        .from(rewards)
-        .where(eq(rewards.id, redemption.rewardId));
+      if (redemption.rewardId) {
+        const [reward] = await tx
+          .select()
+          .from(rewards)
+          .where(eq(rewards.id, redemption.rewardId));
 
-      if (reward?.quantityRemaining !== null) {
-        await db
-          .update(rewards)
-          .set({ quantityRemaining: sql`${rewards.quantityRemaining} + 1` })
-          .where(eq(rewards.id, reward.id));
+        if (reward?.quantityRemaining !== null) {
+          await tx
+            .update(rewards)
+            .set({ quantityRemaining: sql`${rewards.quantityRemaining} + 1` })
+            .where(eq(rewards.id, reward.id));
+        }
       }
-    }
+
+      return rejectedRedemption;
+    });
 
     return updated;
   });
