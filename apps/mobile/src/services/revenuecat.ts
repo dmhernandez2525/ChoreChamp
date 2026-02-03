@@ -18,7 +18,7 @@ const resolveApiKey = (): string | null => {
   return null;
 };
 
-const resolveTierFromEntitlements = (active: Record<string, PurchasesEntitlementInfo>): SubscriptionTier | null => {
+const resolveTierFromEntitlements = (active: Record<string, PurchasesEntitlementInfo>): Exclude<SubscriptionTier, 'free'> | null => {
   if (active.premium) return 'premium';
   if (active.family) return 'family';
   return null;
@@ -77,7 +77,7 @@ export const syncRevenueCatSubscription = async (
   const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
   const activeEntitlements = customerInfo.entitlements.active;
   const tier = resolveTierFromEntitlements(activeEntitlements);
-  const selectedTier = tier || (fallbackTier && fallbackTier !== 'free' ? fallbackTier : null);
+  const selectedTier = tier || (fallbackTier && fallbackTier !== 'free' ? (fallbackTier as Exclude<SubscriptionTier, 'free'>) : null);
   if (!selectedTier) return;
 
   const entitlement = getActiveEntitlement(activeEntitlements);

@@ -294,7 +294,7 @@ export default function Subscription() {
                     ) : (
                       <Button
                         className="w-full"
-                        onClick={() => handleCheckout(plan.tier)}
+                        onClick={() => handleCheckout(plan.tier as 'family' | 'premium')}
                         disabled={isCurrent || createCheckout.isPending || !isParent}
                       >
                         {isCurrent ? 'Current Plan' : createCheckout.isPending ? 'Redirecting...' : 'Upgrade'}
