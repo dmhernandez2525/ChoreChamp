@@ -38,6 +38,7 @@ import { homeworkRoutes } from './homework';
 import { educationalChoreRoutes } from './educational-chores';
 import { reportCardRoutes } from './report-cards';
 import { skillBuildingRoutes } from './skill-building';
+import { schoolExtracurricularRoutes } from './school-extracurricular';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -83,6 +84,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(educationalChoreRoutes, { prefix: '/:householdId/educational' });
       householdApi.register(reportCardRoutes, { prefix: '/:householdId/report-cards' });
       householdApi.register(skillBuildingRoutes, { prefix: '/:householdId/skills' });
+      householdApi.register(schoolExtracurricularRoutes, { prefix: '/:householdId/school' });
     });
 
     // Chore templates (public)
