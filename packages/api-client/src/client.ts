@@ -123,7 +123,6 @@ import type {
   InsightRecommendation,
   PeriodComparison,
   AnalyticsExport,
-  SubscriptionPlan,
   SubscriptionPlansResponse,
   SubscriptionStatusResponse,
   CreateCheckoutSessionRequest,
