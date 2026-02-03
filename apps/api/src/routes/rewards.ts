@@ -57,18 +57,6 @@ function parseDate(value?: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-async function ensureRewardLimit(householdId: string, effectiveTier: 'free' | 'family' | 'premium') {
-  if (isTierAtLeast(effectiveTier, 'premium')) return;
-  const [rewardCount] = await db
-    .select({ count: count() })
-    .from(rewards)
-    .where(eq(rewards.householdId, householdId));
-
-  if ((rewardCount?.count || 0) >= MAX_FREE_REWARDS) {
-    throw new Error(`Free and Family plans can create up to ${MAX_FREE_REWARDS} rewards. Upgrade to Premium for unlimited rewards.`);
-  }
-}
-
 export async function rewardRoutes(fastify: FastifyInstance) {
   // List rewards
   fastify.get('/rewards', { preHandler: [requireAuth] }, async (request, reply) => {
@@ -125,32 +113,49 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const [household] = await db.select().from(households).where(eq(households.id, householdId));
     const effectiveTier = household ? getEffectiveTierForHousehold(household) : 'free';
 
-    try {
-      await ensureRewardLimit(householdId, effectiveTier);
-    } catch (error) {
-      return reply.status(403).send({ error: 'Forbidden', message: (error as Error).message });
-    }
-
     const availableFrom = parseDate(body.availableFrom);
     const availableUntil = parseDate(body.availableUntil);
 
-    const [reward] = await db
-      .insert(rewards)
-      .values({
-        householdId,
-        title: body.title,
-        description: body.description || null,
-        icon: body.icon || '🎁',
-        type: (body.type || 'custom') as RewardType,
-        pointCost: body.pointCost,
-        createdBy: membership.id,
-        quantity: body.quantity ?? null,
-        quantityRemaining: body.quantity ?? null,
-        availableFrom,
-        availableUntil,
-        isActive: true,
-      })
-      .returning();
+    // Wrap limit check and reward creation in a transaction to prevent race conditions
+    let reward;
+    try {
+      reward = await db.transaction(async (tx) => {
+        // Check limit inside transaction
+        if (!isTierAtLeast(effectiveTier, 'premium')) {
+          const [rewardCount] = await tx
+            .select({ count: count() })
+            .from(rewards)
+            .where(eq(rewards.householdId, householdId));
+
+          if ((rewardCount?.count || 0) >= MAX_FREE_REWARDS) {
+            throw new Error(`Free and Family plans can create up to ${MAX_FREE_REWARDS} rewards. Upgrade to Premium for unlimited rewards.`);
+          }
+        }
+
+        // Create reward inside same transaction
+        const [newReward] = await tx
+          .insert(rewards)
+          .values({
+            householdId,
+            title: body.title,
+            description: body.description || null,
+            icon: body.icon || '🎁',
+            type: (body.type || 'custom') as RewardType,
+            pointCost: body.pointCost,
+            createdBy: membership.id,
+            quantity: body.quantity ?? null,
+            quantityRemaining: body.quantity ?? null,
+            availableFrom,
+            availableUntil,
+            isActive: true,
+          })
+          .returning();
+
+        return newReward;
+      });
+    } catch (error) {
+      return reply.status(403).send({ error: 'Forbidden', message: (error as Error).message });
+    }
 
     return reply.status(201).send(reward);
   });
