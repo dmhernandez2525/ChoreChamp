@@ -96,11 +96,18 @@ export function isStatusEntitled(status: SubscriptionStatus): boolean {
 
 export function normalizeStatus(
   status: SubscriptionStatus | null | undefined,
-  gracePeriodEndsAt: Date | null
+  gracePeriodEndsAt: Date | string | null
 ): SubscriptionStatus {
   if (!status) return 'free';
   if (status === 'grace_period' && gracePeriodEndsAt) {
-    if (gracePeriodEndsAt.getTime() < Date.now()) {
+    // Defensive parsing in case database returns string instead of Date
+    const gracePeriod = gracePeriodEndsAt instanceof Date
+      ? gracePeriodEndsAt
+      : new Date(gracePeriodEndsAt);
+    if (Number.isNaN(gracePeriod.getTime())) {
+      return status;
+    }
+    if (gracePeriod.getTime() < Date.now()) {
       return 'expired';
     }
   }
@@ -110,7 +117,7 @@ export function normalizeStatus(
 export function getEffectiveTier(
   tier: SubscriptionTier,
   status: SubscriptionStatus,
-  gracePeriodEndsAt: Date | null
+  gracePeriodEndsAt: Date | string | null
 ): SubscriptionTier {
   const normalizedStatus = normalizeStatus(status, gracePeriodEndsAt);
   if (!isStatusEntitled(normalizedStatus)) {

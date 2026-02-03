@@ -324,7 +324,7 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
         .where(eq(households.id, householdId));
     }
 
-    const hasTrial = household.subscriptionTrialEndsAt || household.subscriptionStatus === 'trialing';
+    const alreadyHadTrial = household.subscriptionTrialEndsAt || household.subscriptionStatus === 'trialing';
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -333,7 +333,7 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       customer_email: household.stripeCustomerId ? undefined : user.email,
       allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: hasTrial ? undefined : TRIAL_DAYS,
+        trial_period_days: alreadyHadTrial ? undefined : TRIAL_DAYS,
         metadata: {
           householdId,
           tier: body.tier,
@@ -475,12 +475,20 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
     } catch {
       return reply.status(500).send({ error: 'Stripe is not configured' });
     }
+
+    let secret: string;
+    try {
+      secret = getStripeWebhookSecret();
+    } catch {
+      logger.error('STRIPE_WEBHOOK_SECRET is not configured');
+      return reply.status(500).send({ error: 'Webhook secret not configured' });
+    }
+
     const signatureHeader = request.headers['stripe-signature'];
     const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
-    const secret = getStripeWebhookSecret();
 
-    if (!signature || !secret) {
-      return reply.status(400).send({ error: 'Missing Stripe signature' });
+    if (!signature) {
+      return reply.status(400).send({ error: 'Missing Stripe signature header' });
     }
 
     let event: Stripe.Event;
@@ -537,6 +545,11 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
             const household = await findHouseholdByStripeIds(subscription.id, subscription.customer as string);
             if (household) {
               await updateHouseholdFromStripeSubscription(household.id, subscription);
+            } else {
+              logger.warn(
+                { subscriptionId: subscription.id, customerId: subscription.customer, eventType: event.type },
+                'Webhook received but household not found - subscription may be orphaned'
+              );
             }
           }
           break;

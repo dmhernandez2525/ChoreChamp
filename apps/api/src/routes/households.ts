@@ -504,10 +504,13 @@ export async function householdRoutes(fastify: FastifyInstance) {
       }
     }
 
-    await db.delete(members).where(eq(members.id, membership.id));
-    await db
-      .delete(userHouseholds)
-      .where(and(eq(userHouseholds.userId, user.id), eq(userHouseholds.householdId, householdId)));
+    // Use transaction to ensure atomicity
+    await db.transaction(async (tx) => {
+      await tx.delete(members).where(eq(members.id, membership.id));
+      await tx
+        .delete(userHouseholds)
+        .where(and(eq(userHouseholds.userId, user.id), eq(userHouseholds.householdId, householdId)));
+    });
 
     return reply.status(204).send();
   });

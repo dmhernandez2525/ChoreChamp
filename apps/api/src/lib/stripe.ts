@@ -1,7 +1,4 @@
 import Stripe from 'stripe';
-import { createLogger } from './logger';
-
-const logger = createLogger('stripe');
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -19,7 +16,7 @@ export function requireStripe(): Stripe {
 export function getStripeWebhookSecret(): string {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
-    logger.warn('Stripe webhook secret is not configured');
+    throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
   }
-  return secret || '';
+  return secret;
 }
