@@ -34,6 +34,7 @@ import { choreDetectionRoutes } from './chore-detection';
 import { qrVerificationRoutes } from './qr-verification';
 import { geofencingRoutes } from './geofencing';
 import { screenTimeRoutes } from './screen-time';
+import { homeworkRoutes } from './homework';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -75,6 +76,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(qrVerificationRoutes, { prefix: '/:householdId' });
       householdApi.register(geofencingRoutes, { prefix: '/:householdId' });
       householdApi.register(screenTimeRoutes, { prefix: '/:householdId/screen-time' });
+      householdApi.register(homeworkRoutes, { prefix: '/:householdId/homework' });
     });
 
     // Chore templates (public)
