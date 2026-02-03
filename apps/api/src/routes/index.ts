@@ -36,6 +36,7 @@ import { geofencingRoutes } from './geofencing';
 import { screenTimeRoutes } from './screen-time';
 import { homeworkRoutes } from './homework';
 import { educationalChoreRoutes } from './educational-chores';
+import { reportCardRoutes } from './report-cards';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -79,6 +80,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(screenTimeRoutes, { prefix: '/:householdId/screen-time' });
       householdApi.register(homeworkRoutes, { prefix: '/:householdId/homework' });
       householdApi.register(educationalChoreRoutes, { prefix: '/:householdId/educational' });
+      householdApi.register(reportCardRoutes, { prefix: '/:householdId/report-cards' });
     });
 
     // Chore templates (public)
