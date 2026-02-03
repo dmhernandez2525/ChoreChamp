@@ -1,8 +1,14 @@
+import type {
+  SubscriptionTier,
+  SubscriptionProvider,
+  SubscriptionStatus,
+  SubscriptionStore,
+  BillingInterval,
+} from './subscription';
+
 // Household and member types
 
 export type MemberRole = 'parent' | 'child' | 'teen' | 'viewer' | 'caregiver';
-export type SubscriptionTier = 'free' | 'premium';
-export type SubscriptionProvider = 'apple' | 'google' | 'stripe';
 
 // Caregiver permission levels
 export interface CaregiverPermissions {
@@ -49,8 +55,19 @@ export interface Household {
 
   // Subscription
   subscriptionTier: SubscriptionTier;
+  subscriptionStatus: SubscriptionStatus;
   subscriptionExpiresAt: Date | null;
   subscriptionProvider: SubscriptionProvider | null;
+  subscriptionStore: SubscriptionStore | null;
+  subscriptionBillingInterval: BillingInterval | null;
+  subscriptionCurrentPeriodStart: Date | null;
+  subscriptionCurrentPeriodEnd: Date | null;
+  subscriptionTrialEndsAt: Date | null;
+  subscriptionGracePeriodEndsAt: Date | null;
+  subscriptionCancelAtPeriodEnd: boolean;
+  subscriptionCanceledAt: Date | null;
+  subscriptionIsGrandfathered: boolean;
+  subscriptionMemberLimit: number | null;
 
   // Stats
   totalChoresCompleted: number;

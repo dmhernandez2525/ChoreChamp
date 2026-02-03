@@ -21,6 +21,7 @@
     "@fastify/cors": "^10.0.0",
     "@fastify/helmet": "^12.0.0",
     "@fastify/rate-limit": "^10.0.0",
+    "@fastify/raw-body": "^6.0.1",
     "@fastify/websocket": "^11.0.0",
     "better-auth": "^1.4.18",
     "bullmq": "^5.25.0",
@@ -29,6 +30,7 @@
     "ioredis": "^5.4.0",
     "pino": "^9.5.0",
     "socket.io": "^4.8.0",
+    "stripe": "^16.12.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

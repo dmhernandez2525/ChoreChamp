@@ -123,6 +123,15 @@ import type {
   InsightRecommendation,
   PeriodComparison,
   AnalyticsExport,
+  SubscriptionPlan,
+  SubscriptionPlansResponse,
+  SubscriptionStatusResponse,
+  CreateCheckoutSessionRequest,
+  CreateCheckoutSessionResponse,
+  CreatePortalSessionRequest,
+  CreatePortalSessionResponse,
+  RevenueCatSyncRequest,
+  RevenueCatSyncResponse,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -233,8 +242,73 @@ class ApiClient {
     });
   }
 
+  async updateHousehold(
+    householdId: string,
+    data: Partial<CreateHouseholdRequest> & {
+      weekStartsOn?: number;
+      pointsName?: string;
+      currency?: string;
+    }
+  ): Promise<Household> {
+    return this.request(`/households/${householdId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async leaveHousehold(householdId: string): Promise<void> {
+    return this.request(`/households/${householdId}/leave`, {
+      method: 'POST',
+    });
+  }
+
+  async deleteHousehold(householdId: string): Promise<void> {
+    return this.request(`/households/${householdId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async joinHousehold(data: JoinHouseholdRequest): Promise<JoinHouseholdResponse> {
     return this.request('/invites/join', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ===== Subscription =====
+  async getSubscriptionPlans(householdId: string): Promise<SubscriptionPlansResponse> {
+    return this.request(`/subscription/${householdId}/plans`);
+  }
+
+  async getSubscriptionStatus(householdId: string): Promise<SubscriptionStatusResponse> {
+    return this.request(`/subscription/${householdId}/status`);
+  }
+
+  async createCheckoutSession(
+    householdId: string,
+    data: CreateCheckoutSessionRequest
+  ): Promise<CreateCheckoutSessionResponse> {
+    return this.request(`/subscription/${householdId}/checkout`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createPortalSession(
+    householdId: string,
+    data: CreatePortalSessionRequest
+  ): Promise<CreatePortalSessionResponse> {
+    return this.request(`/subscription/${householdId}/portal`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async syncRevenueCat(
+    householdId: string,
+    data: RevenueCatSyncRequest
+  ): Promise<RevenueCatSyncResponse> {
+    return this.request(`/subscription/${householdId}/revenuecat/sync`, {
       method: 'POST',
       body: JSON.stringify(data),
     });

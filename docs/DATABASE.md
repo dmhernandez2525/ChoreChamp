@@ -47,6 +47,14 @@ pnpm db:studio
 | `user_households` | Users can belong to multiple households |
 | `invite_codes` | Join codes for new members |
 
+Key subscription fields stored on `households`:
+- `subscription_tier` (`free`, `family`, `premium`)
+- `subscription_status` (`trialing`, `active`, `past_due`, `grace_period`, `canceled`, `expired`)
+- `subscription_current_period_start` / `subscription_current_period_end`
+- `subscription_trial_ends_at` / `subscription_grace_period_ends_at`
+- `stripe_customer_id` / `stripe_subscription_id`
+- `revenuecat_app_user_id`
+
 ### Chore Management (4 tables)
 
 | Table | Description |

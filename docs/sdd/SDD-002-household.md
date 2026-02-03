@@ -68,9 +68,23 @@ CREATE TABLE households (
   currency VARCHAR(3) DEFAULT 'USD',
 
   -- Subscription
-  subscription_tier VARCHAR(20) DEFAULT 'free', -- 'free', 'premium'
+  subscription_tier VARCHAR(20) DEFAULT 'free', -- 'free', 'family', 'premium'
+  subscription_status VARCHAR(20) DEFAULT 'free', -- 'free', 'trialing', 'active', 'past_due', 'grace_period', 'canceled', 'expired'
   subscription_expires_at TIMESTAMPTZ,
-  subscription_provider VARCHAR(20), -- 'apple', 'google', 'stripe'
+  subscription_provider VARCHAR(20), -- 'stripe', 'revenuecat', 'apple', 'google'
+  subscription_store VARCHAR(20), -- 'web', 'app_store', 'play_store'
+  subscription_billing_interval VARCHAR(10), -- 'monthly', 'annual'
+  subscription_current_period_start TIMESTAMPTZ,
+  subscription_current_period_end TIMESTAMPTZ,
+  subscription_trial_ends_at TIMESTAMPTZ,
+  subscription_grace_period_ends_at TIMESTAMPTZ,
+  subscription_cancel_at_period_end BOOLEAN DEFAULT false,
+  subscription_canceled_at TIMESTAMPTZ,
+  subscription_is_grandfathered BOOLEAN DEFAULT false,
+  subscription_member_limit INTEGER DEFAULT 5,
+  stripe_customer_id VARCHAR(120),
+  stripe_subscription_id VARCHAR(120),
+  revenuecat_app_user_id VARCHAR(120)
 
   -- Stats (denormalized for performance)
   total_chores_completed INTEGER DEFAULT 0,

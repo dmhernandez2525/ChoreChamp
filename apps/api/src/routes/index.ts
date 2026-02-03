@@ -39,6 +39,7 @@ import { educationalChoreRoutes } from './educational-chores';
 import { reportCardRoutes } from './report-cards';
 import { skillBuildingRoutes } from './skill-building';
 import { schoolExtracurricularRoutes } from './school-extracurricular';
+import { subscriptionRoutes } from './subscription';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -95,6 +96,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
     // Notification routes
     api.register(notificationRoutes, { prefix: '/notifications' });
+
+    // Subscription & billing routes
+    api.register(subscriptionRoutes, { prefix: '/subscription' });
 
     // Multi-household routes (household switching, member links, etc.)
     api.register(multiHouseholdRoutes);

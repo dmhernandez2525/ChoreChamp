@@ -20,8 +20,22 @@ export const households = pgTable(
 
     // Subscription
     subscriptionTier: varchar('subscription_tier', { length: 20 }).default('free'),
+    subscriptionStatus: varchar('subscription_status', { length: 20 }).default('free'),
     subscriptionExpiresAt: timestamp('subscription_expires_at', { withTimezone: true }),
     subscriptionProvider: varchar('subscription_provider', { length: 20 }),
+    subscriptionStore: varchar('subscription_store', { length: 20 }),
+    subscriptionBillingInterval: varchar('subscription_billing_interval', { length: 10 }),
+    subscriptionCurrentPeriodStart: timestamp('subscription_current_period_start', { withTimezone: true }),
+    subscriptionCurrentPeriodEnd: timestamp('subscription_current_period_end', { withTimezone: true }),
+    subscriptionTrialEndsAt: timestamp('subscription_trial_ends_at', { withTimezone: true }),
+    subscriptionGracePeriodEndsAt: timestamp('subscription_grace_period_ends_at', { withTimezone: true }),
+    subscriptionCancelAtPeriodEnd: boolean('subscription_cancel_at_period_end').default(false),
+    subscriptionCanceledAt: timestamp('subscription_canceled_at', { withTimezone: true }),
+    subscriptionIsGrandfathered: boolean('subscription_is_grandfathered').default(false),
+    subscriptionMemberLimit: integer('subscription_member_limit').default(5),
+    stripeCustomerId: varchar('stripe_customer_id', { length: 120 }),
+    stripeSubscriptionId: varchar('stripe_subscription_id', { length: 120 }),
+    revenuecatAppUserId: varchar('revenuecat_app_user_id', { length: 120 }),
 
     // Stats (denormalized for performance)
     totalChoresCompleted: integer('total_chores_completed').default(0),

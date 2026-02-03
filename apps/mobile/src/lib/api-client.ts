@@ -22,6 +22,14 @@ import type {
   Reward,
   CreateRewardRequest,
   RewardRedemption,
+  SubscriptionPlansResponse,
+  SubscriptionStatusResponse,
+  CreateCheckoutSessionRequest,
+  CreateCheckoutSessionResponse,
+  CreatePortalSessionRequest,
+  CreatePortalSessionResponse,
+  RevenueCatSyncRequest,
+  RevenueCatSyncResponse,
 } from '@chorechamp/types';
 import { config } from '../config/env';
 import { storage } from './storage';
@@ -156,6 +164,44 @@ class MobileApiClient {
 
   async joinHousehold(data: JoinHouseholdRequest): Promise<JoinHouseholdResponse> {
     return this.request('/invites/join', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSubscriptionPlans(householdId: string): Promise<SubscriptionPlansResponse> {
+    return this.request(`/subscription/${householdId}/plans`);
+  }
+
+  async getSubscriptionStatus(householdId: string): Promise<SubscriptionStatusResponse> {
+    return this.request(`/subscription/${householdId}/status`);
+  }
+
+  async createCheckoutSession(
+    householdId: string,
+    data: CreateCheckoutSessionRequest
+  ): Promise<CreateCheckoutSessionResponse> {
+    return this.request(`/subscription/${householdId}/checkout`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createPortalSession(
+    householdId: string,
+    data: CreatePortalSessionRequest
+  ): Promise<CreatePortalSessionResponse> {
+    return this.request(`/subscription/${householdId}/portal`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async syncRevenueCat(
+    householdId: string,
+    data: RevenueCatSyncRequest
+  ): Promise<RevenueCatSyncResponse> {
+    return this.request(`/subscription/${householdId}/revenuecat/sync`, {
       method: 'POST',
       body: JSON.stringify(data),
     });

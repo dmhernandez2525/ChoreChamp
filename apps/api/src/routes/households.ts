@@ -1,10 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { households, members, inviteCodes, userHouseholds } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomBytes } from 'crypto';
+import { getEffectiveMemberLimit } from '../lib/subscription';
 
 // Validation schemas
 const createHouseholdSchema = z.object({
@@ -379,6 +380,33 @@ export async function householdRoutes(fastify: FastifyInstance) {
       });
     }
 
+    const [householdForLimit] = await db
+      .select()
+      .from(households)
+      .where(eq(households.id, invite.householdId));
+
+    if (!householdForLimit) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Household not found',
+      });
+    }
+
+    const memberLimit = getEffectiveMemberLimit(householdForLimit);
+    if (memberLimit !== null) {
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(members)
+        .where(and(eq(members.householdId, invite.householdId), eq(members.isActive, true)));
+
+      if (Number(count) >= memberLimit) {
+        return reply.status(403).send({
+          error: 'Limit Reached',
+          message: `This plan allows up to ${memberLimit} family members.`,
+        });
+      }
+    }
+
     // Create member
     const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -422,5 +450,65 @@ export async function householdRoutes(fastify: FastifyInstance) {
       household,
       member,
     });
+  });
+
+  // Leave household
+  fastify.post('/:householdId/leave', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+
+    const [membership] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.householdId, householdId),
+        eq(members.userId, user.id)
+      ));
+
+    if (!membership) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Membership not found',
+      });
+    }
+
+    const [household] = await db
+      .select()
+      .from(households)
+      .where(eq(households.id, householdId));
+
+    if (!household) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Household not found',
+      });
+    }
+
+    if (membership.role === 'parent') {
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(members)
+        .where(and(
+          eq(members.householdId, householdId),
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
+        ));
+
+      if (Number(count) <= 1 || household.createdBy === user.id) {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: 'Parents must transfer ownership or delete the household before leaving.',
+        });
+      }
+    }
+
+    await db.delete(members).where(eq(members.id, membership.id));
+    await db
+      .delete(userHouseholds)
+      .where(and(eq(userHouseholds.userId, user.id), eq(userHouseholds.householdId, householdId)));
+
+    return reply.status(204).send();
   });
 }
