@@ -409,6 +409,32 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
   });
 
   // RevenueCat sync
+  //
+  // ============================================================================
+  // SECURITY WARNING: UNVERIFIED CLIENT DATA
+  // ============================================================================
+  //
+  // TODO(SECURITY): This endpoint accepts subscription tier/status directly from
+  // the client WITHOUT server-side verification against RevenueCat's API. This is
+  // a significant security vulnerability that MUST be addressed before production.
+  //
+  // Current risk: A malicious user could send a fake request claiming they have
+  // a 'premium' tier subscription when they don't, gaining access to paid features.
+  //
+  // Required fix: Implement server-to-server verification with RevenueCat:
+  // 1. Use RevenueCat's REST API to verify the subscription status:
+  //    GET https://api.revenuecat.com/v1/subscribers/{app_user_id}
+  // 2. Extract the actual entitlements/subscription status from the response
+  // 3. Only update the database with RevenueCat-verified data
+  //
+  // See: https://www.revenuecat.com/docs/api-v1#tag/customers/operation/subscribers
+  //
+  // Until this is fixed, this endpoint should be:
+  // - Heavily monitored for abuse
+  // - Rate limited aggressively
+  // - Considered for temporary disabling if abuse is detected
+  //
+  // ============================================================================
   fastify.post('/:householdId/revenuecat/sync', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -416,7 +442,31 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = revenuecatSchema.parse(request.body) as RevenueCatSyncRequest;
 
+    // SECURITY AUDIT LOG: Track all RevenueCat sync attempts for monitoring
+    // This logging is critical until server-side verification is implemented
+    logger.warn({
+      event: 'revenuecat_sync_attempt',
+      userId: user.id,
+      userEmail: user.email,
+      householdId,
+      claimedTier: body.tier,
+      claimedStatus: body.status,
+      claimedStore: body.store,
+      appUserId: body.appUserId,
+      isTrial: body.isTrial,
+      currentPeriodEnd: body.currentPeriodEnd,
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+      timestamp: new Date().toISOString(),
+    }, 'UNVERIFIED RevenueCat sync request - subscription data NOT verified server-side');
+
     if (body.householdId !== householdId) {
+      logger.warn({
+        event: 'revenuecat_sync_mismatch',
+        userId: user.id,
+        routeHouseholdId: householdId,
+        bodyHouseholdId: body.householdId,
+      }, 'RevenueCat sync household mismatch - potential tampering attempt');
       return reply.status(400).send({
         error: 'Bad Request',
         message: 'Household mismatch',
@@ -425,14 +475,34 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
 
     const membership = await verifyParentMembership(user.id, householdId);
     if (!membership) {
+      logger.warn({
+        event: 'revenuecat_sync_unauthorized',
+        userId: user.id,
+        householdId,
+        claimedTier: body.tier,
+      }, 'Non-parent attempted RevenueCat sync');
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Only parents can sync subscriptions',
       });
     }
 
+    // TODO(SECURITY): Add rate limiting here. Suggested limits:
+    // - Max 5 sync requests per user per hour
+    // - Max 10 sync requests per household per day
+    // This would help mitigate abuse until proper verification is in place.
+
     const currentPeriodEnd = body.currentPeriodEnd ? new Date(body.currentPeriodEnd) : null;
     const trialEndsAt = body.isTrial ? currentPeriodEnd : null;
+
+    // Fetch current household state for audit logging
+    const [existingHousehold] = await db
+      .select()
+      .from(households)
+      .where(eq(households.id, householdId));
+
+    const previousTier = existingHousehold?.subscriptionTier;
+    const previousStatus = existingHousehold?.subscriptionStatus;
 
     const [updated] = await db
       .update(households)
@@ -457,6 +527,20 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
         message: 'Household not found',
       });
     }
+
+    // Log successful sync with before/after state for audit trail
+    logger.warn({
+      event: 'revenuecat_sync_success',
+      userId: user.id,
+      householdId,
+      previousTier,
+      previousStatus,
+      newTier: body.tier,
+      newStatus: body.status,
+      tierChanged: previousTier !== body.tier,
+      statusChanged: previousStatus !== body.status,
+      upgraded: previousTier === 'free' && (body.tier === 'family' || body.tier === 'premium'),
+    }, 'UNVERIFIED RevenueCat sync completed - review if tier upgrade is suspicious');
 
     return reply.send({
       subscription: buildSubscriptionSummary(updated),
