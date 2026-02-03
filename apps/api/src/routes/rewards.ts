@@ -65,7 +65,7 @@ async function ensureRewardLimit(householdId: string, effectiveTier: 'free' | 'f
     .where(eq(rewards.householdId, householdId));
 
   if ((rewardCount?.count || 0) >= MAX_FREE_REWARDS) {
-    throw new Error(`Free plans can create up to ${MAX_FREE_REWARDS} rewards.`);
+    throw new Error(`Free and Family plans can create up to ${MAX_FREE_REWARDS} rewards. Upgrade to Premium for unlimited rewards.`);
   }
 }
 
@@ -289,47 +289,76 @@ export async function rewardRoutes(fastify: FastifyInstance) {
 
     const newBalance = currentPoints - reward.pointCost;
 
-    const [redemption] = await db
-      .insert(rewardRedemptions)
-      .values({
-        rewardId: reward.id,
-        householdId,
-        memberId: redeemingMember.id,
-        pointsSpent: reward.pointCost,
-        status,
-        requestedAt: now,
-        approvedBy: status === 'approved' ? membership.id : null,
-        approvedAt: status === 'approved' ? now : null,
-        notes: body.notes || null,
-      })
-      .returning();
+    // Wrap all redemption operations in a transaction to prevent race conditions
+    let redemption;
+    try {
+      redemption = await db.transaction(async (tx) => {
+        // Re-check points within transaction using optimistic update
+        const updateResult = await tx
+          .update(members)
+          .set({ pointsCurrent: newBalance })
+          .where(and(
+            eq(members.id, redeemingMember.id),
+            sql`${members.pointsCurrent} >= ${reward.pointCost}`
+          ))
+          .returning();
 
-    await db
-      .update(members)
-      .set({
-        pointsCurrent: newBalance,
-      })
-      .where(eq(members.id, redeemingMember.id));
+        if (updateResult.length === 0) {
+          throw new Error('Insufficient points or concurrent redemption');
+        }
 
-    if (reward.quantityRemaining !== null) {
-      await db
-        .update(rewards)
-        .set({ quantityRemaining: sql`${rewards.quantityRemaining} - 1` })
-        .where(eq(rewards.id, reward.id));
-    }
+        // Update reward quantity atomically if limited
+        if (reward.quantityRemaining !== null) {
+          const rewardUpdate = await tx
+            .update(rewards)
+            .set({ quantityRemaining: sql`${rewards.quantityRemaining} - 1` })
+            .where(and(
+              eq(rewards.id, reward.id),
+              sql`${rewards.quantityRemaining} > 0`
+            ))
+            .returning();
 
-    await db
-      .insert(pointTransactions)
-      .values({
-        householdId,
-        memberId: redeemingMember.id,
-        amount: -reward.pointCost,
-        balanceAfter: newBalance,
-        transactionType: 'reward_redemption',
-        referenceId: redemption.id,
-        referenceType: 'reward',
-        description: `Redeemed reward: ${reward.title}`,
+          if (rewardUpdate.length === 0) {
+            throw new Error('Reward is sold out');
+          }
+        }
+
+        // Insert redemption record
+        const [newRedemption] = await tx
+          .insert(rewardRedemptions)
+          .values({
+            rewardId: reward.id,
+            householdId,
+            memberId: redeemingMember.id,
+            pointsSpent: reward.pointCost,
+            status,
+            requestedAt: now,
+            approvedBy: status === 'approved' ? membership.id : null,
+            approvedAt: status === 'approved' ? now : null,
+            notes: body.notes || null,
+          })
+          .returning();
+
+        // Insert point transaction
+        await tx
+          .insert(pointTransactions)
+          .values({
+            householdId,
+            memberId: redeemingMember.id,
+            amount: -reward.pointCost,
+            balanceAfter: newBalance,
+            transactionType: 'reward_redemption',
+            referenceId: newRedemption.id,
+            referenceType: 'reward',
+            description: `Redeemed reward: ${reward.title}`,
+          });
+
+        return newRedemption;
       });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Redemption failed';
+      return reply.status(400).send({ error: 'Redemption failed', message });
+    }
 
     return reply.status(201).send(redemption);
   });
