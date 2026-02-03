@@ -6,6 +6,8 @@ export * from './chores';
 export * from './completions';
 export * from './gamification';
 export * from './rewards';
+export * from './support';
+export * from './api-keys';
 export * from './notifications';
 export * from './trades';
 export * from './allowance';

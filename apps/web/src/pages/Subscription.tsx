@@ -11,6 +11,7 @@ import {
 import { Button, cn } from '@chorechamp/ui';
 import { Skeleton } from '../components/common';
 import { useAuth } from '../context/AuthContext';
+import { FeatureComparisonTable } from '../components/subscription/FeatureComparisonTable';
 
 const formatDate = (value: Date | string | null) => {
   if (!value) return '—';
@@ -102,8 +103,8 @@ export default function Subscription() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white shadow-sm">
+      <div className="min-h-screen bg-[var(--app-bg)]">
+        <header className="border-b bg-[var(--app-surface)] shadow-sm">
           <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4">
             <Skeleton className="h-6 w-6" />
             <Skeleton className="h-6 w-48" />
@@ -123,7 +124,7 @@ export default function Subscription() {
 
   if (!household) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--app-bg)] flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Household not found</p>
           <Button asChild className="mt-4">
@@ -135,8 +136,8 @@ export default function Subscription() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white shadow-sm">
+    <div className="min-h-screen bg-[var(--app-bg)]">
+      <header className="border-b bg-[var(--app-surface)] shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4">
           <Link
             to={`/households/${householdId}/settings`}
@@ -152,7 +153,7 @@ export default function Subscription() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-gray-200 bg-[var(--app-surface)] p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
             <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', statusBadge.tone)}>
@@ -228,7 +229,7 @@ export default function Subscription() {
               <h2 className="text-lg font-semibold text-gray-900">Choose Your Plan</h2>
               <p className="text-sm text-gray-600">All upgrades include a {trialDays}-day free trial.</p>
             </div>
-            <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+            <div className="inline-flex rounded-lg border border-gray-200 bg-[var(--app-surface)] p-1">
               <button
                 className={cn(
                   'rounded-md px-3 py-1 text-sm font-medium transition',
@@ -261,7 +262,7 @@ export default function Subscription() {
                 <div
                   key={plan.tier}
                   className={cn(
-                    'rounded-xl border bg-white p-6 shadow-sm',
+                    'rounded-xl border bg-[var(--app-surface)] p-6 shadow-sm',
                     plan.highlight ? 'border-blue-600 shadow-lg' : 'border-gray-200'
                   )}
                 >
@@ -305,6 +306,16 @@ export default function Subscription() {
               );
             })}
           </div>
+        </section>
+
+        <section className="mt-10">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Plan Comparison</h2>
+            <p className="text-sm text-gray-600">
+              See exactly which features unlock at each tier.
+            </p>
+          </div>
+          <FeatureComparisonTable currentTier={subscription?.tier ?? household.subscriptionTier} />
         </section>
       </main>
     </div>

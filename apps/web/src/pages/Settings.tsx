@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -29,6 +29,7 @@ export default function Settings() {
   const { user, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [notificationPrefs, setNotificationPrefs] = useState(DEFAULT_NOTIFICATION_PREFS);
 
   // Mutations
   const updateProfile = useUpdateProfile();
@@ -59,16 +60,30 @@ export default function Settings() {
   const handleUpdateNotifications = async (
     preferences: typeof DEFAULT_NOTIFICATION_PREFS
   ) => {
-    // TODO: Implement notification preferences storage
-    // This requires a user settings API endpoint
-    console.log('Update notifications:', preferences);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    setNotificationPrefs(preferences);
+    try {
+      localStorage.setItem('cc_notification_prefs', JSON.stringify(preferences));
+    } catch {
+      // Ignore storage errors (private mode, etc.)
+    }
   };
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('cc_notification_prefs');
+      if (stored) {
+        const parsed = JSON.parse(stored) as typeof DEFAULT_NOTIFICATION_PREFS;
+        setNotificationPrefs({ ...DEFAULT_NOTIFICATION_PREFS, ...parsed });
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white shadow-sm">
+      <div className="min-h-screen bg-[var(--app-bg)]">
+        <header className="border-b bg-[var(--app-surface)] shadow-sm">
           <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4">
             <Skeleton className="h-6 w-6" />
             <Skeleton className="h-6 w-32" />
@@ -93,9 +108,9 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--app-bg)]">
       {/* Header */}
-      <header className="border-b bg-white shadow-sm">
+      <header className="border-b bg-[var(--app-surface)] shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4">
           <Link to="/dashboard" className="text-gray-500 hover:text-gray-700">
             ←
@@ -132,7 +147,7 @@ export default function Settings() {
 
         {activeTab === 'notifications' && (
           <NotificationsSection
-            preferences={DEFAULT_NOTIFICATION_PREFS}
+            preferences={notificationPrefs}
             onUpdatePreferences={handleUpdateNotifications}
           />
         )}

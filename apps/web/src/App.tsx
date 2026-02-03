@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DemoAuthProvider, useDemoAuth } from './context/DemoAuthContext';
 import { CelebrationProvider } from './components/celebrations';
 import { PWAProvider } from './components/pwa';
+import { AppShell } from './components/app/AppShell';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -33,6 +34,8 @@ import Arcade from './pages/Arcade';
 import Collection from './pages/Collection';
 import SchoolExtracurricular from './pages/SchoolExtracurricular';
 import Subscription from './pages/Subscription';
+import Analytics from './pages/Analytics';
+import Support from './pages/Support';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -297,6 +300,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/households/:householdId/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/households/:householdId/members/:memberId/character"
         element={
           <ProtectedRoute>
@@ -336,6 +347,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/households/:householdId/support"
+        element={
+          <ProtectedRoute>
+            <Support />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
@@ -349,7 +368,9 @@ export default function App() {
       <AuthProvider>
         <CelebrationProvider>
           <PWAProvider>
-            <AppRoutes />
+            <AppShell>
+              <AppRoutes />
+            </AppShell>
           </PWAProvider>
         </CelebrationProvider>
       </AuthProvider>

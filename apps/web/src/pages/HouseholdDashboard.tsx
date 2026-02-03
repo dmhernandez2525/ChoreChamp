@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useChoreStore } from '../stores/chore-store';
 import { useCelebration } from '../components/celebrations';
+import { hasFeature } from '../lib/subscription';
 import {
   ChoreList,
   ChorePreviewList,
@@ -58,6 +59,7 @@ export default function HouseholdDashboard() {
 
   // Check if current user is a parent
   const isParent = currentMember?.role === 'parent';
+  const canViewAnalytics = hasFeature(household, 'advanced_analytics');
 
   // Count pending approvals
   const pendingApprovalsCount = useMemo(() => {
@@ -130,8 +132,8 @@ export default function HouseholdDashboard() {
 
   if (isLoading && !household) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white shadow-sm">
+      <div className="min-h-screen bg-[var(--app-bg)]">
+        <header className="border-b bg-[var(--app-surface)] shadow-sm">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
             <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
             <div className="h-8 w-20 animate-pulse rounded bg-gray-200" />
@@ -146,7 +148,7 @@ export default function HouseholdDashboard() {
 
   if (!household) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--app-bg)] flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Household not found</p>
           <Button asChild className="mt-4">
@@ -158,9 +160,9 @@ export default function HouseholdDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--app-bg)]">
       {/* Header */}
-      <header className="border-b bg-white shadow-sm">
+      <header className="border-b bg-[var(--app-surface)] shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="text-gray-500 hover:text-gray-700">
@@ -296,6 +298,16 @@ export default function HouseholdDashboard() {
               <Link to={`/households/${householdId}/members`}>Manage Family</Link>
             </Button>
           )}
+          <div className="relative">
+            <Button variant="outline" asChild>
+              <Link to={`/households/${householdId}/analytics`}>Analytics</Link>
+            </Button>
+            {!canViewAnalytics && (
+              <span className="absolute -right-2 -top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                Premium
+              </span>
+            )}
+          </div>
           <Button variant="outline" asChild>
             <Link to={`/households/${householdId}/settings`}>Settings</Link>
           </Button>

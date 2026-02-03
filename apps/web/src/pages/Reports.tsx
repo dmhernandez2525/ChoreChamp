@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
 import {
   useReportSummary,
+  useHousehold,
   apiClient,
 } from '@chorechamp/api-client';
 import {
@@ -12,6 +13,7 @@ import {
   ReportPreview,
 } from '../components/reports';
 import type { ReportType, ExportFormat } from '../components/reports';
+import { hasFeature } from '../lib/subscription';
 
 export default function Reports() {
   const { householdId } = useParams<{ householdId: string }>();
@@ -19,6 +21,8 @@ export default function Reports() {
     start: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
     end: new Date(),
   });
+  const [rangeNotice, setRangeNotice] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [generatingReports, setGeneratingReports] = useState<ReportType[]>([]);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportingReport, setExportingReport] = useState<ReportType | null>(null);
@@ -29,10 +33,26 @@ export default function Reports() {
     endDate: dateRange.end.toISOString().split('T')[0],
   }), [dateRange]);
 
+  const { data: household } = useHousehold(householdId!);
   const { data: summaryData, refetch: refetchSummary } = useReportSummary(
     householdId!,
     dateOptions
   );
+
+  const hasExtendedHistory = hasFeature(household, 'extended_history');
+  const maxDays = hasExtendedHistory ? 365 * 2 : 30;
+
+  const handleRangeChange = (range: { start: Date; end: Date }) => {
+    const end = range.end;
+    const minStart = new Date(end.getTime() - maxDays * 24 * 60 * 60 * 1000);
+    if (range.start.getTime() < minStart.getTime()) {
+      setRangeNotice(`Your current plan includes ${maxDays} days of history. Upgrade to Premium for 2 years.`);
+      setDateRange({ start: minStart, end });
+      return;
+    }
+    setRangeNotice(null);
+    setDateRange(range);
+  };
 
   // Transform API data to component format
   const currentReport = useMemo(() => {
@@ -86,6 +106,7 @@ export default function Reports() {
     if (!householdId) return;
 
     try {
+      setExportError(null);
       const result = await apiClient.exportReport(householdId, {
         startDate: dateOptions.startDate,
         endDate: dateOptions.endDate,
@@ -115,8 +136,7 @@ export default function Reports() {
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Export failed:', error);
-      alert('Failed to export report');
+      setExportError(error instanceof Error ? error.message : 'Failed to export report');
     }
 
     setExportModalOpen(false);
@@ -124,9 +144,9 @@ export default function Reports() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--app-bg)]">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-[var(--app-surface)] border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Link to={`/households/${householdId}`}>
@@ -147,9 +167,19 @@ export default function Reports() {
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         {/* Date range picker */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+        <div className="bg-[var(--app-surface)] rounded-xl border border-gray-200 p-4 mb-6">
           <h2 className="font-semibold text-gray-900 mb-3">Date Range</h2>
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          <DateRangePicker value={dateRange} onChange={handleRangeChange} />
+          {!hasExtendedHistory && (
+            <div className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-700">
+              Free and Family plans include 30 days of report history. Upgrade to Premium for 2 years.
+            </div>
+          )}
+          {rangeNotice && (
+            <div className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-700">
+              {rangeNotice}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -171,7 +201,7 @@ export default function Reports() {
         </div>
 
         {/* Quick export section */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+        <div className="bg-[var(--app-surface)] rounded-xl border border-gray-200 p-6 mt-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Export</h2>
           <p className="text-gray-600 mb-4">
             Export all your household data at once for backup or analysis purposes.
@@ -201,6 +231,12 @@ export default function Reports() {
             </Button>
           </div>
         </div>
+
+        {exportError && (
+          <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+            {exportError}
+          </div>
+        )}
       </main>
 
       {/* Export modal */}

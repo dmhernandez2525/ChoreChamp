@@ -69,6 +69,12 @@ export interface Household {
   subscriptionIsGrandfathered: boolean;
   subscriptionMemberLimit: number | null;
 
+  // Customization
+  themeId: string | null;
+  whiteLabelEnabled: boolean;
+  brandingName: string | null;
+  brandingLogoUrl: string | null;
+
   // Stats
   totalChoresCompleted: number;
   currentFamilyStreak: number;
@@ -83,6 +89,9 @@ export interface HouseholdSettings {
   weekStartsOn: number;
   pointsName: string;
   currency: string;
+  themeId?: string | null;
+  brandingName?: string | null;
+  brandingLogoUrl?: string | null;
 }
 
 export interface Member {

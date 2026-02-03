@@ -12,6 +12,9 @@ import type {
   CreateRewardRequest,
   CreateInviteCodeRequest,
   CreateBossBattleRequest,
+  CreateSupportThreadRequest,
+  CreateSupportMessageRequest,
+  CreateApiKeyRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -43,6 +46,10 @@ export const queryKeys = {
     ['reward', householdId, rewardId] as const,
   pendingRedemptions: (householdId: string) =>
     ['pendingRedemptions', householdId] as const,
+  supportThreads: (householdId: string) => ['supportThreads', householdId] as const,
+  supportThread: (householdId: string, threadId: string) =>
+    ['supportThread', householdId, threadId] as const,
+  apiKeys: (householdId: string) => ['apiKeys', householdId] as const,
   // Boss Battles
   currentBossBattle: (householdId: string) =>
     ['currentBossBattle', householdId] as const,
@@ -174,6 +181,9 @@ export function useUpdateHousehold(householdId: string) {
       weekStartsOn?: number;
       pointsName?: string;
       currency?: string;
+      themeId?: string | null;
+      brandingName?: string | null;
+      brandingLogoUrl?: string | null;
     }) => apiClient.updateHousehold(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.household(householdId) });
@@ -558,6 +568,100 @@ export function useRejectRedemption(householdId: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pendingRedemptions(householdId),
       });
+    },
+  });
+}
+
+// ===== Support Hooks =====
+export function useSupportThreads(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.supportThreads(householdId),
+    queryFn: () => apiClient.getSupportThreads(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useSupportThread(householdId: string, threadId: string) {
+  return useQuery({
+    queryKey: queryKeys.supportThread(householdId, threadId),
+    queryFn: () => apiClient.getSupportThread(householdId, threadId),
+    enabled: !!householdId && !!threadId,
+  });
+}
+
+export function useCreateSupportThread(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSupportThreadRequest) =>
+      apiClient.createSupportThread(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportThreads(householdId) });
+    },
+  });
+}
+
+export function useCreateSupportMessage(householdId: string, threadId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSupportMessageRequest) =>
+      apiClient.createSupportMessage(householdId, threadId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.supportThread(householdId, threadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.supportThreads(householdId),
+      });
+    },
+  });
+}
+
+export function useUpdateSupportThreadStatus(householdId: string, threadId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (status: 'open' | 'pending' | 'closed') =>
+      apiClient.updateSupportThreadStatus(householdId, threadId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.supportThread(householdId, threadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.supportThreads(householdId),
+      });
+    },
+  });
+}
+
+// ===== API Key Hooks =====
+export function useApiKeys(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.apiKeys(householdId),
+    queryFn: () => apiClient.getApiKeys(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useCreateApiKey(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateApiKeyRequest) => apiClient.createApiKey(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys(householdId) });
+    },
+  });
+}
+
+export function useRevokeApiKey(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (keyId: string) => apiClient.revokeApiKey(householdId, keyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys(householdId) });
     },
   });
 }

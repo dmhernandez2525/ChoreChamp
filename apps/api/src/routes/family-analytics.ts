@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { db } from '@chorechamp/database';
-import { members } from '@chorechamp/database/schema';
+import { members, households } from '@chorechamp/database/schema';
 import { eq, and } from 'drizzle-orm';
 import type {
   FamilyAnalytics,
@@ -19,6 +19,7 @@ import {
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomUUID } from 'crypto';
+import { getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
 
 // Helper to verify membership
 async function verifyMembership(
@@ -30,6 +31,13 @@ async function verifyMembership(
     .from(members)
     .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
   return membership || null;
+}
+
+async function verifyPremiumAccess(householdId: string): Promise<boolean> {
+  const [household] = await db.select().from(households).where(eq(households.id, householdId));
+  if (!household) return false;
+  const effectiveTier = getEffectiveTierForHousehold(household);
+  return isTierAtLeast(effectiveTier, 'premium');
 }
 
 // Generate mock analytics data
@@ -276,6 +284,11 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Analytics require parent access' });
     }
 
+    const hasPremium = await verifyPremiumAccess(householdId);
+    if (!hasPremium) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Advanced analytics are available on Premium.' });
+    }
+
     // Get household members
     const householdMembers = await db.query.members.findMany({
       where: eq(members.householdId, householdId),
@@ -301,6 +314,11 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
     // Can view own or parents can view any
     if (membership.id !== memberId && membership.role !== 'parent' && membership.role !== 'admin') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Cannot view other member analytics' });
+    }
+
+    const hasPremium = await verifyPremiumAccess(householdId);
+    if (!hasPremium) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Advanced analytics are available on Premium.' });
     }
 
     const householdMembers = await db.query.members.findMany({
@@ -336,6 +354,11 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership || (membership.role !== 'parent' && membership.role !== 'admin')) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Analytics require parent access' });
+    }
+
+    const hasPremium = await verifyPremiumAccess(householdId);
+    if (!hasPremium) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Advanced analytics are available on Premium.' });
     }
 
     const householdMembers = await db.query.members.findMany({
@@ -406,6 +429,11 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Export requires parent access' });
     }
 
+    const hasPremium = await verifyPremiumAccess(householdId);
+    if (!hasPremium) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Advanced analytics are available on Premium.' });
+    }
+
     // In a real implementation, this would generate a file
     const exportData: AnalyticsExport = {
       format: body.format,
@@ -426,6 +454,11 @@ export async function familyAnalyticsRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
+    }
+
+    const hasPremium = await verifyPremiumAccess(householdId);
+    if (!hasPremium) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Advanced analytics are available on Premium.' });
     }
 
     // Generate recommendations
