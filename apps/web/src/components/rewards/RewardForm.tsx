@@ -44,11 +44,7 @@ export function RewardForm({
       icon,
       type,
       pointCost: parseInt(pointCost) || 0,
-      quantity: hasLimit
-        ? parseInt(quantity) || undefined
-        : initialData
-          ? null
-          : undefined,
+      quantity: hasLimit ? parseInt(quantity) || undefined : undefined,
     });
   };
 
