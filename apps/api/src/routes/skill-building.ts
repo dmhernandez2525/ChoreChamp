@@ -28,6 +28,7 @@ const skillCategorySchema = z.enum(['cooking', 'cleaning', 'organization', 'laun
 const masteryLevelSchema = z.enum(['novice', 'beginner', 'intermediate', 'advanced', 'expert', 'master']);
 const challengeTypeSchema = z.enum(['time_trial', 'quality_check', 'streak', 'teaching', 'assessment']);
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createSkillTreeSchema = z.object({
   category: skillCategorySchema,
   name: z.string().min(1).max(100),
@@ -36,6 +37,7 @@ const createSkillTreeSchema = z.object({
   colorTheme: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createSkillSchema = z.object({
   skillTreeId: z.string().uuid(),
   name: z.string().min(1).max(100),
@@ -55,6 +57,7 @@ const createSkillSchema = z.object({
   isCore: z.boolean().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const logPracticeSchema = z.object({
   skillId: z.string().uuid(),
   memberId: z.string().uuid(),
@@ -69,6 +72,7 @@ const logPracticeSchema = z.object({
   notes: z.string().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createChallengeSchema = z.object({
   skillId: z.string().uuid(),
   title: z.string().min(1).max(100),
@@ -87,6 +91,7 @@ const createChallengeSchema = z.object({
   maxAttempts: z.number().int().positive().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createMentorshipSchema = z.object({
   mentorId: z.string().uuid(),
   menteeId: z.string().uuid(),

@@ -29,6 +29,7 @@ const createReportCardGradeSchema = z.object({
   teacherComments: z.string().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createReportCardSchema = z.object({
   memberId: z.string().uuid(),
   schoolYear: z.string().min(1),
@@ -48,6 +49,7 @@ const createReportCardSchema = z.object({
   notes: z.string().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const updateReportCardSchema = z.object({
   periodName: z.string().min(1).optional(),
   issueDate: z.string().optional(),
@@ -55,6 +57,7 @@ const updateReportCardSchema = z.object({
   parentAcknowledged: z.boolean().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createBonusConfigSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -67,6 +70,7 @@ const createBonusConfigSchema = z.object({
   maxBonusPerCard: z.number().int().positive().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createGoalSchema = z.object({
   memberId: z.string().uuid(),
   goalType: goalTypeSchema,
@@ -81,6 +85,7 @@ const createGoalSchema = z.object({
   deadline: z.string().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createHonorRollConfigSchema = z.object({
   name: z.string().min(1),
   minGpa: z.number().min(0).max(4),
