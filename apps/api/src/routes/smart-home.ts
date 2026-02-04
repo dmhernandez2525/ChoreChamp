@@ -1,7 +1,6 @@
 // Smart Home Hub Integration Routes (F10.1)
 
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '@chorechamp/database';
 import {
@@ -196,7 +195,7 @@ async function controlDevice(
 
 export async function smartHomeRoutes(app: FastifyInstance) {
   // Get supported platforms
-  app.get('/smart-home/platforms', async (_request, reply) => {
+  app.get('/platforms', async (_request, reply) => {
     const platforms = Object.entries(PLATFORM_CONFIG).map(([id, config]) => ({
       id,
       ...config,
@@ -205,13 +204,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Get all hubs for household
-  app.get('/smart-home/hubs', {
-    schema: {
-      querystring: z.object({
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/hubs', async (request, reply) => {
     const { householdId } = request.query as { householdId: string };
 
     const hubs = await db
@@ -247,27 +240,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Connect a new hub
-  app.post('/smart-home/hubs', {
-    schema: {
-      body: z.object({
-        householdId: z.string().uuid(),
-        platform: z.string(),
-        name: z.string().min(1).max(100),
-        description: z.string().optional(),
-        configuration: z.object({
-          platform: z.string(),
-          hostUrl: z.string().optional(),
-          accessToken: z.string().optional(),
-          apiKey: z.string().optional(),
-          webhookUrl: z.string().optional(),
-          webhookSecret: z.string().optional(),
-          mqttBroker: z.string().optional(),
-          mqttTopic: z.string().optional(),
-          customConfig: z.record(z.unknown()).optional(),
-        }),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/hubs', async (request, reply) => {
     const { householdId, platform, name, description, configuration } = request.body as {
       householdId: string;
       platform: SmartHomePlatform;
@@ -374,13 +347,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Sync devices from hub
-  app.post('/smart-home/hubs/:hubId/sync', {
-    schema: {
-      params: z.object({
-        hubId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/hubs/:hubId/sync', async (request, reply) => {
     const { hubId } = request.params as { hubId: string };
 
     // Get hub
@@ -493,13 +460,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Disconnect/remove hub
-  app.delete('/smart-home/hubs/:hubId', {
-    schema: {
-      params: z.object({
-        hubId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.delete('/hubs/:hubId', async (request, reply) => {
     const { hubId } = request.params as { hubId: string };
 
     // Soft delete hub and devices
@@ -521,16 +482,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Get all devices for household
-  app.get('/smart-home/devices', {
-    schema: {
-      querystring: z.object({
-        householdId: z.string().uuid(),
-        category: z.string().optional(),
-        zone: z.string().optional(),
-        hubId: z.string().uuid().optional(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/devices', async (request, reply) => {
     const { householdId, category, zone, hubId } = request.query as {
       householdId: string;
       category?: string;
@@ -567,19 +519,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Control a device
-  app.post('/smart-home/devices/:deviceId/control', {
-    schema: {
-      params: z.object({
-        deviceId: z.string().uuid(),
-      }),
-      body: z.object({
-        command: z.object({
-          type: z.string(),
-          parameters: z.record(z.unknown()),
-        }),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/devices/:deviceId/control', async (request, reply) => {
     const { deviceId } = request.params as { deviceId: string };
     const { command } = request.body as { command: DeviceCommand };
 
@@ -656,18 +596,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Update device zone mapping
-  app.patch('/smart-home/devices/:deviceId', {
-    schema: {
-      params: z.object({
-        deviceId: z.string().uuid(),
-      }),
-      body: z.object({
-        name: z.string().optional(),
-        location: z.string().optional(),
-        choreRelatedZone: z.string().optional(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.patch('/devices/:deviceId', async (request, reply) => {
     const { deviceId } = request.params as { deviceId: string };
     const updates = request.body as {
       name?: string;
@@ -690,13 +619,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   // --- Automations ---
 
   // Get all automations
-  app.get('/smart-home/automations', {
-    schema: {
-      querystring: z.object({
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/automations', async (request, reply) => {
     const { householdId } = request.query as { householdId: string };
 
     const automations = await db
@@ -709,29 +632,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Create automation
-  app.post('/smart-home/automations', {
-    schema: {
-      body: z.object({
-        householdId: z.string().uuid(),
-        name: z.string().min(1).max(100),
-        description: z.string().optional(),
-        trigger: z.object({
-          type: z.string(),
-          config: z.record(z.unknown()),
-        }),
-        conditions: z.array(z.object({
-          type: z.string(),
-          config: z.record(z.unknown()),
-          operator: z.enum(['and', 'or']),
-        })).optional(),
-        actions: z.array(z.object({
-          type: z.string(),
-          config: z.record(z.unknown()),
-          delay: z.number().optional(),
-        })),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/automations', async (request, reply) => {
     const { householdId, name, description, trigger, conditions, actions } = request.body as {
       householdId: string;
       name: string;
@@ -757,32 +658,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Update automation
-  app.patch('/smart-home/automations/:automationId', {
-    schema: {
-      params: z.object({
-        automationId: z.string().uuid(),
-      }),
-      body: z.object({
-        name: z.string().optional(),
-        description: z.string().optional(),
-        isEnabled: z.boolean().optional(),
-        trigger: z.object({
-          type: z.string(),
-          config: z.record(z.unknown()),
-        }).optional(),
-        conditions: z.array(z.object({
-          type: z.string(),
-          config: z.record(z.unknown()),
-          operator: z.enum(['and', 'or']),
-        })).optional(),
-        actions: z.array(z.object({
-          type: z.string(),
-          config: z.record(z.unknown()),
-          delay: z.number().optional(),
-        })).optional(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.patch('/automations/:automationId', async (request, reply) => {
     const { automationId } = request.params as { automationId: string };
     const updates = request.body as {
       name?: string;
@@ -806,13 +682,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Delete automation
-  app.delete('/smart-home/automations/:automationId', {
-    schema: {
-      params: z.object({
-        automationId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.delete('/automations/:automationId', async (request, reply) => {
     const { automationId } = request.params as { automationId: string };
 
     await db
@@ -823,16 +693,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Test automation (dry run)
-  app.post('/smart-home/automations/:automationId/test', {
-    schema: {
-      params: z.object({
-        automationId: z.string().uuid(),
-      }),
-      body: z.object({
-        mockTriggerData: z.record(z.unknown()).optional(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/automations/:automationId/test', async (request, reply) => {
     const { automationId } = request.params as { automationId: string };
     const { mockTriggerData } = request.body as { mockTriggerData?: Record<string, unknown> };
 
@@ -871,16 +732,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Manually trigger automation
-  app.post('/smart-home/automations/:automationId/trigger', {
-    schema: {
-      params: z.object({
-        automationId: z.string().uuid(),
-      }),
-      body: z.object({
-        triggerData: z.record(z.unknown()).optional(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/automations/:automationId/trigger', async (request, reply) => {
     const { automationId } = request.params as { automationId: string };
     const { triggerData } = request.body as { triggerData?: Record<string, unknown> };
 
@@ -959,16 +811,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Get automation logs
-  app.get('/smart-home/automations/:automationId/logs', {
-    schema: {
-      params: z.object({
-        automationId: z.string().uuid(),
-      }),
-      querystring: z.object({
-        limit: z.string().optional(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/automations/:automationId/logs', async (request, reply) => {
     try {
       const { automationId } = request.params as { automationId: string };
       const { limit } = request.query as { limit?: string };
@@ -1001,13 +844,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   // --- Zone Management ---
 
   // Get chore zones
-  app.get('/smart-home/zones', {
-    schema: {
-      querystring: z.object({
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/zones', async (request, reply) => {
     const { householdId } = request.query as { householdId: string };
 
     const zones = await db
@@ -1024,16 +861,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Create/update zone
-  app.post('/smart-home/zones', {
-    schema: {
-      body: z.object({
-        householdId: z.string().uuid(),
-        zoneName: z.string().min(1).max(100),
-        deviceIds: z.array(z.string().uuid()),
-        choreCategories: z.array(z.string()),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/zones', async (request, reply) => {
     const { householdId, zoneName, deviceIds, choreCategories } = request.body as {
       householdId: string;
       zoneName: string;
@@ -1081,13 +909,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Delete zone
-  app.delete('/smart-home/zones/:zoneId', {
-    schema: {
-      params: z.object({
-        zoneId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.delete('/zones/:zoneId', async (request, reply) => {
     const { zoneId } = request.params as { zoneId: string };
 
     await db
@@ -1101,13 +923,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   // --- Overview ---
 
   // Get smart home overview
-  app.get('/smart-home/overview', {
-    schema: {
-      querystring: z.object({
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/overview', async (request, reply) => {
     const { householdId } = request.query as { householdId: string };
 
     // Get hubs

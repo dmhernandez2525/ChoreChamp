@@ -16,7 +16,6 @@ import {
 // Zod schemas
 const letterGradeSchema = z.enum(['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F']);
 const periodTypeSchema = z.enum(['quarter', 'trimester', 'semester', 'year']);
-const achievementTypeSchema = z.enum(['honor_roll', 'principals_list', 'perfect_attendance', 'improvement', 'subject_excellence', 'gpa_milestone', 'streak', 'custom']);
 const bonusTypeSchema = z.enum(['per_grade', 'gpa_threshold', 'improvement', 'perfect_attendance', 'honor_roll']);
 const goalTypeSchema = z.enum(['gpa', 'grade', 'attendance', 'improvement', 'honor_roll']);
 
@@ -209,14 +208,7 @@ async function calculateReportCardBonus(
 
 export async function reportCardRoutes(fastify: FastifyInstance) {
   // Get all report cards for a member
-  fastify.get('/report-cards', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid().optional(),
-        schoolYear: z.string().optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
@@ -239,7 +231,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Get single report card
-  fastify.get('/report-cards/:reportCardId', async (request) => {
+  fastify.get('/:reportCardId', async (request) => {
     const { householdId, reportCardId } = request.params as { householdId: string; reportCardId: string };
 
     const [card] = await db.select().from(reportCards)
@@ -262,11 +254,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create report card
-  fastify.post('/report-cards', {
-    schema: {
-      body: createReportCardSchema,
-    },
-  }, async (request) => {
+  fastify.post('/', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createReportCardSchema>;
 
@@ -450,11 +438,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update report card
-  fastify.patch('/report-cards/:reportCardId', {
-    schema: {
-      body: updateReportCardSchema,
-    },
-  }, async (request) => {
+  fastify.patch('/:reportCardId', async (request) => {
     const { householdId, reportCardId } = request.params as { householdId: string; reportCardId: string };
     const body = request.body as z.infer<typeof updateReportCardSchema>;
 
@@ -476,7 +460,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete report card
-  fastify.delete('/report-cards/:reportCardId', async (request) => {
+  fastify.delete('/:reportCardId', async (request) => {
     const { householdId, reportCardId } = request.params as { householdId: string; reportCardId: string };
 
     await db.delete(reportCards)
@@ -491,7 +475,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === BONUS CONFIGS ===
 
   // Get bonus configs
-  fastify.get('/report-cards/bonus-configs', async (request) => {
+  fastify.get('/bonus-configs', async (request) => {
     const { householdId } = request.params as { householdId: string };
 
     const configs = await db.select().from(gradeBonusConfigs)
@@ -502,11 +486,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create bonus config
-  fastify.post('/report-cards/bonus-configs', {
-    schema: {
-      body: createBonusConfigSchema,
-    },
-  }, async (request) => {
+  fastify.post('/bonus-configs', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createBonusConfigSchema>;
 
@@ -520,7 +500,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update bonus config
-  fastify.patch('/report-cards/bonus-configs/:configId', async (request) => {
+  fastify.patch('/bonus-configs/:configId', async (request) => {
     const { householdId, configId } = request.params as { householdId: string; configId: string };
     const body = request.body as Partial<z.infer<typeof createBonusConfigSchema>> & { isActive?: boolean };
 
@@ -536,7 +516,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete bonus config
-  fastify.delete('/report-cards/bonus-configs/:configId', async (request) => {
+  fastify.delete('/bonus-configs/:configId', async (request) => {
     const { householdId, configId } = request.params as { householdId: string; configId: string };
 
     await db.delete(gradeBonusConfigs)
@@ -551,15 +531,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === ACADEMIC GOALS ===
 
   // Get academic goals
-  fastify.get('/report-cards/goals', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid().optional(),
-        schoolYear: z.string().optional(),
-        isAchieved: z.coerce.boolean().optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/goals', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
@@ -575,11 +547,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create academic goal
-  fastify.post('/report-cards/goals', {
-    schema: {
-      body: createGoalSchema,
-    },
-  }, async (request) => {
+  fastify.post('/goals', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createGoalSchema>;
 
@@ -593,7 +561,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update academic goal
-  fastify.patch('/report-cards/goals/:goalId', async (request) => {
+  fastify.patch('/goals/:goalId', async (request) => {
     const { householdId, goalId } = request.params as { householdId: string; goalId: string };
     const body = request.body as Partial<z.infer<typeof createGoalSchema>> & { currentProgress?: number; isAchieved?: boolean };
 
@@ -614,7 +582,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete academic goal
-  fastify.delete('/report-cards/goals/:goalId', async (request) => {
+  fastify.delete('/goals/:goalId', async (request) => {
     const { householdId, goalId } = request.params as { householdId: string; goalId: string };
 
     await db.delete(academicGoals)
@@ -629,15 +597,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === ACHIEVEMENTS ===
 
   // Get academic achievements
-  fastify.get('/report-cards/achievements', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid().optional(),
-        schoolYear: z.string().optional(),
-        achievementType: achievementTypeSchema.optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/achievements', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { memberId, schoolYear, achievementType } = request.query as { memberId?: string; schoolYear?: string; achievementType?: string };
 
@@ -654,7 +614,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Mark achievement celebration as shown
-  fastify.patch('/report-cards/achievements/:achievementId/celebrate', async (request) => {
+  fastify.patch('/achievements/:achievementId/celebrate', async (request) => {
     const { householdId, achievementId } = request.params as { householdId: string; achievementId: string };
 
     const [updated] = await db.update(academicAchievements)
@@ -671,14 +631,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === ATTENDANCE ===
 
   // Get attendance records
-  fastify.get('/report-cards/attendance', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid().optional(),
-        schoolYear: z.string().optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/attendance', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
@@ -696,15 +649,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === TRENDS ===
 
   // Get academic trends
-  fastify.get('/report-cards/trends', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid().optional(),
-        schoolYear: z.string().optional(),
-        metricType: z.enum(['gpa', 'grade', 'attendance']).optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/trends', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { memberId, schoolYear, metricType } = request.query as { memberId?: string; schoolYear?: string; metricType?: string };
 
@@ -723,7 +668,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === HONOR ROLL CONFIGS ===
 
   // Get honor roll configs
-  fastify.get('/report-cards/honor-roll-configs', async (request) => {
+  fastify.get('/honor-roll-configs', async (request) => {
     const { householdId } = request.params as { householdId: string };
 
     const configs = await db.select().from(honorRollConfigs)
@@ -734,11 +679,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create honor roll config
-  fastify.post('/report-cards/honor-roll-configs', {
-    schema: {
-      body: createHonorRollConfigSchema,
-    },
-  }, async (request) => {
+  fastify.post('/honor-roll-configs', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createHonorRollConfigSchema>;
 
@@ -753,7 +694,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update honor roll config
-  fastify.patch('/report-cards/honor-roll-configs/:configId', async (request) => {
+  fastify.patch('/honor-roll-configs/:configId', async (request) => {
     const { householdId, configId } = request.params as { householdId: string; configId: string };
     const body = request.body as Partial<z.infer<typeof createHonorRollConfigSchema>> & { isActive?: boolean };
 
@@ -769,7 +710,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete honor roll config
-  fastify.delete('/report-cards/honor-roll-configs/:configId', async (request) => {
+  fastify.delete('/honor-roll-configs/:configId', async (request) => {
     const { householdId, configId } = request.params as { householdId: string; configId: string };
 
     await db.delete(honorRollConfigs)
@@ -784,14 +725,7 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === STATISTICS ===
 
   // Get report card statistics
-  fastify.get('/report-cards/stats', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid().optional(),
-        schoolYear: z.string().optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/stats', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
