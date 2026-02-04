@@ -2,7 +2,7 @@
 
 **Project:** ChoreChamp - Gamified Family Chore Management App
 **Version:** 1.0.0
-**Last Updated:** 2026-01-28
+**Last Updated:** 2026-02-03
 
 ---
 
@@ -18,6 +18,7 @@ ChoreChamp is a cross-platform family chore management application that gamifies
 |----------|-------------|
 | [ROADMAP.md](./ROADMAP.md) | Phased development plan (16 weeks) |
 | [FEATURE_BACKLOG.md](./FEATURE_BACKLOG.md) | Prioritized feature list with research justification |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture and service map |
 
 ---
 
@@ -66,7 +67,7 @@ Located in: `/_@agent-prompts/ChoreChamp/research/sessions/`
 ### Key Decisions
 - **Architecture:** Fastify + PostgreSQL + better-auth + Redis
 - **Pricing:** $9.99/month or $59.99/year
-- **Trial:** 7-day free trial
+- **Trial:** 14-day free trial
 - **COPPA Deadline:** April 22, 2026
 
 ### Key Metrics (Targets)

@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import rawBody from 'fastify-raw-body';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { logger } from './lib/logger';
@@ -31,6 +32,13 @@ async function main() {
   await fastify.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
+  });
+
+  await fastify.register(rawBody, {
+    field: 'rawBody',
+    global: false,
+    encoding: 'utf8',
+    runFirst: true,
   });
 
   // Health check

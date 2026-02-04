@@ -24,6 +24,8 @@ services:
         value: "true"
       - key: VITE_API_URL
         sync: false
+      - key: VITE_STRIPE_PUBLIC_KEY
+        sync: false
     routes:
       - type: rewrite
         source: /*
@@ -53,6 +55,30 @@ services:
       - key: BETTER_AUTH_URL
         sync: false
       - key: CORS_ORIGIN
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_FAMILY_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_FAMILY_ANNUAL
+        sync: false
+      - key: STRIPE_PRICE_PREMIUM_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_PREMIUM_ANNUAL
+        sync: false
+      - key: STRIPE_PRICE_FAMILY_MONTHLY_GRANDFATHERED
+        sync: false
+      - key: STRIPE_PRICE_FAMILY_ANNUAL_GRANDFATHERED
+        sync: false
+      - key: STRIPE_PRICE_PREMIUM_MONTHLY_GRANDFATHERED
+        sync: false
+      - key: STRIPE_PRICE_PREMIUM_ANNUAL_GRANDFATHERED
+        sync: false
+      - key: SUBSCRIPTION_GRACE_PERIOD_DAYS
+        value: "7"
+      - key: SUBSCRIPTION_GRANDFATHERED_CUTOFF_DATE
         sync: false
 
 # PostgreSQL Database

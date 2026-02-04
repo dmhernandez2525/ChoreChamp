@@ -215,6 +215,22 @@ export async function syncHouseholds(): Promise<void> {
   const now = nowISO();
 
   for (const household of households) {
+    const subscriptionCurrentPeriodStart = household.subscriptionCurrentPeriodStart
+      ? new Date(household.subscriptionCurrentPeriodStart).toISOString()
+      : null;
+    const subscriptionCurrentPeriodEnd = household.subscriptionCurrentPeriodEnd
+      ? new Date(household.subscriptionCurrentPeriodEnd).toISOString()
+      : null;
+    const subscriptionTrialEndsAt = household.subscriptionTrialEndsAt
+      ? new Date(household.subscriptionTrialEndsAt).toISOString()
+      : null;
+    const subscriptionGracePeriodEndsAt = household.subscriptionGracePeriodEndsAt
+      ? new Date(household.subscriptionGracePeriodEndsAt).toISOString()
+      : null;
+    const subscriptionCanceledAt = household.subscriptionCanceledAt
+      ? new Date(household.subscriptionCanceledAt).toISOString()
+      : null;
+
     await db
       .insert(schema.cachedHouseholds)
       .values({
@@ -224,6 +240,19 @@ export async function syncHouseholds(): Promise<void> {
         weekStartsOn: household.weekStartsOn,
         pointsName: household.pointsName,
         currency: household.currency,
+        subscriptionTier: household.subscriptionTier,
+        subscriptionStatus: household.subscriptionStatus,
+        subscriptionProvider: household.subscriptionProvider,
+        subscriptionStore: household.subscriptionStore,
+        subscriptionBillingInterval: household.subscriptionBillingInterval,
+        subscriptionCurrentPeriodStart,
+        subscriptionCurrentPeriodEnd,
+        subscriptionTrialEndsAt,
+        subscriptionGracePeriodEndsAt,
+        subscriptionCancelAtPeriodEnd: household.subscriptionCancelAtPeriodEnd,
+        subscriptionCanceledAt,
+        subscriptionIsGrandfathered: household.subscriptionIsGrandfathered,
+        subscriptionMemberLimit: household.subscriptionMemberLimit,
         totalChoresCompleted: household.totalChoresCompleted,
         currentFamilyStreak: household.currentFamilyStreak,
         longestFamilyStreak: household.longestFamilyStreak,
@@ -238,6 +267,19 @@ export async function syncHouseholds(): Promise<void> {
           weekStartsOn: household.weekStartsOn,
           pointsName: household.pointsName,
           currency: household.currency,
+          subscriptionTier: household.subscriptionTier,
+          subscriptionStatus: household.subscriptionStatus,
+          subscriptionProvider: household.subscriptionProvider,
+          subscriptionStore: household.subscriptionStore,
+          subscriptionBillingInterval: household.subscriptionBillingInterval,
+          subscriptionCurrentPeriodStart,
+          subscriptionCurrentPeriodEnd,
+          subscriptionTrialEndsAt,
+          subscriptionGracePeriodEndsAt,
+          subscriptionCancelAtPeriodEnd: household.subscriptionCancelAtPeriodEnd,
+          subscriptionCanceledAt,
+          subscriptionIsGrandfathered: household.subscriptionIsGrandfathered,
+          subscriptionMemberLimit: household.subscriptionMemberLimit,
           totalChoresCompleted: household.totalChoresCompleted,
           currentFamilyStreak: household.currentFamilyStreak,
           longestFamilyStreak: household.longestFamilyStreak,

@@ -7,6 +7,7 @@ A gamified family chore management application that motivates children (and adul
 - **Chore Management**: Create, assign, and track household chores
 - **Gamification**: Earn points, badges, and maintain streaks
 - **Family Collaboration**: Family challenges and leaderboards
+- **Subscriptions**: Free, Family, and Premium tiers with Stripe + RevenueCat
 - **ADHD-Friendly**: Visual timers, task chunking, and sensory customization
 - **Cross-Platform**: Web, iOS, Android, macOS, and Windows apps
 
@@ -144,12 +145,29 @@ ChoreChamp/
 | `BETTER_AUTH_SECRET` | Secret for session signing |
 | `BETTER_AUTH_URL` | API URL for auth callbacks |
 | `CORS_ORIGIN` | Allowed CORS origins |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_PRICE_FAMILY_MONTHLY` | Stripe price ID for Family monthly |
+| `STRIPE_PRICE_FAMILY_ANNUAL` | Stripe price ID for Family annual |
+| `STRIPE_PRICE_PREMIUM_MONTHLY` | Stripe price ID for Premium monthly |
+| `STRIPE_PRICE_PREMIUM_ANNUAL` | Stripe price ID for Premium annual |
+| `SUBSCRIPTION_GRACE_PERIOD_DAYS` | Days to keep access after failed payment |
+| `SUBSCRIPTION_GRANDFATHERED_CUTOFF_DATE` | Cutoff date for grandfathered pricing |
 
 ### Web
 
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_URL` | API base URL |
+| `VITE_STRIPE_PUBLIC_KEY` | Stripe public key |
+
+### Mobile
+
+| Variable | Description |
+|----------|-------------|
+| `EXPO_PUBLIC_API_URL` | API base URL |
+| `REVENUECAT_IOS_API_KEY` | RevenueCat iOS API key |
+| `REVENUECAT_ANDROID_API_KEY` | RevenueCat Android API key |
 
 ## Deployment
 

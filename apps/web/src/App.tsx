@@ -32,6 +32,7 @@ import MemberPets from './pages/MemberPets';
 import Arcade from './pages/Arcade';
 import Collection from './pages/Collection';
 import SchoolExtracurricular from './pages/SchoolExtracurricular';
+import Subscription from './pages/Subscription';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -164,6 +165,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <HouseholdSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/subscription"
+        element={
+          <ProtectedRoute>
+            <Subscription />
           </ProtectedRoute>
         }
       />

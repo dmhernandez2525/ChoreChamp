@@ -19,6 +19,8 @@ export const queryKeys = {
   session: ['session'] as const,
   households: ['households'] as const,
   household: (id: string) => ['household', id] as const,
+  subscriptionPlans: (householdId: string) => ['subscriptionPlans', householdId] as const,
+  subscriptionStatus: (householdId: string) => ['subscriptionStatus', householdId] as const,
   members: (householdId: string) => ['members', householdId] as const,
   inviteCodes: (householdId: string) => ['inviteCodes', householdId] as const,
   chores: (householdId: string) => ['chores', householdId] as const,
@@ -162,6 +164,46 @@ export function useCreateHousehold() {
   });
 }
 
+export function useUpdateHousehold(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      name?: string;
+      timezone?: string;
+      weekStartsOn?: number;
+      pointsName?: string;
+      currency?: string;
+    }) => apiClient.updateHousehold(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.household(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.households });
+    },
+  });
+}
+
+export function useLeaveHousehold(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.leaveHousehold(householdId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.households });
+    },
+  });
+}
+
+export function useDeleteHousehold(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.deleteHousehold(householdId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.households });
+    },
+  });
+}
+
 export function useJoinHousehold() {
   const queryClient = useQueryClient();
 
@@ -170,6 +212,37 @@ export function useJoinHousehold() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.households });
     },
+  });
+}
+
+// ===== Subscription Hooks =====
+export function useSubscriptionPlans(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.subscriptionPlans(householdId),
+    queryFn: () => apiClient.getSubscriptionPlans(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useSubscriptionStatus(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.subscriptionStatus(householdId),
+    queryFn: () => apiClient.getSubscriptionStatus(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateCheckoutSession(householdId: string) {
+  return useMutation({
+    mutationFn: (data: Parameters<typeof apiClient.createCheckoutSession>[1]) =>
+      apiClient.createCheckoutSession(householdId, data),
+  });
+}
+
+export function useCreatePortalSession(householdId: string) {
+  return useMutation({
+    mutationFn: (data: Parameters<typeof apiClient.createPortalSession>[1]) =>
+      apiClient.createPortalSession(householdId, data),
   });
 }
 

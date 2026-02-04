@@ -6,3 +6,4 @@ export * from './sounds';
 export * from './linking';
 export * from './sharing';
 export * from './biometric';
+export * from './revenuecat';

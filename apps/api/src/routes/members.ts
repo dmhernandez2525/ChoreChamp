@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { members } from '@chorechamp/database';
+import { households, members } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { getEffectiveMemberLimit } from '../lib/subscription';
 
 // Validation schemas
 const createMemberSchema = z.object({
@@ -94,6 +95,33 @@ export async function memberRoutes(fastify: FastifyInstance) {
         error: 'Forbidden',
         message: 'Only parents can add members',
       });
+    }
+
+    const [household] = await db
+      .select()
+      .from(households)
+      .where(eq(households.id, householdId));
+
+    if (!household) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Household not found',
+      });
+    }
+
+    const memberLimit = getEffectiveMemberLimit(household);
+    if (memberLimit !== null) {
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(members)
+        .where(and(eq(members.householdId, householdId), eq(members.isActive, true)));
+
+      if (Number(count) >= memberLimit) {
+        return reply.status(403).send({
+          error: 'Limit Reached',
+          message: `Your plan allows up to ${memberLimit} family members.`,
+        });
+      }
     }
 
     const [member] = await db

@@ -133,32 +133,44 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-900">Simple Pricing</h2>
           <p className="mt-4 text-gray-600">
-            Start free, upgrade when you're ready.
+            Start free, upgrade when you're ready. Annual plans include two months free.
           </p>
-          <div className="mt-12 flex justify-center gap-8">
+          <div className="mt-12 grid gap-8 md:grid-cols-3">
             {/* Free */}
-            <div className="w-72 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-gray-900">Free</h3>
               <p className="mt-2 text-4xl font-bold text-gray-900">$0</p>
               <p className="text-gray-500">forever</p>
               <ul className="mt-6 space-y-2 text-left text-gray-600">
-                <li>✓ Up to 3 kids</li>
-                <li>✓ Basic chores & points</li>
-                <li>✓ 5 badges</li>
+                <li>✓ Up to 5 family members</li>
+                <li>✓ Core chores & points</li>
+                <li>✓ Basic badges & streaks</li>
+              </ul>
+            </div>
+            {/* Family */}
+            <div className="rounded-xl border-2 border-blue-600 bg-white p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-blue-600">Family</h3>
+              <p className="mt-2 text-4xl font-bold text-gray-900">$4.99</p>
+              <p className="text-gray-500">/month</p>
+              <ul className="mt-6 space-y-2 text-left text-gray-600">
+                <li>✓ Up to 6 family members</li>
+                <li>✓ Ad-free experience</li>
+                <li>✓ Family goals & challenges</li>
+                <li>✓ Allowance tracking</li>
+                <li>✓ Premium templates</li>
               </ul>
             </div>
             {/* Premium */}
-            <div className="w-72 rounded-xl border-2 border-blue-600 bg-white p-6 shadow-lg">
-              <h3 className="text-xl font-semibold text-blue-600">Premium</h3>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-900">Premium</h3>
               <p className="mt-2 text-4xl font-bold text-gray-900">$9.99</p>
               <p className="text-gray-500">/month</p>
               <ul className="mt-6 space-y-2 text-left text-gray-600">
-                <li>✓ Unlimited kids</li>
-                <li>✓ All gamification features</li>
-                <li>✓ 15+ badges</li>
-                <li>✓ Photo proof</li>
-                <li>✓ Custom rewards</li>
+                <li>✓ Unlimited members</li>
+                <li>✓ Advanced analytics</li>
+                <li>✓ Custom themes & skins</li>
                 <li>✓ Priority support</li>
+                <li>✓ All premium features</li>
               </ul>
             </div>
           </div>
@@ -178,7 +190,7 @@ export default function Landing() {
             to="/signup"
             className="mt-8 inline-block rounded-lg bg-white px-8 py-3 text-lg font-semibold text-blue-600 shadow-lg hover:bg-gray-100 transition-colors"
           >
-            Start Your 7-Day Free Trial
+            Start Your 14-Day Free Trial
           </Link>
         </div>
       </section>

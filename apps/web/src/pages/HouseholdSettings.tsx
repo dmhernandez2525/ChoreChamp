@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
-import { useHousehold, useMembers } from '@chorechamp/api-client';
+import { useHousehold, useMembers, useUpdateHousehold, useLeaveHousehold, useDeleteHousehold } from '@chorechamp/api-client';
 import { useAuth } from '../context/AuthContext';
 import { HouseholdSettingsSection } from '../components/settings';
 import { Skeleton } from '../components/common';
@@ -13,6 +13,9 @@ export default function HouseholdSettings() {
 
   const { data: household, isLoading: loadingHousehold } = useHousehold(householdId!);
   const { data: members, isLoading: loadingMembers } = useMembers(householdId!);
+  const updateHousehold = useUpdateHousehold(householdId!);
+  const leaveHousehold = useLeaveHousehold(householdId!);
+  const deleteHousehold = useDeleteHousehold(householdId!);
 
   // Find current member to check if parent
   const currentMember = useMemo(() => {
@@ -29,22 +32,16 @@ export default function HouseholdSettings() {
     weekStartsOn?: number;
     pointsName?: string;
   }) => {
-    // TODO: Implement update household settings API call
-    console.log('Update household settings:', settings);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await updateHousehold.mutateAsync(settings);
   };
 
   const handleLeaveHousehold = async () => {
-    // TODO: Implement leave household API call
-    console.log('Leave household');
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await leaveHousehold.mutateAsync();
     navigate('/dashboard');
   };
 
   const handleDeleteHousehold = async () => {
-    // TODO: Implement delete household API call
-    console.log('Delete household');
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await deleteHousehold.mutateAsync();
     navigate('/dashboard');
   };
 

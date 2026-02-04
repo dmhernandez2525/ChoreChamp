@@ -1,8 +1,8 @@
 # ChoreChamp Work Status
 
-**Last Updated:** 2026-01-30
-**Current Phase:** Web + Android COMPLETE
-**Status:** All Phases A-G finished - PRs #54-#60 ready for merge
+**Last Updated:** 2026-02-03
+**Current Phase:** Phase 12 - Monetization & Business
+**Status:** F12.1 in progress (local branch)
 
 ---
 
@@ -12,7 +12,15 @@ This document tracks the current work status for ChoreChamp development. Update 
 
 ---
 
-## Current Focus: Web + Android Completion
+## Current Focus: F12.1 Subscription Tier System
+
+- [x] Stripe checkout + billing portal (web)
+- [x] RevenueCat sync (mobile)
+- [x] Subscription management UI (web)
+- [x] Member limits enforced
+- [x] Docs + env examples updated
+- [ ] Tests + CI run
+- [ ] PR created
 
 ### Phase A: Core Handler Completion (Web) ✅ COMPLETE (PR #54)
 **Goal:** Wire up all stubbed handlers in the web app

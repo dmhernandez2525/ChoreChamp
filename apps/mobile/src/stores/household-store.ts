@@ -12,6 +12,7 @@ import * as schema from '../db/schema';
 import { apiClient } from '../lib/api-client';
 import { storage } from '../lib/storage';
 import { checkNetworkStatus } from '../hooks/use-network-status';
+import { syncRevenueCatSubscription } from '../services/revenuecat';
 
 interface HouseholdState {
   // Active selections
@@ -69,12 +70,32 @@ function cachedHouseholdToHousehold(cached: typeof schema.cachedHouseholds.$infe
     weekStartsOn: cached.weekStartsOn || 0,
     pointsName: cached.pointsName || 'points',
     currency: cached.currency || 'USD',
+    subscriptionTier: (cached.subscriptionTier as Household['subscriptionTier']) || 'free',
+    subscriptionStatus: (cached.subscriptionStatus as Household['subscriptionStatus']) || 'free',
+    subscriptionExpiresAt: cached.subscriptionCurrentPeriodEnd
+      ? new Date(cached.subscriptionCurrentPeriodEnd)
+      : null,
+    subscriptionProvider: (cached.subscriptionProvider as Household['subscriptionProvider']) || null,
+    subscriptionStore: (cached.subscriptionStore as Household['subscriptionStore']) || null,
+    subscriptionBillingInterval:
+      (cached.subscriptionBillingInterval as Household['subscriptionBillingInterval']) || null,
+    subscriptionCurrentPeriodStart: cached.subscriptionCurrentPeriodStart
+      ? new Date(cached.subscriptionCurrentPeriodStart)
+      : null,
+    subscriptionCurrentPeriodEnd: cached.subscriptionCurrentPeriodEnd
+      ? new Date(cached.subscriptionCurrentPeriodEnd)
+      : null,
+    subscriptionTrialEndsAt: cached.subscriptionTrialEndsAt ? new Date(cached.subscriptionTrialEndsAt) : null,
+    subscriptionGracePeriodEndsAt: cached.subscriptionGracePeriodEndsAt
+      ? new Date(cached.subscriptionGracePeriodEndsAt)
+      : null,
+    subscriptionCancelAtPeriodEnd: cached.subscriptionCancelAtPeriodEnd ?? false,
+    subscriptionCanceledAt: cached.subscriptionCanceledAt ? new Date(cached.subscriptionCanceledAt) : null,
+    subscriptionIsGrandfathered: cached.subscriptionIsGrandfathered ?? false,
+    subscriptionMemberLimit: cached.subscriptionMemberLimit ?? null,
     totalChoresCompleted: cached.totalChoresCompleted || 0,
     currentFamilyStreak: cached.currentFamilyStreak || 0,
     longestFamilyStreak: cached.longestFamilyStreak || 0,
-    subscriptionTier: 'free',
-    subscriptionExpiresAt: null,
-    subscriptionProvider: null,
     createdBy: '',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -237,6 +258,12 @@ export const useHouseholdStore = create<HouseholdStore>((set, get) => ({
       todayChores: [],
       rewards: [],
     });
+
+    try {
+      await syncRevenueCatSubscription(householdId, household.subscriptionTier);
+    } catch {
+      // Best-effort sync
+    }
 
     // Load household data
     await get().loadMembers();

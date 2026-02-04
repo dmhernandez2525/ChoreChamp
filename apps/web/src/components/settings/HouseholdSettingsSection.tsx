@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, cn } from '@chorechamp/ui';
 import type { Household } from '@chorechamp/types';
 
@@ -56,6 +57,33 @@ export function HouseholdSettingsSection({
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+  const planLabelMap: Record<Household['subscriptionTier'], string> = {
+    free: 'Free',
+    family: 'Family',
+    premium: 'Premium',
+  };
+
+  const statusLabelMap: Record<Household['subscriptionStatus'], string> = {
+    free: 'Free',
+    trialing: 'Trial',
+    active: 'Active',
+    past_due: 'Past Due',
+    grace_period: 'Grace Period',
+    canceled: 'Canceled',
+    expired: 'Expired',
+  };
+
+  const planLabel = planLabelMap[household.subscriptionTier] ?? 'Free';
+  const statusLabel = statusLabelMap[household.subscriptionStatus] ?? 'Free';
+  const statusTone =
+    household.subscriptionStatus === 'active' || household.subscriptionStatus === 'trialing'
+      ? 'bg-emerald-100 text-emerald-700'
+      : household.subscriptionStatus === 'grace_period' || household.subscriptionStatus === 'past_due'
+        ? 'bg-amber-100 text-amber-700'
+        : household.subscriptionStatus === 'canceled' || household.subscriptionStatus === 'expired'
+          ? 'bg-red-100 text-red-700'
+          : 'bg-gray-100 text-gray-700';
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
@@ -246,18 +274,21 @@ export function HouseholdSettingsSection({
 
           {/* Subscription Info */}
           <div className="border-t pt-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-gray-700">Plan:</span>
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-xs font-medium',
-                  household.subscriptionTier === 'premium'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-gray-100 text-gray-700'
-                )}
-              >
-                {household.subscriptionTier === 'premium' ? 'Premium' : 'Free'}
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                {planLabel}
               </span>
+              <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', statusTone)}>
+                {statusLabel}
+              </span>
+              {isParent && (
+                <Button variant="outline" size="sm" asChild className="ml-auto">
+                  <Link to={`/households/${household.id}/subscription`}>
+                    Manage Subscription
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
 

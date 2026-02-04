@@ -1,7 +1,7 @@
 # ChoreChamp Development Roadmap
 
 **Version:** 1.0.0
-**Last Updated:** 2026-01-28
+**Last Updated:** 2026-02-03
 **Status:** Active Development
 
 ---
@@ -426,6 +426,18 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 
 ---
 
+## Phase 12: Monetization & Business (Weeks 41-44)
+
+**Goal:** Launch subscription tiers, payment infrastructure, and monetization tooling.
+
+- [x] F12.1 - Subscription tier system (Stripe + RevenueCat, 14-day trial)
+- [ ] F12.2 - Premium feature gates
+- [ ] F12.3 - In-app purchase store
+- [ ] F12.4 - Enterprise & school edition
+- [ ] F12.5 - API platform & integrations
+
+---
+
 ## Decision Log
 
 | Date | Decision | Rationale |
@@ -433,6 +445,7 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 | 2026-01-28 | Fastify + PostgreSQL over Firebase | Consistency with existing projects, more control |
 | 2026-01-28 | $9.99/month pricing | Research shows premium positioning works for family apps |
 | 2026-01-28 | 7-day trial | 39.7% median conversion (RevenueCat data) |
+| 2026-02-03 | 14-day trial | Trial uplift for family subscriptions (extended onboarding) |
 | 2026-01-28 | Offline-first mobile | #1 competitor complaint is reliability |
 
 ---
