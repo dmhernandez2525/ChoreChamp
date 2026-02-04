@@ -1,7 +1,6 @@
 // Story Mode Adventure Routes (F9.5)
 
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import { eq, and, asc, inArray, sql } from 'drizzle-orm';
 import { db } from '@chorechamp/database';
 import {
@@ -235,14 +234,7 @@ function formatDialogue(dialogue: typeof storyDialogues.$inferSelect): StoryDial
 
 export async function storyModeRoutes(app: FastifyInstance) {
   // Get all chapters with progress
-  app.get('/story/chapters', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid(),
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/chapters', async (request, reply) => {
     const { memberId, householdId } = request.query as { memberId: string; householdId: string };
 
     // Ensure story progress exists
@@ -278,17 +270,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Get specific chapter details
-  app.get('/story/chapters/:chapterId', {
-    schema: {
-      params: z.object({
-        chapterId: z.string(),
-      }),
-      querystring: z.object({
-        memberId: z.string().uuid(),
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/chapters/:chapterId', async (request, reply) => {
     const { chapterId } = request.params as { chapterId: string };
     const { memberId, householdId } = request.query as { memberId: string; householdId: string };
 
@@ -388,14 +370,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Get story progress overview
-  app.get('/story/progress', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid(),
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/progress', async (request, reply) => {
     const { memberId, householdId } = request.query as { memberId: string; householdId: string };
 
     // Get or create progress
@@ -487,17 +462,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Start a quest
-  app.post('/story/quests/:questId/start', {
-    schema: {
-      params: z.object({
-        questId: z.string(),
-      }),
-      body: z.object({
-        memberId: z.string().uuid(),
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/quests/:questId/start', async (request, reply) => {
     const { questId } = request.params as { questId: string };
     const { memberId } = request.body as { memberId: string; householdId: string };
 
@@ -625,18 +590,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Update quest objective progress
-  app.post('/story/quests/:questId/objectives/:objectiveId/progress', {
-    schema: {
-      params: z.object({
-        questId: z.string(),
-        objectiveId: z.string(),
-      }),
-      body: z.object({
-        memberId: z.string().uuid(),
-        progressAmount: z.number().int().positive().default(1),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/quests/:questId/objectives/:objectiveId/progress', async (request, reply) => {
     const { questId, objectiveId } = request.params as { questId: string; objectiveId: string };
     const { memberId, progressAmount } = request.body as { memberId: string; progressAmount: number };
 
@@ -712,17 +666,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Complete a quest
-  app.post('/story/quests/:questId/complete', {
-    schema: {
-      params: z.object({
-        questId: z.string(),
-      }),
-      body: z.object({
-        memberId: z.string().uuid(),
-        householdId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/quests/:questId/complete', async (request, reply) => {
     const { questId } = request.params as { questId: string };
     const { memberId } = request.body as { memberId: string; householdId: string };
 
@@ -982,17 +926,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Make a dialogue choice
-  app.post('/story/dialogues/:dialogueId/choice', {
-    schema: {
-      params: z.object({
-        dialogueId: z.string(),
-      }),
-      body: z.object({
-        memberId: z.string().uuid(),
-        choiceId: z.string(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/dialogues/:dialogueId/choice', async (request, reply) => {
     const { dialogueId } = request.params as { dialogueId: string };
     const { memberId, choiceId } = request.body as { memberId: string; choiceId: string };
 
@@ -1110,16 +1044,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Mark dialogue as viewed
-  app.post('/story/dialogues/:dialogueId/view', {
-    schema: {
-      params: z.object({
-        dialogueId: z.string(),
-      }),
-      body: z.object({
-        memberId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.post('/dialogues/:dialogueId/view', async (request, reply) => {
     const { dialogueId } = request.params as { dialogueId: string };
     const { memberId } = request.body as { memberId: string };
 
@@ -1159,13 +1084,7 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Get all characters
-  app.get('/story/characters', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid(),
-      }),
-    },
-  }, async (request, reply) => {
+  app.get('/characters', async (request, reply) => {
     const { memberId } = request.query as { memberId: string };
 
     // Get all characters
