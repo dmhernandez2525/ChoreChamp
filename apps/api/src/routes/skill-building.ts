@@ -28,6 +28,7 @@ const skillCategorySchema = z.enum(['cooking', 'cleaning', 'organization', 'laun
 const masteryLevelSchema = z.enum(['novice', 'beginner', 'intermediate', 'advanced', 'expert', 'master']);
 const challengeTypeSchema = z.enum(['time_trial', 'quality_check', 'streak', 'teaching', 'assessment']);
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createSkillTreeSchema = z.object({
   category: skillCategorySchema,
   name: z.string().min(1).max(100),
@@ -36,6 +37,7 @@ const createSkillTreeSchema = z.object({
   colorTheme: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createSkillSchema = z.object({
   skillTreeId: z.string().uuid(),
   name: z.string().min(1).max(100),
@@ -55,6 +57,7 @@ const createSkillSchema = z.object({
   isCore: z.boolean().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const logPracticeSchema = z.object({
   skillId: z.string().uuid(),
   memberId: z.string().uuid(),
@@ -69,6 +72,7 @@ const logPracticeSchema = z.object({
   notes: z.string().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createChallengeSchema = z.object({
   skillId: z.string().uuid(),
   title: z.string().min(1).max(100),
@@ -87,6 +91,7 @@ const createChallengeSchema = z.object({
   maxAttempts: z.number().int().positive().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for type inference
 const createMentorshipSchema = z.object({
   mentorId: z.string().uuid(),
   menteeId: z.string().uuid(),
@@ -126,7 +131,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === SKILL TREES ===
 
   // Get all skill trees
-  fastify.get('/skill-trees', async (request) => {
+  fastify.get('/trees', async (request) => {
     const { householdId } = request.params as { householdId: string };
 
     const trees = await db.select().from(skillTrees)
@@ -137,7 +142,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Get single skill tree with skills
-  fastify.get('/skill-trees/:treeId', async (request) => {
+  fastify.get('/trees/:treeId', async (request) => {
     const { householdId, treeId } = request.params as { householdId: string; treeId: string };
 
     const [tree] = await db.select().from(skillTrees)
@@ -158,11 +163,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create skill tree
-  fastify.post('/skill-trees', {
-    schema: {
-      body: createSkillTreeSchema,
-    },
-  }, async (request) => {
+  fastify.post('/trees', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createSkillTreeSchema>;
 
@@ -175,7 +176,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Update skill tree
-  fastify.patch('/skill-trees/:treeId', async (request) => {
+  fastify.patch('/trees/:treeId', async (request) => {
     const { householdId, treeId } = request.params as { householdId: string; treeId: string };
     const body = request.body as Partial<z.infer<typeof createSkillTreeSchema>> & { isActive?: boolean };
 
@@ -193,14 +194,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === SKILLS ===
 
   // Get all skills
-  fastify.get('/skills', {
-    schema: {
-      querystring: z.object({
-        treeId: z.string().uuid().optional(),
-        category: skillCategorySchema.optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/skills', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { treeId } = request.query as { treeId?: string };
 
@@ -215,7 +209,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Get single skill
-  fastify.get('/skills/:skillId', async (request) => {
+  fastify.get('/:skillId', async (request) => {
     const { householdId, skillId } = request.params as { householdId: string; skillId: string };
 
     const [skill] = await db.select().from(skills)
@@ -244,11 +238,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create skill
-  fastify.post('/skills', {
-    schema: {
-      body: createSkillSchema,
-    },
-  }, async (request) => {
+  fastify.post('/skills', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createSkillSchema>;
 
@@ -274,7 +264,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Update skill
-  fastify.patch('/skills/:skillId', async (request) => {
+  fastify.patch('/:skillId', async (request) => {
     const { householdId, skillId } = request.params as { householdId: string; skillId: string };
     const body = request.body as Partial<z.infer<typeof createSkillSchema>>;
 
@@ -346,11 +336,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Log practice session
-  fastify.post('/practice', {
-    schema: {
-      body: logPracticeSchema,
-    },
-  }, async (request) => {
+  fastify.post('/practice', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof logPracticeSchema>;
 
@@ -451,14 +437,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Get practice history
-  fastify.get('/members/:memberId/practice-history', {
-    schema: {
-      querystring: z.object({
-        skillId: z.string().uuid().optional(),
-        limit: z.coerce.number().int().positive().default(20),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/members/:memberId/practice-history', async (request) => {
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
     const { skillId, limit } = request.query as { skillId?: string; limit: number };
 
@@ -574,14 +553,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === CHALLENGES ===
 
   // Get skill challenges
-  fastify.get('/challenges', {
-    schema: {
-      querystring: z.object({
-        skillId: z.string().uuid().optional(),
-        difficulty: masteryLevelSchema.optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/challenges', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { skillId, difficulty } = request.query as { skillId?: string; difficulty?: string };
 
@@ -600,11 +572,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create challenge
-  fastify.post('/challenges', {
-    schema: {
-      body: createChallengeSchema,
-    },
-  }, async (request) => {
+  fastify.post('/challenges', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createChallengeSchema>;
 
@@ -709,15 +677,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === MENTORSHIP ===
 
   // Get mentorships
-  fastify.get('/mentorships', {
-    schema: {
-      querystring: z.object({
-        memberId: z.string().uuid().optional(),
-        role: z.enum(['mentor', 'mentee']).optional(),
-        status: z.enum(['pending', 'active', 'completed', 'cancelled']).optional(),
-      }),
-    },
-  }, async (request) => {
+  fastify.get('/mentorships', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const { memberId, role, status } = request.query as { memberId?: string; role?: string; status?: string };
 
@@ -742,11 +702,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create mentorship
-  fastify.post('/mentorships', {
-    schema: {
-      body: createMentorshipSchema,
-    },
-  }, async (request) => {
+  fastify.post('/mentorships', async (request) => {
     const { householdId } = request.params as { householdId: string };
     const body = request.body as z.infer<typeof createMentorshipSchema>;
 
@@ -843,7 +799,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === EXPERT TIPS ===
 
   // Get tips for a skill
-  fastify.get('/skills/:skillId/tips', async (request) => {
+  fastify.get('/:skillId/tips', async (request) => {
     const { skillId } = request.params as { skillId: string };
 
     const tips = await db.select().from(expertTips)
@@ -854,7 +810,7 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Add tip
-  fastify.post('/skills/:skillId/tips', async (request) => {
+  fastify.post('/:skillId/tips', async (request) => {
     const { householdId, skillId } = request.params as { householdId: string; skillId: string };
     const body = request.body as {
       title: string;
