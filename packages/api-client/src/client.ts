@@ -131,6 +131,14 @@ import type {
   CreatePortalSessionResponse,
   RevenueCatSyncRequest,
   RevenueCatSyncResponse,
+  SupportThread,
+  SupportMessage,
+  CreateSupportThreadRequest,
+  CreateSupportMessageRequest,
+  SupportThreadWithMessages,
+  ApiKey,
+  CreateApiKeyRequest,
+  CreateApiKeyResponse,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -247,6 +255,9 @@ class ApiClient {
       weekStartsOn?: number;
       pointsName?: string;
       currency?: string;
+      themeId?: string | null;
+      brandingName?: string | null;
+      brandingLogoUrl?: string | null;
     }
   ): Promise<Household> {
     return this.request(`/households/${householdId}`, {
@@ -510,6 +521,71 @@ class ApiClient {
     return this.request(`/households/${householdId}/redemptions/${redemptionId}/reject`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
+    });
+  }
+
+  // ===== Support =====
+  async getSupportThreads(householdId: string): Promise<SupportThread[]> {
+    return this.request(`/households/${householdId}/support/threads`);
+  }
+
+  async getSupportThread(
+    householdId: string,
+    threadId: string
+  ): Promise<SupportThreadWithMessages> {
+    return this.request(`/households/${householdId}/support/threads/${threadId}`);
+  }
+
+  async createSupportThread(
+    householdId: string,
+    data: CreateSupportThreadRequest
+  ): Promise<{ thread: SupportThread; message: SupportMessage }> {
+    return this.request(`/households/${householdId}/support/threads`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createSupportMessage(
+    householdId: string,
+    threadId: string,
+    data: CreateSupportMessageRequest
+  ): Promise<SupportMessage> {
+    return this.request(`/households/${householdId}/support/threads/${threadId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupportThreadStatus(
+    householdId: string,
+    threadId: string,
+    status: 'open' | 'pending' | 'closed'
+  ): Promise<SupportThread> {
+    return this.request(`/households/${householdId}/support/threads/${threadId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // ===== API Keys =====
+  async getApiKeys(householdId: string): Promise<ApiKey[]> {
+    return this.request(`/households/${householdId}/api-keys`);
+  }
+
+  async createApiKey(
+    householdId: string,
+    data: CreateApiKeyRequest
+  ): Promise<CreateApiKeyResponse> {
+    return this.request(`/households/${householdId}/api-keys`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async revokeApiKey(householdId: string, keyId: string): Promise<ApiKey> {
+    return this.request(`/households/${householdId}/api-keys/${keyId}/revoke`, {
+      method: 'POST',
     });
   }
 

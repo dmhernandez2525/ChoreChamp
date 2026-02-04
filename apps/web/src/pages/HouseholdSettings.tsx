@@ -31,6 +31,9 @@ export default function HouseholdSettings() {
     timezone?: string;
     weekStartsOn?: number;
     pointsName?: string;
+    themeId?: string | null;
+    brandingName?: string | null;
+    brandingLogoUrl?: string | null;
   }) => {
     await updateHousehold.mutateAsync(settings);
   };
@@ -47,8 +50,8 @@ export default function HouseholdSettings() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white shadow-sm">
+      <div className="min-h-screen bg-[var(--app-bg)]">
+        <header className="border-b bg-[var(--app-surface)] shadow-sm">
           <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4">
             <Skeleton className="h-6 w-6" />
             <Skeleton className="h-6 w-40" />
@@ -63,7 +66,7 @@ export default function HouseholdSettings() {
 
   if (!household) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--app-bg)] flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Household not found</p>
           <Button asChild className="mt-4">
@@ -75,9 +78,9 @@ export default function HouseholdSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--app-bg)]">
       {/* Header */}
-      <header className="border-b bg-white shadow-sm">
+      <header className="border-b bg-[var(--app-surface)] shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4">
           <Link
             to={`/households/${householdId}`}

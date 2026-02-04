@@ -34,6 +34,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   const loadAnalytics = useCallback(async (refresh = false) => {
     try {
@@ -46,7 +47,6 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
       const data = await apiClient.getFamilyAnalytics(householdId, { period });
       setAnalytics(data);
     } catch (err) {
-      console.error('Failed to load analytics:', err);
       setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setIsLoading(false);
@@ -64,15 +64,15 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
 
   const handleExport = async (format: 'pdf' | 'csv' | 'json') => {
     try {
+      setExportNotice(null);
       await apiClient.exportAnalytics(householdId, {
         format,
         period,
         sections: ['overview', 'members', 'trends', 'chores', 'engagement'],
       });
-      // In real app, would trigger download
-      alert(`Export requested in ${format.toUpperCase()} format`);
+      setExportNotice(`Export requested in ${format.toUpperCase()} format.`);
     } catch (err) {
-      console.error('Failed to export:', err);
+      setExportNotice(err instanceof Error ? err.message : 'Failed to export analytics');
     }
   };
 
@@ -123,7 +123,7 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -133,16 +133,22 @@ export function FamilyAnalyticsDashboard({ householdId }: FamilyAnalyticsDashboa
             <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
           <div className="relative">
-            <button
-              onClick={() => handleExport('pdf')}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              aria-label="Export analytics as PDF"
-            >
-              <Download className="w-4 h-4" aria-hidden="true" />
-              Export
-            </button>
-          </div>
+          <button
+            onClick={() => handleExport('pdf')}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label="Export analytics as PDF"
+          >
+            <Download className="w-4 h-4" aria-hidden="true" />
+            Export
+          </button>
         </div>
+      </div>
+
+      {exportNotice && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+          {exportNotice}
+        </div>
+      )}
       </div>
 
       {/* Period Selector */}

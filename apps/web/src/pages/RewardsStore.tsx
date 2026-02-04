@@ -21,6 +21,7 @@ import {
 } from '../components/rewards';
 import { Skeleton } from '../components/common';
 import type { Reward } from '@chorechamp/types';
+import { hasFeature } from '../lib/subscription';
 
 export default function RewardsStore() {
   const { householdId } = useParams<{ householdId: string }>();
@@ -51,6 +52,7 @@ export default function RewardsStore() {
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'store' | 'pending'>('store');
 
@@ -59,6 +61,7 @@ export default function RewardsStore() {
 
     setRedeemingId(selectedReward.id);
     try {
+      setError(null);
       await redeemReward.mutateAsync({
         rewardId: selectedReward.id,
         memberId: currentMember.id,
@@ -66,7 +69,7 @@ export default function RewardsStore() {
       });
       setSelectedReward(null);
     } catch (error) {
-      console.error('Failed to redeem reward:', error);
+      setError(error instanceof Error ? error.message : 'Failed to redeem reward');
     } finally {
       setRedeemingId(null);
     }
@@ -75,9 +78,10 @@ export default function RewardsStore() {
   const handleApprove = async (redemptionId: string) => {
     setProcessingId(redemptionId);
     try {
+      setError(null);
       await approveRedemption.mutateAsync(redemptionId);
     } catch (error) {
-      console.error('Failed to approve redemption:', error);
+      setError(error instanceof Error ? error.message : 'Failed to approve redemption');
     } finally {
       setProcessingId(null);
     }
@@ -86,9 +90,10 @@ export default function RewardsStore() {
   const handleFulfill = async (redemptionId: string) => {
     setProcessingId(redemptionId);
     try {
+      setError(null);
       await fulfillRedemption.mutateAsync(redemptionId);
     } catch (error) {
-      console.error('Failed to fulfill redemption:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fulfill redemption');
     } finally {
       setProcessingId(null);
     }
@@ -97,9 +102,10 @@ export default function RewardsStore() {
   const handleReject = async (redemptionId: string, reason: string) => {
     setProcessingId(redemptionId);
     try {
+      setError(null);
       await rejectRedemption.mutateAsync({ redemptionId, reason });
     } catch (error) {
-      console.error('Failed to reject redemption:', error);
+      setError(error instanceof Error ? error.message : 'Failed to reject redemption');
     } finally {
       setProcessingId(null);
     }
@@ -109,8 +115,8 @@ export default function RewardsStore() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white shadow-sm">
+      <div className="min-h-screen bg-[var(--app-bg)]">
+        <header className="border-b bg-[var(--app-surface)] shadow-sm">
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4">
             <Skeleton className="h-6 w-6" />
             <Skeleton className="h-6 w-48" />
@@ -129,7 +135,7 @@ export default function RewardsStore() {
 
   if (!household) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)]">
         <div className="text-center">
           <p className="text-gray-600">Household not found</p>
           <Button asChild className="mt-4">
@@ -144,10 +150,13 @@ export default function RewardsStore() {
     pendingRedemptions?.filter((r) => r.status === 'pending' || r.status === 'approved')
       .length || 0;
 
+  const canCreateUnlimitedRewards = hasFeature(household, 'unlimited_rewards');
+  const rewardLimitReached = !canCreateUnlimitedRewards && (rewards?.length || 0) >= 5;
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--app-bg)]">
       {/* Header */}
-      <header className="border-b bg-white shadow-sm">
+      <header className="border-b bg-[var(--app-surface)] shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <Link
@@ -170,11 +179,21 @@ export default function RewardsStore() {
             </div>
 
             {isParent && (
-              <Button asChild>
-                <Link to={`/households/${householdId}/rewards/new`}>
-                  Create Reward
-                </Link>
-              </Button>
+              <div className="flex flex-col items-end gap-2">
+                <Button asChild disabled={rewardLimitReached}>
+                  <Link to={`/households/${householdId}/rewards/new`}>
+                    Create Reward
+                  </Link>
+                </Button>
+                {rewardLimitReached && (
+                  <Link
+                    to={`/households/${householdId}/subscription`}
+                    className="text-xs text-amber-700 underline"
+                  >
+                    Upgrade for unlimited rewards
+                  </Link>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -215,6 +234,16 @@ export default function RewardsStore() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-4 py-8">
+        {rewardLimitReached && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+            Free and Family plans can create up to 5 rewards. Upgrade to Premium for unlimited rewards.
+          </div>
+        )}
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
         {activeTab === 'store' ? (
           <RewardsList
             rewards={rewards || []}

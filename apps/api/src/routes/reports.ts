@@ -5,8 +5,11 @@ import {
   choreCompletions,
   members,
   chores,
+  households,
 } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { getEffectiveTierForHousehold } from '../lib/subscription';
+import type { SubscriptionTier } from '@chorechamp/types';
 
 async function verifyParentMembership(
   userId: string,
@@ -21,6 +24,26 @@ async function verifyParentMembership(
       eq(members.role, 'parent')
     ));
   return !!membership;
+}
+
+function resolveReportWindowDays(tier: SubscriptionTier): number {
+  if (tier === 'premium') return 365 * 2;
+  return 30;
+}
+
+function clampReportRange(start: Date, end: Date, maxDays: number) {
+  const windowMs = maxDays * 24 * 60 * 60 * 1000;
+  const minStart = new Date(end.getTime() - windowMs);
+  if (start.getTime() < minStart.getTime()) {
+    return { start: minStart, end, limitApplied: true };
+  }
+  return { start, end, limitApplied: false };
+}
+
+async function getEffectiveTierForReports(householdId: string): Promise<SubscriptionTier> {
+  const [household] = await db.select().from(households).where(eq(households.id, householdId));
+  if (!household) return 'free';
+  return getEffectiveTierForHousehold(household);
 }
 
 export async function reportsRoutes(fastify: FastifyInstance) {
@@ -46,11 +69,12 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Default to last 30 days
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const effectiveTier = await getEffectiveTierForReports(householdId);
+    const maxDays = resolveReportWindowDays(effectiveTier);
+    const defaultStart = new Date(end.getTime() - maxDays * 24 * 60 * 60 * 1000);
+    const requestedStart = startDate ? new Date(startDate) : defaultStart;
+    const { start, end: rangeEnd, limitApplied } = clampReportRange(requestedStart, end, maxDays);
 
     // Overall stats
     const [overallStats] = await db
@@ -67,7 +91,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(choreCompletions.householdId, householdId),
         gte(choreCompletions.completedAt, start),
-        lte(choreCompletions.completedAt, end)
+        lte(choreCompletions.completedAt, rangeEnd)
       ));
 
     // Per-member breakdown
@@ -88,7 +112,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
         and(
           eq(choreCompletions.memberId, members.id),
           gte(choreCompletions.completedAt, start),
-          lte(choreCompletions.completedAt, end)
+          lte(choreCompletions.completedAt, rangeEnd)
         )
       )
       .where(and(
@@ -112,7 +136,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(choreCompletions.householdId, householdId),
         gte(choreCompletions.completedAt, start),
-        lte(choreCompletions.completedAt, end)
+        lte(choreCompletions.completedAt, rangeEnd)
       ))
       .groupBy(chores.id, chores.title, chores.category)
       .orderBy(sql`count(*) desc`)
@@ -121,8 +145,10 @@ export async function reportsRoutes(fastify: FastifyInstance) {
     return reply.send({
       period: {
         start,
-        end,
-        days: Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)),
+        end: rangeEnd,
+        days: Math.ceil((rangeEnd.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)),
+        maxDays,
+        limitApplied,
       },
       overall: overallStats,
       members: memberBreakdown,
@@ -154,11 +180,12 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Default to last 14 days
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(end.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const effectiveTier = await getEffectiveTierForReports(householdId);
+    const maxDays = resolveReportWindowDays(effectiveTier);
+    const defaultStart = new Date(end.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const requestedStart = startDate ? new Date(startDate) : defaultStart;
+    const { start, end: rangeEnd, limitApplied } = clampReportRange(requestedStart, end, maxDays);
 
     const trend = await db
       .select({
@@ -170,7 +197,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(choreCompletions.householdId, householdId),
         gte(choreCompletions.completedAt, start),
-        lte(choreCompletions.completedAt, end),
+        lte(choreCompletions.completedAt, rangeEnd),
         memberId ? eq(choreCompletions.memberId, memberId) : sql`1=1`
       ))
       .groupBy(sql`date(${choreCompletions.completedAt})`)
@@ -181,7 +208,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
     const currentDate = new Date(start);
     const trendMap = new Map(trend.map(t => [t.date, t]));
 
-    while (currentDate <= end) {
+    while (currentDate <= rangeEnd) {
       const dateStr = currentDate.toISOString().split('T')[0];
       const existing = trendMap.get(dateStr);
       filledTrend.push({
@@ -193,7 +220,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
     }
 
     return reply.send({
-      period: { start, end },
+      period: { start, end: rangeEnd, maxDays, limitApplied },
       trend: filledTrend,
     });
   });
@@ -220,11 +247,12 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Default to last 30 days
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const effectiveTier = await getEffectiveTierForReports(householdId);
+    const maxDays = resolveReportWindowDays(effectiveTier);
+    const defaultStart = new Date(end.getTime() - maxDays * 24 * 60 * 60 * 1000);
+    const requestedStart = startDate ? new Date(startDate) : defaultStart;
+    const { start, end: rangeEnd, limitApplied } = clampReportRange(requestedStart, end, maxDays);
 
     const categories = await db
       .select({
@@ -238,13 +266,13 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(choreCompletions.householdId, householdId),
         gte(choreCompletions.completedAt, start),
-        lte(choreCompletions.completedAt, end)
+        lte(choreCompletions.completedAt, rangeEnd)
       ))
       .groupBy(chores.category)
       .orderBy(sql`count(*) desc`);
 
     return reply.send({
-      period: { start, end },
+      period: { start, end: rangeEnd, maxDays, limitApplied },
       categories,
     });
   });
@@ -273,11 +301,12 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Default to last 30 days
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const effectiveTier = await getEffectiveTierForReports(householdId);
+    const maxDays = resolveReportWindowDays(effectiveTier);
+    const defaultStart = new Date(end.getTime() - maxDays * 24 * 60 * 60 * 1000);
+    const requestedStart = startDate ? new Date(startDate) : defaultStart;
+    const { start, end: rangeEnd } = clampReportRange(requestedStart, end, maxDays);
 
     // Get all completions with details
     const completions = await db
@@ -295,7 +324,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(choreCompletions.householdId, householdId),
         gte(choreCompletions.completedAt, start),
-        lte(choreCompletions.completedAt, end)
+        lte(choreCompletions.completedAt, rangeEnd)
       ))
       .orderBy(desc(choreCompletions.completedAt));
 
@@ -318,12 +347,12 @@ export async function reportsRoutes(fastify: FastifyInstance) {
 
       return reply
         .header('Content-Type', 'text/csv')
-        .header('Content-Disposition', `attachment; filename="chorechamp-report-${start.toISOString().split('T')[0]}-to-${end.toISOString().split('T')[0]}.csv"`)
+        .header('Content-Disposition', `attachment; filename="chorechamp-report-${start.toISOString().split('T')[0]}-to-${rangeEnd.toISOString().split('T')[0]}.csv"`)
         .send(csv);
     }
 
     return reply.send({
-      period: { start, end },
+      period: { start, end: rangeEnd, maxDays },
       completions,
     });
   });

@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Button } from '@chorechamp/ui';
 import { useHousehold, useReward, useUpdateReward, useDeleteReward } from '@chorechamp/api-client';
 import { RewardForm } from '../components/rewards';
@@ -16,13 +17,15 @@ export default function EditReward() {
   const { data: reward, isLoading: loadingReward } = useReward(householdId!, rewardId!);
   const updateReward = useUpdateReward(householdId!);
   const deleteReward = useDeleteReward(householdId!);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (data: CreateRewardRequest) => {
     try {
+      setError(null);
       await updateReward.mutateAsync({ rewardId: rewardId!, data });
       navigate(`/households/${householdId}/rewards`);
     } catch (error) {
-      console.error('Failed to update reward:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update reward');
     }
   };
 
@@ -32,10 +35,11 @@ export default function EditReward() {
     }
 
     try {
+      setError(null);
       await deleteReward.mutateAsync(rewardId!);
       navigate(`/households/${householdId}/rewards`);
     } catch (error) {
-      console.error('Failed to delete reward:', error);
+      setError(error instanceof Error ? error.message : 'Failed to delete reward');
     }
   };
 
@@ -43,8 +47,8 @@ export default function EditReward() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white shadow-sm">
+      <div className="min-h-screen bg-[var(--app-bg)]">
+        <header className="border-b bg-[var(--app-surface)] shadow-sm">
           <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-4">
             <Skeleton className="h-6 w-6" />
             <Skeleton className="h-6 w-40" />
@@ -59,7 +63,7 @@ export default function EditReward() {
 
   if (!household || !reward) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)]">
         <div className="text-center">
           <p className="text-gray-600">Reward not found</p>
           <Button asChild className="mt-4">
@@ -71,9 +75,9 @@ export default function EditReward() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--app-bg)]">
       {/* Header */}
-      <header className="border-b bg-white shadow-sm">
+      <header className="border-b bg-[var(--app-surface)] shadow-sm">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <Link
@@ -100,7 +104,12 @@ export default function EditReward() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-2xl px-4 py-8">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        <div className="rounded-lg border border-gray-200 bg-[var(--app-surface)] p-6">
           <RewardForm
             initialData={reward}
             onSubmit={handleSubmit}

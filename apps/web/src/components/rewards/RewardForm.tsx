@@ -30,7 +30,9 @@ export function RewardForm({
   const [icon, setIcon] = useState(initialData?.icon || '🎁');
   const [type, setType] = useState<RewardType>(initialData?.type || 'custom');
   const [pointCost, setPointCost] = useState(initialData?.pointCost.toString() || '100');
-  const [hasLimit, setHasLimit] = useState(initialData?.quantity !== null);
+  const [hasLimit, setHasLimit] = useState(
+    initialData ? initialData.quantity !== null : false
+  );
   const [quantity, setQuantity] = useState(initialData?.quantity?.toString() || '10');
 
   const handleSubmit = (e: React.FormEvent) => {

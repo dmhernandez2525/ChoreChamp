@@ -16,6 +16,7 @@ const FREE_PLAN_FEATURES = [
   'Basic gamification (points, streaks, badges)',
   'Template browser',
   'Standard support',
+  'Reports up to 30 days',
 ];
 
 const FAMILY_PLAN_FEATURES = [
@@ -24,6 +25,7 @@ const FAMILY_PLAN_FEATURES = [
   'Family challenges and goals',
   'Allowance management',
   'Shared household insights',
+  'Reports up to 30 days',
 ];
 
 const PREMIUM_PLAN_FEATURES = [
@@ -31,7 +33,10 @@ const PREMIUM_PLAN_FEATURES = [
   'Everything in Family',
   'Advanced analytics',
   'Custom themes and skins',
-  'Priority support',
+  'Unlimited custom rewards',
+  'Extended reports (2 years)',
+  'Priority support chat',
+  'API access for power users',
 ];
 
 export const subscriptionPlans: SubscriptionPlan[] = [
@@ -124,6 +129,24 @@ export function getEffectiveTier(
     return 'free';
   }
   return tier;
+}
+
+const TIER_ORDER: Record<SubscriptionTier, number> = {
+  free: 0,
+  family: 1,
+  premium: 2,
+};
+
+export function isTierAtLeast(tier: SubscriptionTier, required: SubscriptionTier): boolean {
+  return TIER_ORDER[tier] >= TIER_ORDER[required];
+}
+
+export function getEffectiveTierForHousehold(
+  household: typeof households.$inferSelect
+): SubscriptionTier {
+  const tier = (household.subscriptionTier as SubscriptionTier) ?? 'free';
+  const status = (household.subscriptionStatus as SubscriptionStatus) ?? 'free';
+  return getEffectiveTier(tier, status, household.subscriptionGracePeriodEndsAt ?? null);
 }
 
 export function getEffectiveMemberLimit(

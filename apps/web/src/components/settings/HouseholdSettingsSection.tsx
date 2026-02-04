@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, cn } from '@chorechamp/ui';
 import type { Household } from '@chorechamp/types';
+import { THEMES, resolveThemeId } from '../../lib/themes';
+import { FeatureGate } from '../subscription/FeatureGate';
+import { hasFeature } from '../../lib/subscription';
+import { useApiKeys, useCreateApiKey, useRevokeApiKey } from '@chorechamp/api-client';
 
 const TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (ET)' },
@@ -29,6 +33,9 @@ interface HouseholdSettingsSectionProps {
     timezone?: string;
     weekStartsOn?: number;
     pointsName?: string;
+    themeId?: string | null;
+    brandingName?: string | null;
+    brandingLogoUrl?: string | null;
   }) => Promise<void>;
   onLeaveHousehold?: () => Promise<void>;
   onDeleteHousehold?: () => Promise<void>;
@@ -52,11 +59,34 @@ export function HouseholdSettingsSection({
     pointsName: household.pointsName,
   });
 
+  const [themeId, setThemeId] = useState(resolveThemeId(household.themeId));
+  const [isThemeSaving, setIsThemeSaving] = useState(false);
+  const [themeError, setThemeError] = useState('');
+
+  const [brandingName, setBrandingName] = useState(household.brandingName || '');
+  const [brandingLogoUrl, setBrandingLogoUrl] = useState(household.brandingLogoUrl || '');
+  const [isBrandingSaving, setIsBrandingSaving] = useState(false);
+  const [brandingError, setBrandingError] = useState('');
+
+  const [apiKeyName, setApiKeyName] = useState('');
+  const [apiKeyError, setApiKeyError] = useState('');
+  const [newApiSecret, setNewApiSecret] = useState<string | null>(null);
+
   const [isSaving, setIsSaving] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+  const canCustomizeThemes = hasFeature(household, 'custom_themes');
+  const canWhiteLabel = hasFeature(household, 'white_label');
+  const canApiAccess = hasFeature(household, 'api_access');
+  const currentThemeName =
+    THEMES.find((theme) => theme.id === resolveThemeId(household.themeId))?.name || THEMES[0].name;
+
+  const { data: apiKeys } = useApiKeys(household.id, { enabled: canApiAccess });
+  const createApiKey = useCreateApiKey(household.id);
+  const revokeApiKey = useRevokeApiKey(household.id);
 
   const planLabelMap: Record<Household['subscriptionTier'], string> = {
     free: 'Free',
@@ -115,6 +145,9 @@ export function HouseholdSettingsSection({
       weekStartsOn: household.weekStartsOn,
       pointsName: household.pointsName,
     });
+    setThemeId(resolveThemeId(household.themeId));
+    setBrandingName(household.brandingName || '');
+    setBrandingLogoUrl(household.brandingLogoUrl || '');
     setIsEditing(false);
     setError('');
   };
@@ -141,6 +174,71 @@ export function HouseholdSettingsSection({
     } catch {
       setError('Failed to delete household. Please try again.');
       setIsDeleting(false);
+    }
+  };
+
+  const handleApplyTheme = async () => {
+    if (!isParent) return;
+    setThemeError('');
+    setIsThemeSaving(true);
+    try {
+      await onUpdateSettings({ themeId });
+    } catch {
+      setThemeError('Failed to update theme. Please try again.');
+    } finally {
+      setIsThemeSaving(false);
+    }
+  };
+
+  const handleBrandingSave = async () => {
+    if (!isParent) return;
+    setBrandingError('');
+
+    if (brandingLogoUrl) {
+      try {
+        // Basic URL validation
+        new URL(brandingLogoUrl);
+      } catch {
+        setBrandingError('Please enter a valid logo URL.');
+        return;
+      }
+    }
+
+    setIsBrandingSaving(true);
+    try {
+      await onUpdateSettings({
+        brandingName: brandingName.trim() || null,
+        brandingLogoUrl: brandingLogoUrl.trim() || null,
+      });
+    } catch {
+      setBrandingError('Failed to update branding. Please try again.');
+    } finally {
+      setIsBrandingSaving(false);
+    }
+  };
+
+  const handleCreateApiKey = async () => {
+    if (!isParent) return;
+    if (!apiKeyName.trim()) {
+      setApiKeyError('Please enter a name for the API key.');
+      return;
+    }
+    setApiKeyError('');
+    try {
+      const response = await createApiKey.mutateAsync({ name: apiKeyName.trim() });
+      setNewApiSecret(response.secret);
+      setApiKeyName('');
+    } catch (err) {
+      setApiKeyError(err instanceof Error ? err.message : 'Failed to create API key.');
+    }
+  };
+
+  const handleRevokeApiKey = async (keyId: string) => {
+    if (!isParent) return;
+    try {
+      await revokeApiKey.mutateAsync(keyId);
+    } catch (err) {
+      setApiKeyError(err instanceof Error ? err.message : 'Failed to revoke API key.');
     }
   };
 
@@ -308,6 +406,253 @@ export function HouseholdSettingsSection({
               </Button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Appearance & Themes */}
+      <FeatureGate
+        household={household}
+        feature="custom_themes"
+        preview={
+          <div className="grid gap-3 sm:grid-cols-2">
+            {THEMES.slice(0, 4).map((theme) => (
+              <div key={theme.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full" style={{ backgroundColor: theme.preview.primary }} />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{theme.name}</p>
+                    <p className="text-xs text-gray-500">{theme.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        }
+      >
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Appearance & Themes</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Pick a look that matches your family vibe. Premium households can switch themes anytime.
+              </p>
+            </div>
+            {!isParent && (
+              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                Parent-only
+              </span>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                type="button"
+                onClick={() => setThemeId(theme.id)}
+                disabled={!isParent}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg border px-3 py-3 text-left transition',
+                  themeId === theme.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300',
+                  !isParent && 'cursor-not-allowed opacity-60'
+                )}
+              >
+                <div className="h-10 w-10 rounded-full" style={{ backgroundColor: theme.preview.primary }} />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{theme.name}</p>
+                  <p className="text-xs text-gray-500">{theme.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {themeError && (
+            <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+              {themeError}
+            </div>
+          )}
+
+          {isParent && (
+            <div className="mt-4 flex items-center gap-3">
+              <Button onClick={handleApplyTheme} disabled={isThemeSaving || !canCustomizeThemes}>
+                {isThemeSaving ? 'Applying...' : 'Apply Theme'}
+              </Button>
+              <span className="text-xs text-gray-500">Current theme: {currentThemeName}</span>
+            </div>
+          )}
+        </div>
+      </FeatureGate>
+
+      {/* White-label Branding */}
+      {canWhiteLabel ? (
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">White-label Branding</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Replace ChoreChamp branding with your household or organization identity.
+              </p>
+            </div>
+            {!isParent && (
+              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                Parent-only
+              </span>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Brand Name</label>
+              <input
+                type="text"
+                value={brandingName}
+                onChange={(e) => setBrandingName(e.target.value)}
+                placeholder="Johnson Home"
+                disabled={!isParent}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Logo URL</label>
+              <input
+                type="url"
+                value={brandingLogoUrl}
+                onChange={(e) => setBrandingLogoUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
+                disabled={!isParent}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {brandingError && (
+            <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+              {brandingError}
+            </div>
+          )}
+
+          {isParent && (
+            <div className="mt-4 flex items-center gap-3">
+              <Button onClick={handleBrandingSave} disabled={isBrandingSaving}>
+                {isBrandingSaving ? 'Saving...' : 'Save Branding'}
+              </Button>
+              <span className="text-xs text-gray-500">Enterprise branding enabled</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+          <h3 className="text-lg font-medium text-amber-900">White-label Branding</h3>
+          <p className="mt-1 text-sm text-amber-700">
+            White-label options are available for enterprise households. Contact sales to enable custom branding.
+          </p>
+          <Button variant="outline" size="sm" asChild className="mt-4 border-amber-300 text-amber-700 hover:bg-amber-100">
+            <Link to={`/households/${household.id}/support?topic=white-label`}>Contact Sales</Link>
+          </Button>
+        </div>
+      )}
+
+      {/* Developer API Access */}
+      <FeatureGate
+        household={household}
+        feature="api_access"
+        preview={
+          <div className="space-y-2 text-sm text-amber-700">
+            <p>Generate API keys for automations and integrations.</p>
+            <div className="rounded-md border border-amber-200 bg-white px-3 py-2">
+              cc_live_••••••••••••
+            </div>
+          </div>
+        }
+      >
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Developer API Access</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Manage API keys for third-party automations and power-user workflows.
+              </p>
+            </div>
+            {!isParent && (
+              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                Parent-only
+              </span>
+            )}
+          </div>
+
+          {newApiSecret && (
+            <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+              <p className="font-medium">New API key created</p>
+              <p className="mt-1 break-all font-mono text-xs">{newApiSecret}</p>
+              <p className="mt-1 text-xs">Copy this key now. You will not be able to view it again.</p>
+            </div>
+          )}
+
+          <div className="mt-4 space-y-3">
+            {apiKeys && apiKeys.length > 0 ? (
+              apiKeys.map((key) => (
+                <div key={key.id} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-900">{key.name}</p>
+                    <p className="text-xs text-gray-500">Prefix: {key.keyPrefix}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {key.revokedAt ? (
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Revoked</span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRevokeApiKey(key.id)}
+                        disabled={!isParent || revokeApiKey.isPending}
+                      >
+                        Revoke
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No API keys created yet.</p>
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              value={apiKeyName}
+              onChange={(e) => setApiKeyName(e.target.value)}
+              placeholder="Key name (e.g., Zapier)"
+              disabled={!isParent}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <Button onClick={handleCreateApiKey} disabled={!isParent || createApiKey.isPending}>
+              {createApiKey.isPending ? 'Creating...' : 'Create Key'}
+            </Button>
+          </div>
+
+          {apiKeyError && (
+            <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700">
+              {apiKeyError}
+            </div>
+          )}
+        </div>
+      </FeatureGate>
+
+      {/* Support */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">Support & Help</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Need assistance? Start a support request or chat with our team.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/households/${household.id}/support`}>Open Support</Link>
+          </Button>
         </div>
       </div>
 

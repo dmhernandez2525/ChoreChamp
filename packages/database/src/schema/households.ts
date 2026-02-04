@@ -37,6 +37,12 @@ export const households = pgTable(
     stripeSubscriptionId: varchar('stripe_subscription_id', { length: 120 }),
     revenuecatAppUserId: varchar('revenuecat_app_user_id', { length: 120 }),
 
+    // Customization
+    themeId: varchar('theme_id', { length: 40 }).default('classic'),
+    whiteLabelEnabled: boolean('white_label_enabled').default(false),
+    brandingName: varchar('branding_name', { length: 120 }),
+    brandingLogoUrl: text('branding_logo_url'),
+
     // Stats (denormalized for performance)
     totalChoresCompleted: integer('total_chores_completed').default(0),
     currentFamilyStreak: integer('current_family_streak').default(0),

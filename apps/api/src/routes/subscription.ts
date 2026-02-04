@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { db } from '../lib/db';
-import { households, members } from '@chorechamp/database/schema';
+import { households, members, webhookEvents } from '@chorechamp/database/schema';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { createLogger } from '../lib/logger';
 import { requireStripe, getStripeWebhookSecret } from '../lib/stripe';
+import { verifySubscription, isRevenueCatConfigured } from '../lib/revenuecat';
 import {
   TRIAL_DAYS,
   subscriptionPlans,
@@ -20,7 +21,6 @@ import type {
   BillingInterval,
   CreateCheckoutSessionRequest,
   CreatePortalSessionRequest,
-  RevenueCatSyncRequest,
   SubscriptionTier,
 } from '@chorechamp/types';
 
@@ -40,11 +40,6 @@ const portalSchema = z.object({
 const revenuecatSchema = z.object({
   appUserId: z.string().min(1),
   householdId: z.string().uuid(),
-  tier: z.enum(['family', 'premium']),
-  store: z.enum(['app_store', 'play_store', 'web']),
-  status: z.enum(['trialing', 'active', 'past_due', 'grace_period', 'canceled', 'expired']),
-  currentPeriodEnd: z.string().nullable(),
-  isTrial: z.boolean(),
 });
 
 async function verifyMembership(userId: string, householdId: string) {
@@ -408,15 +403,40 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
     return reply.send({ url: portalSession.url });
   });
 
-  // RevenueCat sync
+  // RevenueCat sync - Server-side verified
+  //
+  // This endpoint verifies subscription status directly with RevenueCat's API
+  // before updating the database. The client only provides the appUserId and
+  // householdId; all subscription data is fetched server-to-server.
   fastify.post('/:householdId/revenuecat/sync', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const body = revenuecatSchema.parse(request.body) as RevenueCatSyncRequest;
+    const body = revenuecatSchema.parse(request.body);
+
+    // Check if RevenueCat is configured
+    if (!isRevenueCatConfigured()) {
+      return reply.status(500).send({
+        error: 'Server Error',
+        message: 'RevenueCat is not configured',
+      });
+    }
+
+    logger.info({
+      event: 'revenuecat_sync_attempt',
+      userId: user.id,
+      householdId,
+      appUserId: body.appUserId,
+    }, 'RevenueCat sync request received');
 
     if (body.householdId !== householdId) {
+      logger.warn({
+        event: 'revenuecat_sync_mismatch',
+        userId: user.id,
+        routeHouseholdId: householdId,
+        bodyHouseholdId: body.householdId,
+      }, 'RevenueCat sync household mismatch');
       return reply.status(400).send({
         error: 'Bad Request',
         message: 'Household mismatch',
@@ -425,41 +445,85 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
 
     const membership = await verifyParentMembership(user.id, householdId);
     if (!membership) {
+      logger.warn({
+        event: 'revenuecat_sync_unauthorized',
+        userId: user.id,
+        householdId,
+      }, 'Non-parent attempted RevenueCat sync');
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Only parents can sync subscriptions',
       });
     }
 
-    const currentPeriodEnd = body.currentPeriodEnd ? new Date(body.currentPeriodEnd) : null;
-    const trialEndsAt = body.isTrial ? currentPeriodEnd : null;
+    // Fetch current household state for audit logging
+    const [existingHousehold] = await db
+      .select()
+      .from(households)
+      .where(eq(households.id, householdId));
 
-    const [updated] = await db
-      .update(households)
-      .set({
-      subscriptionTier: body.tier,
-      subscriptionStatus: body.status,
-      subscriptionProvider: 'revenuecat',
-      subscriptionStore: body.store,
-      subscriptionCurrentPeriodEnd: currentPeriodEnd,
-      subscriptionExpiresAt: currentPeriodEnd,
-      subscriptionTrialEndsAt: trialEndsAt,
-      subscriptionMemberLimit: getMemberLimitForTier(body.tier),
-        revenuecatAppUserId: body.appUserId,
-        updatedAt: new Date(),
-      })
-      .where(eq(households.id, householdId))
-      .returning();
-
-    if (!updated) {
+    if (!existingHousehold) {
       return reply.status(404).send({
         error: 'Not Found',
         message: 'Household not found',
       });
     }
 
+    const previousTier = existingHousehold.subscriptionTier;
+    const previousStatus = existingHousehold.subscriptionStatus;
+
+    // Server-side verification with RevenueCat API
+    let verifiedSubscription;
+    try {
+      verifiedSubscription = await verifySubscription(body.appUserId);
+    } catch (error) {
+      logger.error({
+        event: 'revenuecat_verification_failed',
+        userId: user.id,
+        householdId,
+        appUserId: body.appUserId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }, 'Failed to verify subscription with RevenueCat');
+      return reply.status(502).send({
+        error: 'Bad Gateway',
+        message: 'Failed to verify subscription with RevenueCat',
+      });
+    }
+
+    const trialEndsAt = verifiedSubscription.isTrial ? verifiedSubscription.currentPeriodEnd : null;
+
+    const [updated] = await db
+      .update(households)
+      .set({
+        subscriptionTier: verifiedSubscription.tier,
+        subscriptionStatus: verifiedSubscription.status,
+        subscriptionProvider: 'revenuecat',
+        subscriptionStore: verifiedSubscription.store,
+        subscriptionCurrentPeriodEnd: verifiedSubscription.currentPeriodEnd,
+        subscriptionExpiresAt: verifiedSubscription.currentPeriodEnd,
+        subscriptionTrialEndsAt: trialEndsAt,
+        subscriptionMemberLimit: getMemberLimitForTier(verifiedSubscription.tier),
+        revenuecatAppUserId: body.appUserId,
+        updatedAt: new Date(),
+      })
+      .where(eq(households.id, householdId))
+      .returning();
+
+    // Log successful sync with before/after state
+    logger.info({
+      event: 'revenuecat_sync_success',
+      userId: user.id,
+      householdId,
+      previousTier,
+      previousStatus,
+      newTier: verifiedSubscription.tier,
+      newStatus: verifiedSubscription.status,
+      tierChanged: previousTier !== verifiedSubscription.tier,
+      statusChanged: previousStatus !== verifiedSubscription.status,
+    }, 'RevenueCat sync completed (server-verified)');
+
     return reply.send({
-      subscription: buildSubscriptionSummary(updated),
+      subscription: buildSubscriptionSummary(updated!),
     });
   });
 
@@ -501,6 +565,17 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
     } catch (error) {
       logger.error({ error }, 'Stripe webhook signature verification failed');
       return reply.status(400).send({ error: 'Invalid signature' });
+    }
+
+    // Idempotency check: Skip if event was already processed
+    const [existingEvent] = await db
+      .select()
+      .from(webhookEvents)
+      .where(eq(webhookEvents.eventId, event.id));
+
+    if (existingEvent) {
+      logger.info({ eventId: event.id, eventType: event.type }, 'Skipping duplicate webhook event');
+      return reply.send({ received: true, duplicate: true });
     }
 
     try {
@@ -595,7 +670,26 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
         default:
           break;
       }
+
+      // Record successful event processing for idempotency
+      await db.insert(webhookEvents).values({
+        eventId: event.id,
+        provider: 'stripe',
+        eventType: event.type,
+        status: 'processed',
+        metadata: { livemode: event.livemode },
+      });
     } catch (error) {
+      // Record failed event processing
+      await db.insert(webhookEvents).values({
+        eventId: event.id,
+        provider: 'stripe',
+        eventType: event.type,
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        metadata: { livemode: event.livemode },
+      }).onConflictDoNothing();
+
       logger.error({ error, eventType: event.type }, 'Stripe webhook processing failed');
       return reply.status(500).send({ error: 'Webhook processing failed' });
     }

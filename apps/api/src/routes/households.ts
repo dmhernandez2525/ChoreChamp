@@ -5,7 +5,7 @@ import { db } from '../lib/db';
 import { households, members, inviteCodes, userHouseholds } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomBytes } from 'crypto';
-import { getEffectiveMemberLimit } from '../lib/subscription';
+import { getEffectiveMemberLimit, getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
 
 // Validation schemas
 const createHouseholdSchema = z.object({
@@ -21,6 +21,9 @@ const updateHouseholdSchema = z.object({
   weekStartsOn: z.number().min(0).max(6).optional(),
   pointsName: z.string().max(50).optional(),
   currency: z.string().length(3).optional(),
+  themeId: z.string().max(40).nullable().optional(),
+  brandingName: z.string().max(120).nullable().optional(),
+  brandingLogoUrl: z.string().url().nullable().optional(),
 });
 
 const createInviteSchema = z.object({
@@ -181,6 +184,36 @@ export async function householdRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Only parents can update household settings',
+      });
+    }
+
+    const [currentHousehold] = await db
+      .select()
+      .from(households)
+      .where(eq(households.id, householdId));
+
+    if (!currentHousehold) {
+      return reply.status(404).send({
+        error: 'Not found',
+        message: 'Household not found',
+      });
+    }
+
+    const effectiveTier = getEffectiveTierForHousehold(currentHousehold);
+    const wantsTheme = body.themeId !== undefined;
+    const wantsBranding = body.brandingName !== undefined || body.brandingLogoUrl !== undefined;
+
+    if (wantsTheme && !isTierAtLeast(effectiveTier, 'premium')) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Custom themes are available on the Premium plan.',
+      });
+    }
+
+    if (wantsBranding && (!currentHousehold.whiteLabelEnabled || !isTierAtLeast(effectiveTier, 'premium'))) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'White-label branding is available for enterprise households.',
       });
     }
 
