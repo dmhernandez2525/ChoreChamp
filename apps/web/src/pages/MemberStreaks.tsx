@@ -53,7 +53,7 @@ export default function MemberStreaks() {
         <main className="mx-auto max-w-4xl px-4 py-8">
           <div className="space-y-6">
             <Skeleton className="h-48 rounded-xl" />
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <Skeleton className="h-64 rounded-lg" />
               <Skeleton className="h-64 rounded-lg" />
             </div>
@@ -111,7 +111,7 @@ export default function MemberStreaks() {
           <StreakCard streakData={streakData} />
 
           {/* Two column layout */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Left column */}
             <div className="space-y-6">
               {/* Calendar */}
@@ -137,7 +137,7 @@ export default function MemberStreaks() {
           {/* Streak Tips */}
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Streak Tips</h3>
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="flex items-start gap-3">
                 <span className="text-2xl">⏰</span>
                 <div>

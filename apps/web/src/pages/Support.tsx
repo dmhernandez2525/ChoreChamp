@@ -153,7 +153,7 @@ export default function Support() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
           <div className="space-y-4">
             <div className="rounded-xl border border-gray-200 bg-white p-4">
               <h2 className="text-sm font-semibold text-gray-900">Your Requests</h2>

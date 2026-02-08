@@ -112,7 +112,7 @@ export default function Subscription() {
         </header>
         <main className="mx-auto max-w-5xl px-4 py-8">
           <Skeleton className="h-48 w-full rounded-xl" />
-          <div className="mt-6 grid gap-6 md:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
             <Skeleton className="h-64 w-full rounded-xl" />
             <Skeleton className="h-64 w-full rounded-xl" />
             <Skeleton className="h-64 w-full rounded-xl" />
@@ -166,7 +166,7 @@ export default function Subscription() {
             )}
           </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <p className="text-sm text-gray-500">Tier</p>
               <p className="text-base font-semibold text-gray-900">
@@ -251,7 +251,7 @@ export default function Subscription() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = subscription?.tier === plan.tier;
               const price = billingInterval === 'annual' ? plan.annualPrice : plan.monthlyPrice;

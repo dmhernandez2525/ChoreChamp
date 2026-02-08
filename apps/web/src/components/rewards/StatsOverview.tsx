@@ -31,7 +31,7 @@ function StatItem({ icon, label, value, subValue, color }: StatItemProps) {
 
 export function StatsOverview({ stats }: StatsOverviewProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatItem
         icon="🔥"
         label="Current Streak"

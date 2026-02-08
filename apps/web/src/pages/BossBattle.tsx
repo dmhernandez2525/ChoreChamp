@@ -60,7 +60,7 @@ export default function BossBattle() {
         <main className="mx-auto max-w-4xl px-4 py-8">
           <div className="space-y-6">
             <Skeleton className="h-64 rounded-xl" />
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <Skeleton className="h-48 rounded-lg" />
               <Skeleton className="h-48 rounded-lg" />
             </div>
@@ -134,7 +134,7 @@ export default function BossBattle() {
           </div>
 
           {/* Two column layout */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Left column */}
             <div className="space-y-6">
               <FamilyGoalProgress party={mockParty} />

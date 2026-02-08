@@ -75,3 +75,12 @@ body {
   background-color: var(--app-bg);
   color: var(--app-text);
 }
+
+/* Safe area utilities for notched devices */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top, 0);
+}

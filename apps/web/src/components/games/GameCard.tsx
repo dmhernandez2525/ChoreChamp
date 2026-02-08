@@ -199,7 +199,7 @@ export function GameGrid({ games, onGameClick, emptyMessage = 'No games availabl
 
   return (
     <div className={cn(
-      'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
+      'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3',
       className
     )}>
       {games.map((game) => (

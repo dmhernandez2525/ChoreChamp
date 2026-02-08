@@ -60,8 +60,8 @@ export default function JoinHousehold() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-xl px-4 py-8">
-        <div className="rounded-lg bg-white p-6 shadow">
+      <main className="mx-auto max-w-xl px-4 py-6 sm:py-8">
+        <div className="rounded-lg bg-white p-4 sm:p-6 shadow">
           <div className="mb-6 text-center">
             <div className="text-4xl mb-2">🔗</div>
             <h2 className="text-xl font-semibold text-gray-900">

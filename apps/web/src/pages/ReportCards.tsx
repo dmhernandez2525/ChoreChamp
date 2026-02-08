@@ -303,7 +303,7 @@ export default function ReportCards() {
                 </button>
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {mockReportCards.map((card) => (
                   <ReportCardCard
                     key={card.id}
@@ -329,7 +329,7 @@ export default function ReportCards() {
                 <p className="text-gray-500 mt-1">Academic achievements will appear here as they are earned</p>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {mockAchievements.map((achievement) => (
                   <AcademicAchievementBadge
                     key={achievement.id}
@@ -362,7 +362,7 @@ export default function ReportCards() {
                 <p className="text-gray-500 mt-1">Set academic goals to motivate and track progress</p>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {mockGoals.map((goal) => (
                   <AcademicGoalCard
                     key={goal.id}
@@ -387,7 +387,7 @@ export default function ReportCards() {
                 <p className="text-gray-500 mt-1">Attendance data will be added with report cards</p>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {mockAttendance.map((attendance) => (
                   <AttendanceCard key={attendance.id} attendance={attendance} />
                 ))}
@@ -400,7 +400,7 @@ export default function ReportCards() {
         {activeTab === 'trends' && (
           <div className="space-y-6">
             <h2 className="text-lg font-semibold">Academic Trends</h2>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <TrendChart
                 trends={mockTrends.filter(t => t.metricType === 'gpa')}
                 metricType="gpa"

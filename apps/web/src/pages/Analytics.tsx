@@ -59,7 +59,7 @@ export default function Analytics() {
           household={household}
           feature="advanced_analytics"
           preview={
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((item) => (
                 <div key={item} className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="h-4 w-24 rounded bg-gray-100" />

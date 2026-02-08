@@ -68,8 +68,8 @@ export default function TemplateBrowser() {
             <Skeleton className="h-6 w-40" />
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Skeleton key={i} className="h-48 rounded-lg" />
             ))}
@@ -118,7 +118,7 @@ export default function TemplateBrowser() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
         <div className="space-y-6">
           {/* Info banner */}
           <div className="rounded-lg bg-blue-50 p-4">

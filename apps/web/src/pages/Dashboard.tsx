@@ -34,10 +34,10 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
             Welcome, {user?.name || 'there'}!
           </h2>
           <p className="mt-1 text-gray-600">
@@ -49,9 +49,9 @@ export default function Dashboard() {
 
         {/* Households List */}
         {isLoading ? (
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-lg bg-white p-6 shadow">
+              <div key={i} className="rounded-lg bg-white p-4 sm:p-6 shadow">
                 <Skeleton className="h-6 w-32 mb-2" />
                 <Skeleton className="h-4 w-24 mb-4" />
                 <Skeleton className="h-10 w-full" />
@@ -59,11 +59,11 @@ export default function Dashboard() {
             ))}
           </div>
         ) : hasHouseholds ? (
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {households.map((household) => (
               <div
                 key={household.id}
-                className="rounded-lg bg-white p-6 shadow hover:shadow-md transition-shadow"
+                className="rounded-lg bg-white p-4 sm:p-6 shadow hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">
@@ -94,7 +94,7 @@ export default function Dashboard() {
           </div>
         ) : (
           /* Quick Actions - shown when no households */
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Link
               to="/households/new"
               className="flex flex-col items-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-6 text-center transition hover:border-blue-500 hover:bg-blue-50"
@@ -132,7 +132,7 @@ export default function Dashboard() {
 
         {/* Empty State for Households */}
         {!isLoading && !hasHouseholds && (
-          <div className="mt-8 rounded-lg border border-gray-200 bg-white p-8 text-center">
+          <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6 sm:p-8 text-center">
             <div className="text-4xl">🏠</div>
             <h3 className="mt-4 text-lg font-semibold text-gray-900">
               No households yet

@@ -101,7 +101,7 @@ function DemoRewardsStoreContent() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
         {/* Points Balance Card (for children) */}
         {!isParent && currentMember && (
           <div className="mb-8 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-400 p-6 text-white shadow-lg">
@@ -117,7 +117,7 @@ function DemoRewardsStoreContent() {
 
         {/* Rewards Grid */}
         <h2 className="mb-6 text-xl font-semibold text-gray-900">Available Rewards</h2>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {rewards.map((reward) => {
             const canAfford = currentMember ? currentMember.pointsCurrent >= reward.pointCost : false;
             const isLimited = reward.quantity !== null;
@@ -126,7 +126,7 @@ function DemoRewardsStoreContent() {
             return (
               <div
                 key={reward.id}
-                className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-lg"
+                className="rounded-lg bg-white p-4 sm:p-6 shadow transition-shadow hover:shadow-lg"
               >
                 <div className="mb-4 text-4xl">{reward.icon}</div>
                 <h3 className="text-lg font-semibold text-gray-900">{reward.title}</h3>

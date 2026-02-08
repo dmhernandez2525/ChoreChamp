@@ -285,7 +285,7 @@ export default function SkillBuilding() {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Skill Categories</h2>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {mockSkillTrees.map((tree) => (
                 <SkillTreeCard
                   key={tree.id}
@@ -319,7 +319,7 @@ export default function SkillBuilding() {
                 </button>
               )}
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {mockSkills
                 .filter(s => !selectedTree || s.skillTreeId === selectedTree)
                 .map((skill) => (
@@ -350,7 +350,7 @@ export default function SkillBuilding() {
                 <p className="text-gray-500 mt-1">Complete skills and pass assessments to earn certifications</p>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {mockCertifications.map((cert) => (
                   <CertificationBadge
                     key={cert.id}
@@ -374,7 +374,7 @@ export default function SkillBuilding() {
               </button>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">As Mentee</h3>
                 {mockMentorships.filter(m => m.menteeId === 'm1').length === 0 ? (

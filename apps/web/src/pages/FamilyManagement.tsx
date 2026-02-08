@@ -109,7 +109,7 @@ export default function FamilyManagement() {
             <Skeleton className="h-6 w-40" />
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 py-8">
+        <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-20 w-full rounded-lg" />
@@ -157,7 +157,7 @@ export default function FamilyManagement() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
         {/* Tab Navigation */}
         <div className="mb-6 border-b border-gray-200">
           <nav className="-mb-px flex gap-6">
@@ -198,7 +198,7 @@ export default function FamilyManagement() {
                 onRemoveMember={isParent ? handleRemoveMember : undefined}
               />
             ) : (
-              <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
+              <div className="rounded-lg border border-gray-200 bg-white p-6 sm:p-8 text-center">
                 <div className="text-4xl mb-2">👨‍👩‍👧‍👦</div>
                 <h3 className="font-medium text-gray-900">No members yet</h3>
                 <p className="mt-1 text-sm text-gray-500">
