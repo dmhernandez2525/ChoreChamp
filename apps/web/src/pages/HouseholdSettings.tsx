@@ -57,7 +57,7 @@ export default function HouseholdSettings() {
             <Skeleton className="h-6 w-40" />
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 py-8">
+        <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
           <Skeleton className="h-64 w-full rounded-lg" />
         </main>
       </div>
@@ -96,7 +96,7 @@ export default function HouseholdSettings() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
         <HouseholdSettingsSection
           household={household}
           isParent={isParent}

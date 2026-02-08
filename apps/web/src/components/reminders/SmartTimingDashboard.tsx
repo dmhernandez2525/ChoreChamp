@@ -114,7 +114,7 @@ export function SmartTimingDashboard({ householdId, members }: SmartTimingDashbo
       </div>
 
       {/* Member suggestions */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {suggestions.map((suggestion) => {
           const member = members.find((m) => m.id === suggestion.memberId);
           const isSelected = selectedMember === suggestion.memberId;

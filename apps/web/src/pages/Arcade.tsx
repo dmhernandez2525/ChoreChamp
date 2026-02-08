@@ -351,7 +351,7 @@ export default function Arcade() {
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Skeleton className="h-48 rounded-xl" />
             <Skeleton className="h-48 rounded-xl" />
             <Skeleton className="h-48 rounded-xl" />
@@ -414,7 +414,7 @@ export default function Arcade() {
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Upcoming Game Nights
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {familyNights.slice(0, 2).map((night) => (
                 <FamilyNightCard
                   key={night.id}

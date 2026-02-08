@@ -123,7 +123,7 @@ export default function Leaderboard() {
 
           {/* Stats Summary */}
           {leaderboard && leaderboard.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
                 <p className="text-3xl font-bold text-blue-600">
                   {leaderboard.reduce((sum, e) => sum + e.totalPoints, 0).toLocaleString()}

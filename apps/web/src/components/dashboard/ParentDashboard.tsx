@@ -137,7 +137,7 @@ export function ParentDashboard({ householdId }: ParentDashboardProps) {
             <Lightbulb className="w-5 h-5 text-amber-500" />
             Insights
           </h2>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {dashboard.insights.map((insight, index) => (
               <div
                 key={index}
@@ -211,7 +211,7 @@ export function ParentDashboard({ householdId }: ParentDashboardProps) {
           <TrendingUp className="w-5 h-5 text-indigo-500" />
           Member Progress
         </h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {dashboard.memberData.map((member) => (
             <div
               key={member.memberId}

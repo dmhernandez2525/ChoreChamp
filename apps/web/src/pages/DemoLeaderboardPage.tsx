@@ -39,7 +39,7 @@ function DemoLeaderboardContent() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
         {/* Podium */}
         <div className="mb-12 flex items-end justify-center gap-4">
           {/* Second Place */}
@@ -145,18 +145,18 @@ function DemoLeaderboardContent() {
         </div>
 
         {/* Household Stats */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg bg-white p-6 shadow">
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow">
             <p className="text-sm text-gray-500">Family Points Name</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">{household.pointsName}</p>
           </div>
-          <div className="rounded-lg bg-white p-6 shadow">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow">
             <p className="text-sm text-gray-500">Total Chores Completed</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
               {household.totalChoresCompleted}
             </p>
           </div>
-          <div className="rounded-lg bg-white p-6 shadow">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow">
             <p className="text-sm text-gray-500">Current Family Streak</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
               {household.currentFamilyStreak} days

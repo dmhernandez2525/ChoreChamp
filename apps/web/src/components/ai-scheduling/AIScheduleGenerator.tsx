@@ -396,7 +396,7 @@ export function AIScheduleGenerator({
                     ({groupedSuggestions[date].length} chores)
                   </span>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                   {groupedSuggestions[date].map((suggestion) => (
                     <ScheduleSuggestionCard
                       key={suggestion.id}

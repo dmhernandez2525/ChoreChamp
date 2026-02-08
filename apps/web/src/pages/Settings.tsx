@@ -89,7 +89,7 @@ export default function Settings() {
             <Skeleton className="h-6 w-32" />
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 py-8">
+        <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
           <Skeleton className="h-64 w-full rounded-lg" />
         </main>
       </div>
@@ -120,7 +120,7 @@ export default function Settings() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
         {/* Tab Navigation */}
         <div className="mb-6 border-b border-gray-200">
           <nav className="-mb-px flex gap-6">

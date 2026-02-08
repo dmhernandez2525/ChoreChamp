@@ -414,7 +414,7 @@ export function HouseholdSettingsSection({
         household={household}
         feature="custom_themes"
         preview={
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {THEMES.slice(0, 4).map((theme) => (
               <div key={theme.id} className="rounded-lg border border-gray-200 bg-white p-3">
                 <div className="flex items-center gap-3">
@@ -444,7 +444,7 @@ export function HouseholdSettingsSection({
             )}
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {THEMES.map((theme) => (
               <button
                 key={theme.id}
@@ -502,7 +502,7 @@ export function HouseholdSettingsSection({
             )}
           </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-700">Brand Name</label>
               <input

@@ -333,7 +333,7 @@ export default function SchoolExtracurricular() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {schoolSchedules.map((schedule) => (
             <SchoolScheduleCard
               key={schedule.id}
@@ -370,7 +370,7 @@ export default function SchoolExtracurricular() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {activities.map((activity) => (
             <ActivityCard
               key={activity.id}
@@ -420,7 +420,7 @@ export default function SchoolExtracurricular() {
             {upcomingEvents.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Events</h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {upcomingEvents.map((event) => (
                     <EventCard key={event.id} event={event} onDelete={handleDeleteEvent} />
                   ))}
@@ -431,7 +431,7 @@ export default function SchoolExtracurricular() {
             {pastEvents.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-500 mb-4">Past Events</h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {pastEvents.slice(0, 6).map((event) => (
                     <EventCard key={event.id} event={event} />
                   ))}
@@ -485,7 +485,7 @@ export default function SchoolExtracurricular() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {volunteerLogs.map((log) => (
             <VolunteerLogCard
               key={log.id}
@@ -530,7 +530,7 @@ export default function SchoolExtracurricular() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div>
               <h3 className="text-lg font-medium text-gray-700 mb-4">
                 Not Started ({byStatus.not_started.length})
@@ -617,7 +617,7 @@ export default function SchoolExtracurricular() {
                 <h3 className="text-lg font-medium text-amber-700 mb-4">
                   Action Needed ({unacknowledged.length})
                 </h3>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {unacknowledged.map((rec) => (
                     <BalanceCard
                       key={rec.id}
@@ -634,7 +634,7 @@ export default function SchoolExtracurricular() {
                 <h3 className="text-lg font-medium text-gray-500 mb-4">
                   Acknowledged ({acknowledged.length})
                 </h3>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {acknowledged.map((rec) => (
                     <BalanceCard key={rec.id} recommendation={rec} />
                   ))}

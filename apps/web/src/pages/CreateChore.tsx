@@ -33,7 +33,7 @@ export default function CreateChore() {
             <Skeleton className="h-6 w-40" />
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 py-8">
+        <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
           <div className="space-y-6">
             <Skeleton className="h-12 w-full rounded-lg" />
             <Skeleton className="h-32 w-full rounded-lg" />
@@ -76,8 +76,8 @@ export default function CreateChore() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <div className="rounded-lg bg-white p-6 shadow">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
+        <div className="rounded-lg bg-white p-4 sm:p-6 shadow">
           <ChoreForm
             members={members}
             onSubmit={handleSubmit}
