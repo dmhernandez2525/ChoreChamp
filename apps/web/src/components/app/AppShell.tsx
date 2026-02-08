@@ -4,6 +4,7 @@ import { useHousehold } from '@chorechamp/api-client';
 import { applyTheme } from '../../lib/themes';
 import { getHouseholdEffectiveTier, hasFeature } from '../../lib/subscription';
 import { AdBanner } from '../ads/AdBanner';
+import { MobileBottomNav } from './MobileBottomNav';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -29,6 +30,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <>
       {children}
+      {householdId && <MobileBottomNav householdId={householdId} />}
       <AdBanner visible={showAds} householdId={householdId} />
       {householdId && (
         <span className="sr-only">Current tier: {effectiveTier}</span>
