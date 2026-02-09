@@ -277,9 +277,9 @@ export function StoryMode({ memberId, householdId }: StoryModeProps) {
     <div className="max-w-6xl mx-auto p-4">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 mb-6 text-white">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Story Mode</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Story Mode</h1>
             <p className="text-white/80">
               Embark on an adventure and become a true Chore Champion!
             </p>
@@ -292,7 +292,7 @@ export function StoryMode({ memberId, householdId }: StoryModeProps) {
 
         {/* Progress stats */}
         {storyProgress && (
-          <div className="grid grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
             <div className="bg-white/10 rounded-xl p-3 text-center">
               <div className="text-2xl font-bold">{storyProgress.chaptersCompleted}</div>
               <div className="text-xs text-white/70">Chapters</div>
@@ -314,7 +314,7 @@ export function StoryMode({ memberId, householdId }: StoryModeProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto">
         {[
           { id: 'chapters', label: 'Chapters', icon: '📚' },
           { id: 'characters', label: 'Characters', icon: '👥' },

@@ -249,7 +249,7 @@ export default function Collection() {
 
           {/* Stats bar */}
           {stats && (
-            <div className="grid grid-cols-4 gap-4 mt-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
               <div className="bg-white/10 rounded-xl p-3 text-center">
                 <div className="text-2xl font-bold">{stats.uniqueCardsOwned}</div>
                 <div className="text-sm text-white/70">Unique Cards</div>

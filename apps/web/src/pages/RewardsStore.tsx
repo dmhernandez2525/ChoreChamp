@@ -157,7 +157,7 @@ export default function RewardsStore() {
     <div className="min-h-screen bg-[var(--app-bg)]">
       {/* Header */}
       <header className="border-b bg-[var(--app-surface)] shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-6xl flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-4">
             <Link
               to={`/households/${householdId}`}

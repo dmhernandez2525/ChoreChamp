@@ -214,7 +214,7 @@ export default function ReportCards() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Report Cards</h1>
               <p className="text-sm text-gray-500">Track academic progress and earn rewards</p>
@@ -230,7 +230,7 @@ export default function ReportCards() {
               </select>
               <button
                 onClick={() => setShowAddReportCard(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Add Report Card
               </button>
@@ -242,7 +242,7 @@ export default function ReportCards() {
       {/* Stats Bar */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold">{mockReportCards.length}</div>
               <div className="text-sm opacity-80">Report Cards</div>
@@ -520,7 +520,7 @@ export default function ReportCards() {
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Add Report Card</h2>
             <form className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">School Year</label>
                   <input type="text" placeholder="2025-2026" className="w-full border rounded-lg px-3 py-2" />
