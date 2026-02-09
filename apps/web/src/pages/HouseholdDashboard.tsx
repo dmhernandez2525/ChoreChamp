@@ -289,7 +289,7 @@ export default function HouseholdDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 flex gap-4">
+        <div className="mt-8 flex flex-wrap gap-3">
           <Button variant="outline" asChild>
             <Link to={`/households/${householdId}/chores/new`}>+ Add Chore</Link>
           </Button>

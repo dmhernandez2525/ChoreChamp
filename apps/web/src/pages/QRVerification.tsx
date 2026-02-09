@@ -217,7 +217,7 @@ export function QRVerification() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">QR Verification</h1>
           <p className="text-gray-500">
@@ -226,7 +226,7 @@ export function QRVerification() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           + Create QR Code
         </button>
@@ -234,13 +234,13 @@ export function QRVerification() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                'px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                 activeTab === tab.id
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
