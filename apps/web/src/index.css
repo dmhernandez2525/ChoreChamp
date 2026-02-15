@@ -355,3 +355,18 @@ body {
 :root[data-reduced-motion='true'] .timer-ring {
   animation: none;
 }
+
+/* ===== F13.4: RTL Language Support ===== */
+
+/* Flip horizontal layout for RTL languages */
+html[dir='rtl'] .skip-link {
+  left: auto;
+  right: 1rem;
+}
+
+html[dir='rtl'] .chore-step {
+  border-left: none;
+  border-right: 3px solid var(--app-accent);
+  padding-left: 0;
+  padding-right: 1rem;
+}

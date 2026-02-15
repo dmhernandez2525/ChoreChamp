@@ -4,6 +4,7 @@ import { DemoAuthProvider, useDemoAuth } from './context/DemoAuthContext';
 import { CelebrationProvider } from './components/celebrations';
 import { PWAProvider } from './components/pwa';
 import { AccessibilityProvider } from './components/accessibility';
+import { I18nProvider } from './lib/i18n';
 import { AppShell } from './components/app/AppShell';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -397,9 +398,11 @@ export default function App() {
         <CelebrationProvider>
           <PWAProvider>
             <AccessibilityProvider>
-              <AppShell>
-                <AppRoutes />
-              </AppShell>
+              <I18nProvider>
+                <AppShell>
+                  <AppRoutes />
+                </AppShell>
+              </I18nProvider>
             </AccessibilityProvider>
           </PWAProvider>
         </CelebrationProvider>

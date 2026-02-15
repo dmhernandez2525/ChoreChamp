@@ -12,10 +12,11 @@ import {
   NotificationsSection,
   AccessibilitySection,
   CognitiveAccessibilitySection,
+  LanguageSection,
 } from '../components/settings';
 import { Skeleton } from '../components/common';
 
-type SettingsTab = 'profile' | 'notifications' | 'security' | 'accessibility';
+type SettingsTab = 'profile' | 'notifications' | 'security' | 'accessibility' | 'language';
 
 const DEFAULT_NOTIFICATION_PREFS = {
   emailChoreReminders: true,
@@ -108,6 +109,7 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications' },
     { id: 'security', label: 'Security' },
     { id: 'accessibility', label: 'Accessibility' },
+    { id: 'language', label: 'Language' },
   ];
 
   return (
@@ -168,6 +170,8 @@ export default function Settings() {
             <CognitiveAccessibilitySection />
           </div>
         )}
+
+        {activeTab === 'language' && <LanguageSection />}
       </main>
     </div>
   );
