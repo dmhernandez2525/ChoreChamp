@@ -187,6 +187,25 @@ import type {
   EnterpriseReportFile,
   EnterpriseBulkImport,
   EnterpriseAdminAuditEvent,
+  ActivityLog,
+  ActivityGoal,
+  CreateActivityLogRequest,
+  UpdateActivityGoalRequest,
+  HouseholdActivityStats,
+  WellnessCheckIn,
+  CreateCheckInRequest,
+  WellnessTrends,
+  SleepLog,
+  CreateSleepLogRequest,
+  SleepStats,
+  MealPlan,
+  CreateMealPlanRequest,
+  UpdateMealPlanRequest,
+  MentalHealthResource,
+  CreateMentalHealthResourceRequest,
+  GratitudeEntry,
+  CreateGratitudeRequest,
+  MoodJournal,
   ApiPlatformDeveloperOverview,
   ApiPlatformOpenApiDocument,
   ApiPlatformKeySettings,
@@ -2507,6 +2526,214 @@ class ApiClient {
     householdId: string
   ): Promise<{ recommendations: InsightRecommendation[] }> {
     return this.request(`/households/${householdId}/analytics/recommendations`);
+  }
+
+  // ==================== Health & Wellness (F14.1-F14.5) ====================
+
+  async getWellnessActivityLogs(
+    householdId: string,
+    params?: { memberId?: string; startDate?: string; endDate?: string }
+  ): Promise<{ logs: ActivityLog[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    if (params?.memberId) queryParams.set('memberId', params.memberId);
+    if (params?.startDate) queryParams.set('startDate', params.startDate);
+    if (params?.endDate) queryParams.set('endDate', params.endDate);
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/wellness/activity-logs${query ? `?${query}` : ''}`);
+  }
+
+  async createWellnessActivityLog(
+    householdId: string,
+    data: CreateActivityLogRequest
+  ): Promise<ActivityLog> {
+    return this.request(`/households/${householdId}/wellness/activity-logs`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getWellnessActivityStats(
+    householdId: string,
+    memberId?: string
+  ): Promise<HouseholdActivityStats> {
+    const query = memberId ? `?memberId=${memberId}` : '';
+    return this.request(`/households/${householdId}/wellness/activity-stats${query}`);
+  }
+
+  async getWellnessActivityGoals(
+    householdId: string
+  ): Promise<{ goals: ActivityGoal[] }> {
+    return this.request(`/households/${householdId}/wellness/activity-goals`);
+  }
+
+  async createWellnessActivityGoal(
+    householdId: string,
+    data: UpdateActivityGoalRequest
+  ): Promise<ActivityGoal> {
+    return this.request(`/households/${householdId}/wellness/activity-goals`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateWellnessActivityGoal(
+    householdId: string,
+    goalId: string,
+    data: UpdateActivityGoalRequest
+  ): Promise<ActivityGoal> {
+    return this.request(`/households/${householdId}/wellness/activity-goals/${goalId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getWellnessCheckIns(
+    householdId: string,
+    params?: { memberId?: string; limit?: number }
+  ): Promise<{ checkIns: WellnessCheckIn[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    if (params?.memberId) queryParams.set('memberId', params.memberId);
+    if (params?.limit) queryParams.set('limit', String(params.limit));
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/wellness/wellness/check-ins${query ? `?${query}` : ''}`);
+  }
+
+  async createWellnessCheckIn(
+    householdId: string,
+    data: CreateCheckInRequest
+  ): Promise<WellnessCheckIn> {
+    return this.request(`/households/${householdId}/wellness/wellness/check-ins`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getWellnessTrends(
+    householdId: string,
+    params?: { memberId?: string; days?: number }
+  ): Promise<WellnessTrends> {
+    const queryParams = new URLSearchParams();
+    if (params?.memberId) queryParams.set('memberId', params.memberId);
+    if (params?.days) queryParams.set('days', String(params.days));
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/wellness/wellness/trends${query ? `?${query}` : ''}`);
+  }
+
+  async getSleepLogs(
+    householdId: string,
+    memberId?: string
+  ): Promise<{ logs: SleepLog[]; total: number }> {
+    const query = memberId ? `?memberId=${memberId}` : '';
+    return this.request(`/households/${householdId}/wellness/sleep-logs${query}`);
+  }
+
+  async createSleepLog(
+    householdId: string,
+    data: CreateSleepLogRequest
+  ): Promise<SleepLog> {
+    return this.request(`/households/${householdId}/wellness/sleep-logs`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSleepStats(
+    householdId: string,
+    params?: { memberId?: string; days?: number }
+  ): Promise<SleepStats> {
+    const queryParams = new URLSearchParams();
+    if (params?.memberId) queryParams.set('memberId', params.memberId);
+    if (params?.days) queryParams.set('days', String(params.days));
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/wellness/sleep-stats${query ? `?${query}` : ''}`);
+  }
+
+  async getMealPlans(
+    householdId: string,
+    params?: { startDate?: string; endDate?: string }
+  ): Promise<{ plans: MealPlan[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.set('startDate', params.startDate);
+    if (params?.endDate) queryParams.set('endDate', params.endDate);
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/wellness/meal-plans${query ? `?${query}` : ''}`);
+  }
+
+  async createMealPlan(
+    householdId: string,
+    data: CreateMealPlanRequest
+  ): Promise<MealPlan> {
+    return this.request(`/households/${householdId}/wellness/meal-plans`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateMealPlan(
+    householdId: string,
+    planId: string,
+    data: UpdateMealPlanRequest
+  ): Promise<MealPlan> {
+    return this.request(`/households/${householdId}/wellness/meal-plans/${planId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteMealPlan(
+    householdId: string,
+    planId: string
+  ): Promise<void> {
+    return this.request(`/households/${householdId}/wellness/meal-plans/${planId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getMentalHealthResources(
+    householdId: string,
+    category?: string
+  ): Promise<{ resources: MentalHealthResource[]; total: number }> {
+    const query = category ? `?category=${category}` : '';
+    return this.request(`/households/${householdId}/wellness/mental-health/resources${query}`);
+  }
+
+  async createMentalHealthResource(
+    householdId: string,
+    data: CreateMentalHealthResourceRequest
+  ): Promise<MentalHealthResource> {
+    return this.request(`/households/${householdId}/wellness/mental-health/resources`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getGratitudeEntries(
+    householdId: string,
+    memberId?: string
+  ): Promise<{ entries: GratitudeEntry[]; total: number }> {
+    const query = memberId ? `?memberId=${memberId}` : '';
+    return this.request(`/households/${householdId}/wellness/mental-health/gratitude${query}`);
+  }
+
+  async createGratitudeEntry(
+    householdId: string,
+    data: CreateGratitudeRequest
+  ): Promise<GratitudeEntry> {
+    return this.request(`/households/${householdId}/wellness/mental-health/gratitude`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMoodJournal(
+    householdId: string,
+    params?: { memberId?: string; days?: number }
+  ): Promise<MoodJournal> {
+    const queryParams = new URLSearchParams();
+    if (params?.memberId) queryParams.set('memberId', params.memberId);
+    if (params?.days) queryParams.set('days', String(params.days));
+    const query = queryParams.toString();
+    return this.request(`/households/${householdId}/wellness/mental-health/mood-journal${query ? `?${query}` : ''}`);
   }
 }
 

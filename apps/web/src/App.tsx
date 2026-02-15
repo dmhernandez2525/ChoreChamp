@@ -41,6 +41,7 @@ import Support from './pages/Support';
 import InAppStore from './pages/InAppStore';
 import EnterpriseSchoolEdition from './pages/EnterpriseSchoolEdition';
 import ApiPlatformIntegrations from './pages/ApiPlatformIntegrations';
+import WellnessHub from './pages/WellnessHub';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -381,6 +382,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ApiPlatformIntegrations />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/wellness"
+        element={
+          <ProtectedRoute>
+            <WellnessHub />
           </ProtectedRoute>
         }
       />
