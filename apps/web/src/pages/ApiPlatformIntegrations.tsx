@@ -120,7 +120,7 @@ export default function ApiPlatformIntegrations() {
     installCommand: 'npm install @chorechamp/sdk-js',
   });
 
-  const { data: members } = useMembers(householdId ?? '');
+  const { data: members, isLoading: loadingMembers } = useMembers(householdId ?? '');
   const currentMember = useMemo(
     () => members?.find((member) => member.userId === user?.id) ?? null,
     [members, user]
@@ -261,6 +261,10 @@ export default function ApiPlatformIntegrations() {
       setError('Webhook name, URL, and secret are required.');
       return;
     }
+    if (webhookForm.eventTypes.length === 0) {
+      setError('Select at least one webhook event type.');
+      return;
+    }
 
     await runAction(async () => {
       await createWebhook.mutateAsync({
@@ -343,6 +347,10 @@ export default function ApiPlatformIntegrations() {
   const handleCreateOAuthClient = async () => {
     if (!oauthForm.name.trim()) {
       setError('OAuth client name is required.');
+      return;
+    }
+    if (oauthForm.scopes.length === 0) {
+      setError('Select at least one OAuth scope.');
       return;
     }
 
@@ -440,6 +448,14 @@ export default function ApiPlatformIntegrations() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)]">
         <p className="text-gray-600">Missing household id.</p>
+      </div>
+    );
+  }
+
+  if (loadingMembers) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)]">
+        <p className="text-gray-600">Loading developer platform...</p>
       </div>
     );
   }
