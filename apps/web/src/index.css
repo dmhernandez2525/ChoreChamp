@@ -303,3 +303,55 @@ body {
 :root[data-simplified-language='true'] .decorative-only {
   display: none;
 }
+
+/* ===== F13.3: Cognitive Accessibility Mode ===== */
+
+/* Focus mode: moderate - dims non-primary content */
+:root[data-focus-mode='moderate'] .secondary-content,
+:root[data-focus-mode='moderate'] .decorative-only,
+:root[data-focus-mode='moderate'] aside:not([role="alert"]) {
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+:root[data-focus-mode='moderate'] .secondary-content:hover,
+:root[data-focus-mode='moderate'] .secondary-content:focus-within {
+  opacity: 1;
+}
+
+/* Focus mode: strict - hides non-essential UI entirely */
+:root[data-focus-mode='strict'] .secondary-content,
+:root[data-focus-mode='strict'] .decorative-only,
+:root[data-focus-mode='strict'] aside:not([role="alert"]) {
+  display: none;
+}
+
+:root[data-focus-mode='strict'] .optional-detail {
+  display: none;
+}
+
+/* Task chunking: visual step indicators */
+:root[data-task-chunking='true'] .chore-step {
+  border-left: 3px solid var(--app-accent);
+  padding-left: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+:root[data-task-chunking='true'] .chore-step.completed {
+  border-left-color: #16a34a;
+  opacity: 0.7;
+}
+
+/* Timer visualization: pulsing ring */
+:root[data-timer-visualization='true'] .timer-ring {
+  animation: timer-pulse 2s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+}
+
+:root[data-reduced-motion='true'] .timer-ring {
+  animation: none;
+}
