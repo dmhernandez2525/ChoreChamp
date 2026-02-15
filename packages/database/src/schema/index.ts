@@ -31,3 +31,4 @@ export * from './skill-building';
 export * from './school-extracurricular';
 export * from './webhook-events';
 export * from './activity-tracking';
+export * from './advanced-analytics';

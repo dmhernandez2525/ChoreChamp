@@ -206,6 +206,20 @@ import type {
   GratitudeEntry,
   CreateGratitudeRequest,
   MoodJournal,
+  AdvancedReport,
+  GeneratedReport,
+  CreateAdvancedReportRequest,
+  UpdateAdvancedReportRequest,
+  AdminDashboard,
+  AdminMemberSummary,
+  AdminAlert,
+  DataExport,
+  DataExportRequest,
+  AuditLogEntry,
+  AuditLogQuery,
+  PerformanceMetrics,
+  UsageMetrics,
+  ErrorMetric,
   ApiPlatformDeveloperOverview,
   ApiPlatformOpenApiDocument,
   ApiPlatformKeySettings,
@@ -2734,6 +2748,115 @@ class ApiClient {
     if (params?.days) queryParams.set('days', String(params.days));
     const query = queryParams.toString();
     return this.request(`/households/${householdId}/wellness/mental-health/mood-journal${query ? `?${query}` : ''}`);
+  }
+
+  // ==================== Advanced Analytics & Admin (F15.1-F15.5) ====================
+
+  async getAdvancedReports(householdId: string): Promise<{ reports: AdvancedReport[]; total: number }> {
+    return this.request(`/households/${householdId}/admin-analytics/reports`);
+  }
+
+  async createAdvancedReport(householdId: string, data: CreateAdvancedReportRequest): Promise<AdvancedReport> {
+    return this.request(`/households/${householdId}/admin-analytics/reports`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getAdvancedReport(householdId: string, reportId: string): Promise<{ report: AdvancedReport }> {
+    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}`);
+  }
+
+  async updateAdvancedReport(householdId: string, reportId: string, data: UpdateAdvancedReportRequest): Promise<AdvancedReport> {
+    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAdvancedReport(householdId: string, reportId: string): Promise<void> {
+    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}`, { method: 'DELETE' });
+  }
+
+  async generateReport(householdId: string, reportId: string): Promise<GeneratedReport> {
+    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}/generate`, { method: 'POST' });
+  }
+
+  async getGeneratedReports(householdId: string, reportId: string): Promise<{ reports: GeneratedReport[]; total: number }> {
+    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}/generated`);
+  }
+
+  async getAdminDashboard(householdId: string): Promise<AdminDashboard> {
+    return this.request(`/households/${householdId}/admin-analytics/admin/dashboard`);
+  }
+
+  async getAdminMembers(householdId: string): Promise<{ members: AdminMemberSummary[]; total: number }> {
+    return this.request(`/households/${householdId}/admin-analytics/admin/members`);
+  }
+
+  async getAdminAlerts(householdId: string): Promise<{ alerts: AdminAlert[]; total: number }> {
+    return this.request(`/households/${householdId}/admin-analytics/admin/alerts`);
+  }
+
+  async markAlertRead(householdId: string, alertId: string): Promise<{ id: string; isRead: boolean }> {
+    return this.request(`/households/${householdId}/admin-analytics/admin/alerts/${alertId}/read`, { method: 'PATCH' });
+  }
+
+  async createDataExport(householdId: string, data: DataExportRequest): Promise<DataExport> {
+    return this.request(`/households/${householdId}/admin-analytics/exports`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getDataExports(householdId: string): Promise<{ exports: DataExport[]; total: number }> {
+    return this.request(`/households/${householdId}/admin-analytics/exports`);
+  }
+
+  async getDataExport(householdId: string, exportId: string): Promise<DataExport> {
+    return this.request(`/households/${householdId}/admin-analytics/exports/${exportId}`);
+  }
+
+  async deleteDataExport(householdId: string, exportId: string): Promise<void> {
+    return this.request(`/households/${householdId}/admin-analytics/exports/${exportId}`, { method: 'DELETE' });
+  }
+
+  async getAuditLogs(householdId: string, query?: AuditLogQuery): Promise<{ logs: AuditLogEntry[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    if (query?.actorId) queryParams.set('actorId', query.actorId);
+    if (query?.action) queryParams.set('action', query.action);
+    if (query?.resourceType) queryParams.set('resourceType', query.resourceType);
+    if (query?.startDate) queryParams.set('startDate', query.startDate);
+    if (query?.endDate) queryParams.set('endDate', query.endDate);
+    if (query?.limit) queryParams.set('limit', String(query.limit));
+    if (query?.offset) queryParams.set('offset', String(query.offset));
+    const qs = queryParams.toString();
+    return this.request(`/households/${householdId}/admin-analytics/audit-logs${qs ? `?${qs}` : ''}`);
+  }
+
+  async getAuditLogSummary(householdId: string): Promise<{ totalActions: number; actionBreakdown: Record<string, number>; topActors: unknown[]; recentActions: unknown[] }> {
+    return this.request(`/households/${householdId}/admin-analytics/audit-logs/summary`);
+  }
+
+  async getPerformanceMetrics(householdId: string): Promise<PerformanceMetrics> {
+    return this.request(`/households/${householdId}/admin-analytics/performance`);
+  }
+
+  async getPerformanceHistory(householdId: string, period?: string): Promise<{ metrics: PerformanceMetrics[]; period: string }> {
+    const query = period ? `?period=${period}` : '';
+    return this.request(`/households/${householdId}/admin-analytics/performance/history${query}`);
+  }
+
+  async getUsageMetrics(householdId: string): Promise<UsageMetrics> {
+    return this.request(`/households/${householdId}/admin-analytics/usage`);
+  }
+
+  async getErrorMetrics(householdId: string): Promise<{ errors: ErrorMetric[]; total: number }> {
+    return this.request(`/households/${householdId}/admin-analytics/errors`);
+  }
+
+  async resolveError(householdId: string, errorId: string): Promise<{ id: string; isResolved: boolean }> {
+    return this.request(`/households/${householdId}/admin-analytics/errors/${errorId}/resolve`, { method: 'PATCH' });
   }
 }
 
