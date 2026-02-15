@@ -11,6 +11,7 @@ import {
 } from '@chorechamp/api-client';
 import { useAuth } from '../context/AuthContext';
 import { useChoreStore } from '../stores/chore-store';
+import { useAccessibility } from '../components/accessibility';
 import { useCelebration } from '../components/celebrations';
 import { hasFeature } from '../lib/subscription';
 import {
@@ -50,6 +51,7 @@ export default function HouseholdDashboard() {
 
   // Celebrations
   const { celebrateChoreCompleted } = useCelebration();
+  const { announce } = useAccessibility();
 
   // Find current member based on user
   const currentMember = useMemo(() => {
@@ -98,6 +100,7 @@ export default function HouseholdDashboard() {
 
       // Celebrate!
       celebrateChoreCompleted(points, household?.pointsName || 'Stars');
+      announce(`${completedChore?.chore.title || 'Chore'} completed. ${points} points earned.`);
     } finally {
       setCompletingChoreId(null);
     }
@@ -107,6 +110,7 @@ export default function HouseholdDashboard() {
     setApprovingId(completionId);
     try {
       await approveCompletion.mutateAsync(completionId);
+      announce('Completion approved.');
     } finally {
       setApprovingId(null);
     }
@@ -116,6 +120,7 @@ export default function HouseholdDashboard() {
     setApprovingId(completionId);
     try {
       await rejectCompletion.mutateAsync({ completionId, reason });
+      announce('Completion rejected.');
     } finally {
       setApprovingId(null);
     }

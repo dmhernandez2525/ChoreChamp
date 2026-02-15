@@ -10,10 +10,11 @@ import {
   ProfileSection,
   SecuritySection,
   NotificationsSection,
+  AccessibilitySection,
 } from '../components/settings';
 import { Skeleton } from '../components/common';
 
-type SettingsTab = 'profile' | 'notifications' | 'security';
+type SettingsTab = 'profile' | 'notifications' | 'security' | 'accessibility';
 
 const DEFAULT_NOTIFICATION_PREFS = {
   emailChoreReminders: true,
@@ -105,6 +106,7 @@ export default function Settings() {
     { id: 'profile', label: 'Profile' },
     { id: 'notifications', label: 'Notifications' },
     { id: 'security', label: 'Security' },
+    { id: 'accessibility', label: 'Accessibility' },
   ];
 
   return (
@@ -158,6 +160,8 @@ export default function Settings() {
             onDeleteAccount={handleDeleteAccount}
           />
         )}
+
+        {activeTab === 'accessibility' && <AccessibilitySection />}
       </main>
     </div>
   );

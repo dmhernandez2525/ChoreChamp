@@ -13,6 +13,8 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (
     <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
       className={`w-12 h-12 rounded-xl items-center justify-center ${
         focused ? 'bg-primary-100' : 'bg-transparent'
       }`}
@@ -50,6 +52,7 @@ export function MainNavigator() {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+          tabBarAccessibilityLabel: 'Home tab',
         }}
       />
       <Tab.Screen
@@ -57,6 +60,7 @@ export function MainNavigator() {
         component={ChoreListScreen}
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />,
+          tabBarAccessibilityLabel: 'Chores tab',
         }}
       />
       <Tab.Screen
@@ -64,6 +68,7 @@ export function MainNavigator() {
         component={RewardsScreen}
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="🎁" focused={focused} />,
+          tabBarAccessibilityLabel: 'Rewards tab',
         }}
       />
       <Tab.Screen
@@ -71,6 +76,7 @@ export function MainNavigator() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
+          tabBarAccessibilityLabel: 'Profile tab',
         }}
       />
     </Tab.Navigator>

@@ -37,6 +37,7 @@ ChoreChamp is a cross-platform family chore management application that gamifies
 | [SDD-007: Rewards System](./sdd/SDD-007-rewards.md)                                | Planned     |
 | [SDD-012: Enterprise & School Edition](./sdd/SDD-012-enterprise-school-edition.md) | Implemented |
 | [SDD-013: API Platform & Integrations](./sdd/SDD-013-api-platform-integrations.md) | Implemented |
+| [SDD-014: Screen Reader & Assistive Technology](./sdd/SDD-014-screen-reader-assistive-tech.md) | Implemented |
 
 ---
 
@@ -59,6 +60,7 @@ Located in: `/_@agent-prompts/ChoreChamp/research/sessions/`
 | Resource                        | Location                      |
 | ------------------------------- | ----------------------------- |
 | [Database Guide](./DATABASE.md) | Schema, migrations, seed data |
+| [Screen Reader Testing](./accessibility/SCREEN_READER_TESTING.md) | VoiceOver/TalkBack + keyboard validation checklist |
 | Agent Prompt                    | `/CHORECHAMP_AGENT_PROMPT.md` |
 | Work Status                     | `/roadmap/WORK_STATUS.md`     |
 | Agent Logs                      | `/roadmap/AGENT_LOGS/`        |

@@ -18,13 +18,18 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 4. **Cross-platform with native desktop** - Web + Mobile + macOS + Windows
 5. **Value-before-signup** - +20% DAU (Duolingo A/B test)
 
-## Current Delivery Status (Phase 12)
+## Current Delivery Status (Phase 13)
 
 - [x] F12.1 Subscription tier system
 - [x] F12.2 Premium feature gates
 - [x] F12.3 In-app purchase store
 - [x] F12.4 Enterprise and school edition
 - [x] F12.5 API platform and integrations
+- [x] F13.1 Screen reader and assistive technology
+- [ ] F13.2 Dyslexia and reading accommodations
+- [ ] F13.3 Cognitive accessibility mode
+- [ ] F13.4 Multi-language support (i18n)
+- [ ] F13.5 Special needs accommodations
 
 ---
 
@@ -491,6 +496,18 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 - [x] F12.3 - In-app purchase store (catalog, ChoreCoins bundles, receipts, refunds, parental controls, gift cards)
 - [x] F12.4 - Enterprise & school edition (district/school portal, LMS configuration, compliance/reporting workflows)
 - [x] F12.5 - API platform & integrations (OpenAPI public API, OAuth2, webhook subscriptions, marketplace approvals, SDK packages)
+
+---
+
+## Phase 13: Accessibility & Internationalization (Weeks 45-48)
+
+**Goal:** Ensure core product workflows are accessible to assistive technologies and ready for inclusive global delivery.
+
+- [x] F13.1 - Screen reader & assistive technology (skip link, live announcements, high contrast, reduced motion, VoiceOver/TalkBack labeling)
+- [ ] F13.2 - Dyslexia & reading accommodations
+- [ ] F13.3 - Cognitive accessibility mode
+- [ ] F13.4 - Multi-language support (i18n)
+- [ ] F13.5 - Special needs accommodations
 
 ---
 

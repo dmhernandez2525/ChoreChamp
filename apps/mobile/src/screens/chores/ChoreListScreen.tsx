@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  type AccessibilityActionEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -119,6 +120,9 @@ export function ChoreListScreen() {
       <TouchableOpacity
         className="bg-success-500 justify-center items-center px-6"
         onPress={() => handleCompleteChore(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`Mark ${item.chore?.title || 'chore'} as complete`}
+        accessibilityHint="Completes this chore and awards points"
       >
         <Text className="text-white text-2xl">✓</Text>
         <Text className="text-white text-xs font-medium mt-1">Done</Text>
@@ -139,6 +143,28 @@ export function ChoreListScreen() {
             isCompleting ? 'opacity-50' : ''
           }`}
           onPress={() => navigateToDetail(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.chore?.title || 'Chore'}, ${item.chore?.pointValue || 0} ${activeHousehold?.pointsName || 'points'}, ${item.isCompleted ? 'completed' : 'to do'}`}
+          accessibilityHint={
+            item.isCompleted
+              ? 'Double tap to review chore details.'
+              : 'Double tap to open details. Additional action available to complete chore.'
+          }
+          accessibilityActions={
+            item.isCompleted
+              ? [{ name: 'activate', label: 'Open chore details' }]
+              : [
+                  { name: 'activate', label: 'Open chore details' },
+                  { name: 'complete', label: 'Complete chore' },
+                ]
+          }
+          onAccessibilityAction={(event: AccessibilityActionEvent) => {
+            if (event.nativeEvent.actionName === 'complete') {
+              void handleCompleteChore(item);
+              return;
+            }
+            navigateToDetail(item);
+          }}
           disabled={isCompleting}
         >
           {/* Icon */}
@@ -225,6 +251,10 @@ export function ChoreListScreen() {
         filter === type ? 'bg-primary-500' : 'bg-gray-100'
       }`}
       onPress={() => setFilter(type)}
+      accessibilityRole="button"
+      accessibilityState={{ selected: filter === type }}
+      accessibilityLabel={`${label} filter`}
+      accessibilityHint={`Shows ${count} chore${count === 1 ? '' : 's'}`}
     >
       <Text
         className={`text-sm font-medium ${
@@ -244,8 +274,10 @@ export function ChoreListScreen() {
       <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
         {/* Header */}
         <View className="px-6 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-gray-900">{"Today's Chores"}</Text>
-          <Text className="text-gray-500 mt-1">
+          <Text className="text-2xl font-bold text-gray-900" accessibilityRole="header">
+            {"Today's Chores"}
+          </Text>
+          <Text className="text-gray-500 mt-1" accessibilityLiveRegion="polite">
             {todoCount === 0
               ? 'All done for today!'
               : `${todoCount} chore${todoCount !== 1 ? 's' : ''} remaining`}
@@ -262,9 +294,15 @@ export function ChoreListScreen() {
               placeholderTextColor="#9ca3af"
               value={searchQuery}
               onChangeText={setSearchQuery}
+              accessibilityLabel="Search chores"
+              accessibilityHint="Type to filter chores by title or category"
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
                 <Text className="text-gray-400">✕</Text>
               </TouchableOpacity>
             )}
@@ -294,6 +332,8 @@ export function ChoreListScreen() {
           data={filteredChores}
           keyExtractor={(item) => item.id}
           renderItem={renderChoreItem}
+          accessibilityRole="list"
+          accessibilityLabel="Today chore list"
           refreshControl={
             <RefreshControl
               refreshing={refreshing || isSyncing || isLoading}

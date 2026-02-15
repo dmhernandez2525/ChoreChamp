@@ -143,6 +143,29 @@ API platform support introduces key management, OAuth, webhook, marketplace, and
 - Includes API key creation/settings, webhook management, marketplace approvals, OAuth client registration, SDK registry metadata, and usage analytics
 - Uses shared `@chorechamp/api-client` hooks for typed request/response handling
 
+## Accessibility Architecture (Phase 13.1)
+
+### Web Accessibility Layer
+
+- Global `AccessibilityProvider` manages:
+  - live region announcements for route and dynamic action feedback
+  - persisted high contrast preference
+  - persisted reduced motion preference (plus system preference alignment)
+- `AppShell` provides:
+  - keyboard `Skip to main content` link
+  - route-change announcement and focus handoff to primary heading
+  - labeled navigation landmarks for mobile navigation structures
+- Stylesheet accessibility mode support:
+  - high contrast palette override (`data-high-contrast='true'`)
+  - reduced motion override (`data-reduced-motion='true'`) and `prefers-reduced-motion` handling
+  - consistent `:focus-visible` outlines
+
+### Mobile Accessibility Layer
+
+- Bottom tab navigation includes explicit VoiceOver/TalkBack labels and hints.
+- Chore list rows expose accessibility actions (`activate`, `complete`) for assistive technology custom actions.
+- Filter/search controls include explicit labels, selected state, and hints to improve Voice Access discoverability.
+
 ## Shared Packages
 
 - `@chorechamp/types`: Shared contracts for subscriptions, in-app store, enterprise school workflows, API platform integrations, and core product domains

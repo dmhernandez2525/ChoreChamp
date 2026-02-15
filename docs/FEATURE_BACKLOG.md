@@ -266,6 +266,14 @@
 - [x] F12.4 Enterprise & school edition (district/school portal, classroom workflows, LMS controls, compliance/reporting)
 - [x] F12.5 API platform & integrations (public OpenAPI + OAuth2 + webhooks + marketplace request workflow + SDK package distribution)
 
+### Phase 13 Delivery Status (Current)
+
+- [x] F13.1 Screen reader & assistive technology (skip link, route/live announcements, keyboard focus upgrades, high contrast + reduced motion controls, VoiceOver/TalkBack labels/actions)
+- [ ] F13.2 Dyslexia & reading accommodations
+- [ ] F13.3 Cognitive accessibility mode
+- [ ] F13.4 Multi-language support (i18n)
+- [ ] F13.5 Special needs accommodations
+
 ---
 
 ## P3 - Nice to Have (Post-Launch)

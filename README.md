@@ -11,6 +11,7 @@ A gamified family chore management application that motivates children (and adul
 - **In-App Store**: ChoreCoins bundles, boosters, cosmetics, gift cards, and receipts
 - **Enterprise School Edition**: District/school admin, classroom workflows, LMS sync, FERPA/COPPA controls, reports
 - **API Platform**: Public REST API with OpenAPI docs, OAuth2, webhooks, marketplace approvals, and language SDKs
+- **Accessibility**: Screen reader announcements, keyboard skip links, high contrast mode, reduced motion controls
 - **ADHD-Friendly**: Visual timers, task chunking, and sensory customization
 - **Cross-Platform**: Web, iOS, Android, macOS, and Windows apps
 
