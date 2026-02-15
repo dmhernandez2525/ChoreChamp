@@ -9,6 +9,7 @@ export * from './rewards';
 export * from './support';
 export * from './api-keys';
 export * from './in-app-store';
+export * from './enterprise-school';
 export * from './notifications';
 export * from './trades';
 export * from './allowance';

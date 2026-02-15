@@ -64,9 +64,8 @@ export default function HouseholdDashboard() {
   // Count pending approvals
   const pendingApprovalsCount = useMemo(() => {
     if (!todayChores) return 0;
-    return todayChores.filter(
-      (c) => c.chore.requiresApproval && c.completion?.status === 'pending'
-    ).length;
+    return todayChores.filter((c) => c.chore.requiresApproval && c.completion?.status === 'pending')
+      .length;
   }, [todayChores]);
 
   // Set selected household/member on load
@@ -296,6 +295,11 @@ export default function HouseholdDashboard() {
           {isParent && (
             <Button variant="outline" asChild>
               <Link to={`/households/${householdId}/members`}>Manage Family</Link>
+            </Button>
+          )}
+          {isParent && (
+            <Button variant="outline" asChild>
+              <Link to={`/households/${householdId}/enterprise`}>Enterprise School</Link>
             </Button>
           )}
           <div className="relative">

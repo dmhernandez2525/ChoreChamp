@@ -22,6 +22,19 @@ import type {
   UpdateStorePurchaseControlsRequest,
   CreateStoreGiftCardRequest,
   RedeemStoreGiftCardRequest,
+  CreateEnterpriseDistrictRequest,
+  CreateEnterpriseSchoolRequest,
+  UpdateEnterpriseSchoolRequest,
+  CreateEnterpriseClassroomRequest,
+  AddEnterpriseStudentRequest,
+  BulkImportEnterpriseStudentsRequest,
+  CreateEnterpriseAssignmentRequest,
+  SubmitEnterpriseAssignmentRequest,
+  ReviewEnterpriseSubmissionRequest,
+  CreateEnterpriseChallengeRequest,
+  ConfigureEnterpriseLmsRequest,
+  SetEnterpriseParentVisibilityRequest,
+  EnterpriseLmsProvider,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -37,22 +50,17 @@ export const queryKeys = {
   todaysChores: (householdId: string, memberId?: string) =>
     ['todaysChores', householdId, memberId] as const,
   // Gamification
-  stats: (householdId: string, memberId: string) =>
-    ['stats', householdId, memberId] as const,
+  stats: (householdId: string, memberId: string) => ['stats', householdId, memberId] as const,
   transactions: (householdId: string, memberId: string) =>
     ['transactions', householdId, memberId] as const,
-  streak: (householdId: string, memberId: string) =>
-    ['streak', householdId, memberId] as const,
-  badges: (householdId: string, memberId: string) =>
-    ['badges', householdId, memberId] as const,
+  streak: (householdId: string, memberId: string) => ['streak', householdId, memberId] as const,
+  badges: (householdId: string, memberId: string) => ['badges', householdId, memberId] as const,
   leaderboard: (householdId: string, period?: string) =>
     ['leaderboard', householdId, period] as const,
   // Rewards
   rewards: (householdId: string) => ['rewards', householdId] as const,
-  reward: (householdId: string, rewardId: string) =>
-    ['reward', householdId, rewardId] as const,
-  pendingRedemptions: (householdId: string) =>
-    ['pendingRedemptions', householdId] as const,
+  reward: (householdId: string, rewardId: string) => ['reward', householdId, rewardId] as const,
+  pendingRedemptions: (householdId: string) => ['pendingRedemptions', householdId] as const,
   supportThreads: (householdId: string) => ['supportThreads', householdId] as const,
   supportThread: (householdId: string, threadId: string) =>
     ['supportThread', householdId, threadId] as const,
@@ -72,11 +80,32 @@ export const queryKeys = {
   storeControlsMember: (householdId: string, memberId: string) =>
     ['storeControlsMember', householdId, memberId] as const,
   storeGiftCards: (householdId: string) => ['storeGiftCards', householdId] as const,
+  enterpriseOverview: (householdId: string) => ['enterpriseOverview', householdId] as const,
+  enterpriseDistricts: (householdId: string) => ['enterpriseDistricts', householdId] as const,
+  enterpriseSchools: (householdId: string) => ['enterpriseSchools', householdId] as const,
+  enterpriseClassrooms: (householdId: string, schoolId: string) =>
+    ['enterpriseClassrooms', householdId, schoolId] as const,
+  enterpriseStudents: (householdId: string, classroomId: string) =>
+    ['enterpriseStudents', householdId, classroomId] as const,
+  enterpriseAssignments: (householdId: string, classroomId: string) =>
+    ['enterpriseAssignments', householdId, classroomId] as const,
+  enterpriseClassroomDashboard: (householdId: string, classroomId: string) =>
+    ['enterpriseClassroomDashboard', householdId, classroomId] as const,
+  enterpriseChallenges: (householdId: string, schoolId: string) =>
+    ['enterpriseChallenges', householdId, schoolId] as const,
+  enterpriseLms: (householdId: string, schoolId: string) =>
+    ['enterpriseLms', householdId, schoolId] as const,
+  enterpriseParentVisibility: (householdId: string, schoolId: string) =>
+    ['enterpriseParentVisibility', householdId, schoolId] as const,
+  enterpriseSchoolAnalytics: (householdId: string, schoolId: string) =>
+    ['enterpriseSchoolAnalytics', householdId, schoolId] as const,
+  enterpriseImports: (householdId: string) => ['enterpriseImports', householdId] as const,
+  enterpriseAudits: (householdId: string) => ['enterpriseAudits', householdId] as const,
+  enterpriseReport: (householdId: string, schoolId: string, format: 'pdf' | 'excel') =>
+    ['enterpriseReport', householdId, schoolId, format] as const,
   // Boss Battles
-  currentBossBattle: (householdId: string) =>
-    ['currentBossBattle', householdId] as const,
-  bossBattleHistory: (householdId: string) =>
-    ['bossBattleHistory', householdId] as const,
+  currentBossBattle: (householdId: string) => ['currentBossBattle', householdId] as const,
+  bossBattleHistory: (householdId: string) => ['bossBattleHistory', householdId] as const,
   bossBattle: (householdId: string, battleId: string) =>
     ['bossBattle', householdId, battleId] as const,
   // Activity
@@ -334,8 +363,7 @@ export function useCreateInviteCode(householdId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateInviteCodeRequest) =>
-      apiClient.createInviteCode(householdId, data),
+    mutationFn: (data: CreateInviteCodeRequest) => apiClient.createInviteCode(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inviteCodes(householdId) });
     },
@@ -484,13 +512,8 @@ export function useUpdateReward(householdId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      rewardId,
-      data,
-    }: {
-      rewardId: string;
-      data: Partial<CreateRewardRequest>;
-    }) => apiClient.updateReward(householdId, rewardId, data),
+    mutationFn: ({ rewardId, data }: { rewardId: string; data: Partial<CreateRewardRequest> }) =>
+      apiClient.updateReward(householdId, rewardId, data),
     onSuccess: (_, { rewardId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.rewards(householdId) });
       queryClient.invalidateQueries({
@@ -551,8 +574,7 @@ export function useApproveRedemption(householdId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (redemptionId: string) =>
-      apiClient.approveRedemption(householdId, redemptionId),
+    mutationFn: (redemptionId: string) => apiClient.approveRedemption(householdId, redemptionId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pendingRedemptions(householdId),
@@ -565,8 +587,7 @@ export function useFulfillRedemption(householdId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (redemptionId: string) =>
-      apiClient.fulfillRedemption(householdId, redemptionId),
+    mutationFn: (redemptionId: string) => apiClient.fulfillRedemption(householdId, redemptionId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pendingRedemptions(householdId),
@@ -579,13 +600,8 @@ export function useRejectRedemption(householdId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      redemptionId,
-      reason,
-    }: {
-      redemptionId: string;
-      reason: string;
-    }) => apiClient.rejectRedemption(householdId, redemptionId, reason),
+    mutationFn: ({ redemptionId, reason }: { redemptionId: string; reason: string }) =>
+      apiClient.rejectRedemption(householdId, redemptionId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pendingRedemptions(householdId),
@@ -685,6 +701,472 @@ export function useRevokeApiKey(householdId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys(householdId) });
     },
+  });
+}
+
+// ===== Enterprise School Edition Hooks =====
+export function useEnterpriseOverview(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseOverview(householdId),
+    queryFn: () => apiClient.getEnterpriseOverview(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useEnterpriseDistricts(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseDistricts(householdId),
+    queryFn: () => apiClient.getEnterpriseDistricts(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useCreateEnterpriseDistrict(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateEnterpriseDistrictRequest) =>
+      apiClient.createEnterpriseDistrict(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseDistricts(householdId) });
+    },
+  });
+}
+
+export function useEnterpriseSchools(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseSchools(householdId),
+    queryFn: () => apiClient.getEnterpriseSchools(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useCreateEnterpriseSchool(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateEnterpriseSchoolRequest) =>
+      apiClient.createEnterpriseSchool(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseSchools(householdId) });
+    },
+  });
+}
+
+export function useUpdateEnterpriseSchool(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ schoolId, data }: { schoolId: string; data: UpdateEnterpriseSchoolRequest }) =>
+      apiClient.updateEnterpriseSchool(householdId, schoolId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseSchools(householdId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseSchoolAnalytics(householdId, variables.schoolId),
+      });
+    },
+  });
+}
+
+export function useEnterpriseClassrooms(
+  householdId: string,
+  schoolId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseClassrooms(householdId, schoolId),
+    queryFn: () => apiClient.getEnterpriseClassrooms(householdId, schoolId),
+    enabled: options?.enabled ?? (!!householdId && !!schoolId),
+  });
+}
+
+export function useCreateEnterpriseClassroom(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      schoolId,
+      data,
+    }: {
+      schoolId: string;
+      data: CreateEnterpriseClassroomRequest;
+    }) => apiClient.createEnterpriseClassroom(householdId, schoolId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseClassrooms(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useEnterpriseStudents(
+  householdId: string,
+  classroomId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseStudents(householdId, classroomId),
+    queryFn: () => apiClient.getEnterpriseStudents(householdId, classroomId),
+    enabled: options?.enabled ?? (!!householdId && !!classroomId),
+  });
+}
+
+export function useAddEnterpriseStudent(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      classroomId,
+      data,
+    }: {
+      classroomId: string;
+      data: AddEnterpriseStudentRequest;
+    }) => apiClient.addEnterpriseStudent(householdId, classroomId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseStudents(householdId, variables.classroomId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseClassroomDashboard(householdId, variables.classroomId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useImportEnterpriseStudents(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      classroomId,
+      data,
+    }: {
+      classroomId: string;
+      data: BulkImportEnterpriseStudentsRequest;
+    }) => apiClient.importEnterpriseStudents(householdId, classroomId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseStudents(householdId, variables.classroomId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseClassroomDashboard(householdId, variables.classroomId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseImports(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useEnterpriseAssignments(
+  householdId: string,
+  classroomId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseAssignments(householdId, classroomId),
+    queryFn: () => apiClient.getEnterpriseAssignments(householdId, classroomId),
+    enabled: options?.enabled ?? (!!householdId && !!classroomId),
+  });
+}
+
+export function useCreateEnterpriseAssignment(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      classroomId,
+      data,
+    }: {
+      classroomId: string;
+      data: CreateEnterpriseAssignmentRequest;
+    }) => apiClient.createEnterpriseAssignment(householdId, classroomId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseAssignments(householdId, variables.classroomId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseClassroomDashboard(householdId, variables.classroomId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useSubmitEnterpriseAssignment(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      assignmentId,
+      data,
+    }: {
+      assignmentId: string;
+      data: SubmitEnterpriseAssignmentRequest;
+    }) => apiClient.submitEnterpriseAssignment(householdId, assignmentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'enterpriseAssignments' &&
+          query.queryKey[1] === householdId,
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'enterpriseClassroomDashboard' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useReviewEnterpriseSubmission(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      submissionId,
+      data,
+    }: {
+      submissionId: string;
+      data: ReviewEnterpriseSubmissionRequest;
+    }) => apiClient.reviewEnterpriseSubmission(householdId, submissionId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'enterpriseAssignments' &&
+          query.queryKey[1] === householdId,
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'enterpriseClassroomDashboard' &&
+          query.queryKey[1] === householdId,
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useEnterpriseClassroomDashboard(
+  householdId: string,
+  classroomId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseClassroomDashboard(householdId, classroomId),
+    queryFn: () => apiClient.getEnterpriseClassroomDashboard(householdId, classroomId),
+    enabled: options?.enabled ?? (!!householdId && !!classroomId),
+  });
+}
+
+export function useEnterpriseChallenges(
+  householdId: string,
+  schoolId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseChallenges(householdId, schoolId),
+    queryFn: () => apiClient.getEnterpriseChallenges(householdId, schoolId),
+    enabled: options?.enabled ?? (!!householdId && !!schoolId),
+  });
+}
+
+export function useCreateEnterpriseChallenge(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      schoolId,
+      data,
+    }: {
+      schoolId: string;
+      data: CreateEnterpriseChallengeRequest;
+    }) => apiClient.createEnterpriseChallenge(householdId, schoolId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseChallenges(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useAddEnterpriseChallengeParticipation(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: {
+      challengeId: string;
+      schoolId: string;
+      data: {
+        classroomId?: string;
+        studentMemberId?: string;
+        progress?: number;
+        rank?: number;
+      };
+    }) =>
+      apiClient.addEnterpriseChallengeParticipation(
+        householdId,
+        variables.challengeId,
+        variables.data
+      ),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseChallenges(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useEnterpriseLms(
+  householdId: string,
+  schoolId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseLms(householdId, schoolId),
+    queryFn: () => apiClient.getEnterpriseLmsIntegrations(householdId, schoolId),
+    enabled: options?.enabled ?? (!!householdId && !!schoolId),
+  });
+}
+
+export function useConfigureEnterpriseLms(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      schoolId,
+      provider,
+      data,
+    }: {
+      schoolId: string;
+      provider: EnterpriseLmsProvider;
+      data: ConfigureEnterpriseLmsRequest;
+    }) => apiClient.configureEnterpriseLms(householdId, schoolId, provider, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseLms(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseSchoolAnalytics(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useSyncEnterpriseLms(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ schoolId, provider }: { schoolId: string; provider: EnterpriseLmsProvider }) =>
+      apiClient.syncEnterpriseLms(householdId, schoolId, provider),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseLms(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseSchoolAnalytics(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useEnterpriseParentVisibility(
+  householdId: string,
+  schoolId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseParentVisibility(householdId, schoolId),
+    queryFn: () => apiClient.getEnterpriseParentVisibility(householdId, schoolId),
+    enabled: options?.enabled ?? (!!householdId && !!schoolId),
+  });
+}
+
+export function useSetEnterpriseParentVisibility(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      schoolId,
+      studentMemberId,
+      data,
+    }: {
+      schoolId: string;
+      studentMemberId: string;
+      data: SetEnterpriseParentVisibilityRequest;
+    }) => apiClient.setEnterpriseParentVisibility(householdId, schoolId, studentMemberId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.enterpriseParentVisibility(householdId, variables.schoolId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enterpriseOverview(householdId) });
+    },
+  });
+}
+
+export function useEnterpriseSchoolAnalytics(
+  householdId: string,
+  schoolId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseSchoolAnalytics(householdId, schoolId),
+    queryFn: () => apiClient.getEnterpriseSchoolAnalytics(householdId, schoolId),
+    enabled: options?.enabled ?? (!!householdId && !!schoolId),
+  });
+}
+
+export function useEnterpriseImports(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseImports(householdId),
+    queryFn: () => apiClient.getEnterpriseImports(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useEnterpriseAudits(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseAudits(householdId),
+    queryFn: () => apiClient.getEnterpriseAudits(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useEnterpriseReport(
+  householdId: string,
+  schoolId: string,
+  format: 'pdf' | 'excel',
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.enterpriseReport(householdId, schoolId, format),
+    queryFn: () => apiClient.generateEnterpriseSchoolReport(householdId, schoolId, format),
+    enabled: options?.enabled ?? (!!householdId && !!schoolId),
+  });
+}
+
+export function useExportEnterpriseStudents(householdId: string) {
+  return useMutation({
+    mutationFn: (classroomId: string) =>
+      apiClient.exportEnterpriseStudents(householdId, classroomId),
+  });
+}
+
+export function useGenerateEnterpriseReport(householdId: string) {
+  return useMutation({
+    mutationFn: ({ schoolId, format }: { schoolId: string; format: 'pdf' | 'excel' }) =>
+      apiClient.generateEnterpriseSchoolReport(householdId, schoolId, format),
   });
 }
 
@@ -823,13 +1305,8 @@ export function useResolveStoreRefund(householdId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      refundId,
-      request,
-    }: {
-      refundId: string;
-      request: ResolveStoreRefundRequest;
-    }) => apiClient.resolveStoreRefund(householdId, refundId, request),
+    mutationFn: ({ refundId, request }: { refundId: string; request: ResolveStoreRefundRequest }) =>
+      apiClient.resolveStoreRefund(householdId, refundId, request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.storeRefunds(householdId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.storePurchases(householdId) });
@@ -843,11 +1320,10 @@ export function useStoreControls(householdId: string, memberId?: string) {
     queryKey: memberId
       ? queryKeys.storeControlsMember(householdId, memberId)
       : queryKeys.storeControls(householdId),
-    queryFn: () => (
+    queryFn: () =>
       memberId
         ? apiClient.getStorePurchaseControlsForMember(householdId, memberId)
-        : apiClient.getStorePurchaseControls(householdId)
-    ),
+        : apiClient.getStorePurchaseControls(householdId),
     enabled: !!householdId,
   });
 }
@@ -937,8 +1413,7 @@ export function useCreateBossBattle(householdId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateBossBattleRequest) =>
-      apiClient.createBossBattle(householdId, data),
+    mutationFn: (data: CreateBossBattleRequest) => apiClient.createBossBattle(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.currentBossBattle(householdId),
@@ -991,10 +1466,7 @@ export function useActivityFeed(
   });
 }
 
-export function useActivityStats(
-  householdId: string,
-  period?: 'day' | 'week' | 'month'
-) {
+export function useActivityStats(householdId: string, period?: 'day' | 'week' | 'month') {
   return useQuery({
     queryKey: queryKeys.activityStats(householdId, period),
     queryFn: () => apiClient.getActivityStats(householdId, period),

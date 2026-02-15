@@ -9,6 +9,7 @@ A gamified family chore management application that motivates children (and adul
 - **Family Collaboration**: Family challenges and leaderboards
 - **Subscriptions**: Free, Family, and Premium tiers with Stripe + RevenueCat
 - **In-App Store**: ChoreCoins bundles, boosters, cosmetics, gift cards, and receipts
+- **Enterprise School Edition**: District/school admin, classroom workflows, LMS sync, FERPA/COPPA controls, reports
 - **ADHD-Friendly**: Visual timers, task chunking, and sensory customization
 - **Cross-Platform**: Web, iOS, Android, macOS, and Windows apps
 
@@ -20,6 +21,7 @@ A gamified family chore management application that motivates children (and adul
 ## Tech Stack
 
 ### Frontend
+
 - React 19 + TypeScript
 - Vite 7
 - Tailwind CSS 4
@@ -29,12 +31,14 @@ A gamified family chore management application that motivates children (and adul
 - Framer Motion (animations)
 
 ### Backend
+
 - Fastify 5 + TypeScript
 - PostgreSQL + Drizzle ORM
 - better-auth (authentication)
 - Socket.io (real-time updates)
 
 ### Packages (Monorepo)
+
 - `@chorechamp/database` - Drizzle schema + 70 chore templates
 - `@chorechamp/types` - Shared TypeScript interfaces
 - `@chorechamp/gamification` - Points, streaks, badges logic
@@ -140,34 +144,40 @@ ChoreChamp/
 
 ### API
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `BETTER_AUTH_SECRET` | Secret for session signing |
-| `BETTER_AUTH_URL` | API URL for auth callbacks |
-| `CORS_ORIGIN` | Allowed CORS origins |
-| `STRIPE_SECRET_KEY` | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `STRIPE_PRICE_FAMILY_MONTHLY` | Stripe price ID for Family monthly |
-| `STRIPE_PRICE_FAMILY_ANNUAL` | Stripe price ID for Family annual |
-| `STRIPE_PRICE_PREMIUM_MONTHLY` | Stripe price ID for Premium monthly |
-| `STRIPE_PRICE_PREMIUM_ANNUAL` | Stripe price ID for Premium annual |
-| `SUBSCRIPTION_GRACE_PERIOD_DAYS` | Days to keep access after failed payment |
-| `SUBSCRIPTION_GRANDFATHERED_CUTOFF_DATE` | Cutoff date for grandfathered pricing |
+| Variable                                 | Description                                     |
+| ---------------------------------------- | ----------------------------------------------- |
+| `DATABASE_URL`                           | PostgreSQL connection string                    |
+| `BETTER_AUTH_SECRET`                     | Secret for session signing                      |
+| `BETTER_AUTH_URL`                        | API URL for auth callbacks                      |
+| `CORS_ORIGIN`                            | Allowed CORS origins                            |
+| `STRIPE_SECRET_KEY`                      | Stripe secret key                               |
+| `STRIPE_WEBHOOK_SECRET`                  | Stripe webhook signing secret                   |
+| `STRIPE_PRICE_FAMILY_MONTHLY`            | Stripe price ID for Family monthly              |
+| `STRIPE_PRICE_FAMILY_ANNUAL`             | Stripe price ID for Family annual               |
+| `STRIPE_PRICE_PREMIUM_MONTHLY`           | Stripe price ID for Premium monthly             |
+| `STRIPE_PRICE_PREMIUM_ANNUAL`            | Stripe price ID for Premium annual              |
+| `SUBSCRIPTION_GRACE_PERIOD_DAYS`         | Days to keep access after failed payment        |
+| `SUBSCRIPTION_GRANDFATHERED_CUTOFF_DATE` | Cutoff date for grandfathered pricing           |
+| `CANVAS_CLIENT_ID`                       | Canvas LMS OAuth client ID (optional)           |
+| `CANVAS_CLIENT_SECRET`                   | Canvas LMS OAuth client secret (optional)       |
+| `GOOGLE_CLASSROOM_CLIENT_ID`             | Google Classroom OAuth client ID (optional)     |
+| `GOOGLE_CLASSROOM_CLIENT_SECRET`         | Google Classroom OAuth client secret (optional) |
+| `CLEVER_CLIENT_ID`                       | Clever OAuth client ID (optional)               |
+| `CLEVER_CLIENT_SECRET`                   | Clever OAuth client secret (optional)           |
 
 ### Web
 
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | API base URL |
+| Variable                 | Description       |
+| ------------------------ | ----------------- |
+| `VITE_API_URL`           | API base URL      |
 | `VITE_STRIPE_PUBLIC_KEY` | Stripe public key |
 
 ### Mobile
 
-| Variable | Description |
-|----------|-------------|
-| `EXPO_PUBLIC_API_URL` | API base URL |
-| `REVENUECAT_IOS_API_KEY` | RevenueCat iOS API key |
+| Variable                     | Description                |
+| ---------------------------- | -------------------------- |
+| `EXPO_PUBLIC_API_URL`        | API base URL               |
+| `REVENUECAT_IOS_API_KEY`     | RevenueCat iOS API key     |
 | `REVENUECAT_ANDROID_API_KEY` | RevenueCat Android API key |
 
 ## Deployment
