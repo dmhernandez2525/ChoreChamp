@@ -264,7 +264,7 @@
 - [x] F12.2 Premium feature gates (analytics/rewards/support/themes/history/API gating)
 - [x] F12.3 In-app purchase store (catalog, bundles, receipts, refunds, parental controls, gift cards)
 - [x] F12.4 Enterprise & school edition (district/school portal, classroom workflows, LMS controls, compliance/reporting)
-- [ ] F12.5 API platform & integrations
+- [x] F12.5 API platform & integrations (public OpenAPI + OAuth2 + webhooks + marketplace request workflow + SDK package distribution)
 
 ---
 

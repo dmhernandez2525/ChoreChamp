@@ -24,7 +24,7 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 - [x] F12.2 Premium feature gates
 - [x] F12.3 In-app purchase store
 - [x] F12.4 Enterprise and school edition
-- [ ] F12.5 API platform and integrations
+- [x] F12.5 API platform and integrations
 
 ---
 
@@ -489,8 +489,8 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 - [x] F12.1 - Subscription tier system (Stripe + RevenueCat, 14-day trial)
 - [x] F12.2 - Premium feature gates (graceful degradation + feature comparison + unlock prompts)
 - [x] F12.3 - In-app purchase store (catalog, ChoreCoins bundles, receipts, refunds, parental controls, gift cards)
-- [ ] F12.4 - Enterprise & school edition
-- [ ] F12.5 - API platform & integrations
+- [x] F12.4 - Enterprise & school edition (district/school portal, LMS configuration, compliance/reporting workflows)
+- [x] F12.5 - API platform & integrations (OpenAPI public API, OAuth2, webhook subscriptions, marketplace approvals, SDK packages)
 
 ---
 

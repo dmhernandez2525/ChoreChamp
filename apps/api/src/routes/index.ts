@@ -45,6 +45,7 @@ import { supportRoutes } from './support';
 import { apiKeyRoutes } from './api-keys';
 import { inAppStoreRoutes } from './in-app-store';
 import { enterpriseSchoolRoutes } from './enterprise-school';
+import { developerApiPlatformRoutes, oauthPlatformRoutes, publicApiPlatformRoutes } from './api-platform';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -99,6 +100,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         householdApi.register(apiKeyRoutes, { prefix: '/:householdId' });
         householdApi.register(inAppStoreRoutes, { prefix: '/:householdId/store' });
         householdApi.register(enterpriseSchoolRoutes, { prefix: '/:householdId' });
+        householdApi.register(developerApiPlatformRoutes, { prefix: '/:householdId' });
       });
 
       // Chore templates (public)
@@ -112,6 +114,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       // Subscription & billing routes
       api.register(subscriptionRoutes, { prefix: '/subscription' });
+
+      // OAuth and public developer platform routes
+      api.register(oauthPlatformRoutes, { prefix: '/oauth' });
+      api.register(publicApiPlatformRoutes, { prefix: '/public/v1' });
 
       // Multi-household routes (household switching, member links, etc.)
       api.register(multiHouseholdRoutes);
