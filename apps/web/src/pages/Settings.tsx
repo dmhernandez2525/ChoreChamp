@@ -13,6 +13,7 @@ import {
   AccessibilitySection,
   CognitiveAccessibilitySection,
   LanguageSection,
+  SpecialNeedsSection,
 } from '../components/settings';
 import { Skeleton } from '../components/common';
 
@@ -168,6 +169,7 @@ export default function Settings() {
           <div className="space-y-6">
             <AccessibilitySection />
             <CognitiveAccessibilitySection />
+            <SpecialNeedsSection />
           </div>
         )}
 

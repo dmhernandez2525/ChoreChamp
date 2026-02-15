@@ -5,3 +5,4 @@ export { HouseholdSettingsSection } from './HouseholdSettingsSection';
 export { AccessibilitySection } from './AccessibilitySection';
 export { CognitiveAccessibilitySection } from './CognitiveAccessibilitySection';
 export { LanguageSection } from './LanguageSection';
+export { SpecialNeedsSection } from './SpecialNeedsSection';

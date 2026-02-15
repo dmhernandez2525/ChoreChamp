@@ -370,3 +370,82 @@ html[dir='rtl'] .chore-step {
   padding-left: 0;
   padding-right: 1rem;
 }
+
+/* ===== F13.5: Special Needs Accommodations ===== */
+
+/* ADHD mode: highlight active task, reduce peripheral distractions */
+:root[data-adhd-mode='true'] .task-card.active {
+  box-shadow: 0 0 0 3px var(--app-accent), 0 4px 12px rgba(0,0,0,0.1);
+}
+
+:root[data-adhd-mode='true'] .task-card:not(.active) {
+  opacity: 0.6;
+}
+
+/* Autism-friendly mode: predictable layouts, reduced surprise elements */
+:root[data-autism-friendly='true'] .surprise-element,
+:root[data-autism-friendly='true'] .confetti,
+:root[data-autism-friendly='true'] .celebration-animation {
+  display: none;
+}
+
+:root[data-autism-friendly='true'] .tooltip-auto {
+  display: none;
+}
+
+/* Sensory level: low - reduce color saturation and brightness */
+:root[data-sensory-level='low'] {
+  filter: saturate(0.7);
+}
+
+:root[data-sensory-level='low'] img {
+  filter: saturate(1.43); /* compensate so images stay normal */
+}
+
+/* Sensory level: minimal - further desaturation, muted colors */
+:root[data-sensory-level='minimal'] {
+  filter: saturate(0.4) brightness(0.95);
+}
+
+:root[data-sensory-level='minimal'] img {
+  filter: saturate(2.5) brightness(1.05);
+}
+
+/* Transition style: fade - only use opacity transitions */
+:root[data-transition-style='fade'] * {
+  transition-property: opacity !important;
+}
+
+/* Transition style: none - disable all transitions */
+:root[data-transition-style='none'] *,
+:root[data-transition-style='none'] *::before,
+:root[data-transition-style='none'] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Quiet mode: hide notification badges and alert indicators */
+:root[data-quiet-mode='true'] .notification-badge,
+:root[data-quiet-mode='true'] .alert-dot,
+:root[data-quiet-mode='true'] .unread-indicator {
+  display: none;
+}
+
+/* Predictable layout: force consistent card sizes */
+:root[data-predictable-layout='true'] .task-card,
+:root[data-predictable-layout='true'] .reward-card {
+  min-height: 6rem;
+}
+
+/* Consistent navigation: always show nav labels */
+:root[data-consistent-navigation='true'] nav span {
+  display: inline !important;
+  visibility: visible !important;
+}
+
+/* Visual timer: countdown ring animation */
+:root[data-visual-timer='true'] .timer-display {
+  border: 3px solid var(--app-accent);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+}
