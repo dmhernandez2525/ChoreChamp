@@ -6,6 +6,7 @@ import { getHouseholdEffectiveTier, hasFeature } from '../../lib/subscription';
 import { AdBanner } from '../ads/AdBanner';
 import { useAccessibility } from '../accessibility';
 import { MobileBottomNav } from './MobileBottomNav';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -18,7 +19,7 @@ function extractHouseholdId(pathname: string): string | null {
 
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
-  const { announce } = useAccessibility();
+  const { announce, isSpeaking, speakPage, stopSpeaking } = useAccessibility();
   const householdId = useMemo(() => extractHouseholdId(location.pathname), [location.pathname]);
   const { data: household } = useHousehold(householdId || '');
 
@@ -61,6 +62,19 @@ export function AppShell({ children }: AppShellProps) {
         Skip to main content
       </a>
       <div id="main-content">{children}</div>
+      <button
+        type="button"
+        onClick={() => (isSpeaking ? stopSpeaking() : speakPage())}
+        aria-label={isSpeaking ? 'Stop reading page' : 'Read page aloud'}
+        className={`fixed bottom-20 right-4 z-30 hidden md:flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+          isSpeaking
+            ? 'bg-red-600 text-white hover:bg-red-700'
+            : 'bg-[var(--app-surface)] text-[var(--app-text-muted)] hover:bg-[var(--app-surface-muted)]'
+        }`}
+        title={isSpeaking ? 'Stop reading' : 'Read page aloud'}
+      >
+        {isSpeaking ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      </button>
       {householdId && <MobileBottomNav householdId={householdId} />}
       <AdBanner visible={showAds} householdId={householdId} />
       {householdId && (
