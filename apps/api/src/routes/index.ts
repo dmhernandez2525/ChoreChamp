@@ -43,6 +43,7 @@ import { subscriptionRoutes } from './subscription';
 import { rewardRoutes } from './rewards';
 import { supportRoutes } from './support';
 import { apiKeyRoutes } from './api-keys';
+import { inAppStoreRoutes } from './in-app-store';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -92,6 +93,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       householdApi.register(rewardRoutes, { prefix: '/:householdId' });
       householdApi.register(supportRoutes, { prefix: '/:householdId' });
       householdApi.register(apiKeyRoutes, { prefix: '/:householdId' });
+      householdApi.register(inAppStoreRoutes, { prefix: '/:householdId/store' });
     });
 
     // Chore templates (public)

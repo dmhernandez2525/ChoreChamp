@@ -1,8 +1,8 @@
 # ChoreChamp Work Status
 
-**Last Updated:** 2026-02-03
+**Last Updated:** 2026-02-15
 **Current Phase:** Phase 12 - Monetization & Business
-**Status:** F12.1 in progress (local branch)
+**Status:** F12.3 in progress (feature/F12.3-in-app-purchase-store)
 
 ---
 
@@ -12,14 +12,18 @@ This document tracks the current work status for ChoreChamp development. Update 
 
 ---
 
-## Current Focus: F12.1 Subscription Tier System
+## Current Focus: F12.3 In-App Purchase Store
 
-- [x] Stripe checkout + billing portal (web)
-- [x] RevenueCat sync (mobile)
-- [x] Subscription management UI (web)
-- [x] Member limits enforced
-- [x] Docs + env examples updated
-- [ ] Tests + CI run
+- [x] Store catalog + offer endpoints
+- [x] ChoreCoins wallet + bundle purchases
+- [x] Cosmetics/boosters/story/pet/mini-game/store entitlement grants
+- [x] Purchase history + digital receipts
+- [x] Refund request and parent resolution workflow
+- [x] Parental purchase controls (approval + PIN + spending limits)
+- [x] Gift card creation + redemption for subscription upgrades
+- [x] Web store management UI and route integration
+- [x] Shared API client hooks and types
+- [x] Typecheck and focused route/component tests
 - [ ] PR created
 
 ### Phase A: Core Handler Completion (Web) ✅ COMPLETE (PR #54)

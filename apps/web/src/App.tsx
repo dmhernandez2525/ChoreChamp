@@ -36,6 +36,7 @@ import SchoolExtracurricular from './pages/SchoolExtracurricular';
 import Subscription from './pages/Subscription';
 import Analytics from './pages/Analytics';
 import Support from './pages/Support';
+import InAppStore from './pages/InAppStore';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -352,6 +353,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Support />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/store"
+        element={
+          <ProtectedRoute>
+            <InAppStore />
           </ProtectedRoute>
         }
       />
