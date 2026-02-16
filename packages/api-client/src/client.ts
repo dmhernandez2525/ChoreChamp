@@ -220,6 +220,23 @@ import type {
   PerformanceMetrics,
   UsageMetrics,
   ErrorMetric,
+  ForumPost,
+  ForumReply,
+  CreateForumPostRequest,
+  CreateForumReplyRequest,
+  SocialChallenge,
+  SocialChallengeParticipant,
+  CreateSocialChallengeRequest,
+  SocialPost,
+  SocialComment,
+  CreateSocialPostRequest,
+  CreateSocialCommentRequest,
+  FriendConnection,
+  CreateFriendRequestPayload,
+  FriendSuggestion,
+  CommunityEvent,
+  CommunityEventParticipation,
+  CreateCommunityEventRequest,
   ApiPlatformDeveloperOverview,
   ApiPlatformOpenApiDocument,
   ApiPlatformKeySettings,
@@ -2857,6 +2874,135 @@ class ApiClient {
 
   async resolveError(householdId: string, errorId: string): Promise<{ id: string; isResolved: boolean }> {
     return this.request(`/households/${householdId}/admin-analytics/errors/${errorId}/resolve`, { method: 'PATCH' });
+  }
+
+  // ==================== Community & Social (F16.1-F16.5) ====================
+
+  async getForumPosts(householdId: string, params?: { category?: string; limit?: number; offset?: number }): Promise<{ posts: ForumPost[]; total: number }> {
+    const qp = new URLSearchParams();
+    if (params?.category) qp.set('category', params.category);
+    if (params?.limit) qp.set('limit', String(params.limit));
+    if (params?.offset) qp.set('offset', String(params.offset));
+    const q = qp.toString();
+    return this.request(`/households/${householdId}/community/forums/posts${q ? `?${q}` : ''}`);
+  }
+
+  async createForumPost(householdId: string, data: CreateForumPostRequest): Promise<ForumPost> {
+    return this.request(`/households/${householdId}/community/forums/posts`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getForumPost(householdId: string, postId: string): Promise<{ post: ForumPost; replies: ForumReply[] }> {
+    return this.request(`/households/${householdId}/community/forums/posts/${postId}`);
+  }
+
+  async createForumReply(householdId: string, postId: string, data: CreateForumReplyRequest): Promise<ForumReply> {
+    return this.request(`/households/${householdId}/community/forums/posts/${postId}/replies`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async likeForumPost(householdId: string, postId: string): Promise<{ liked: boolean; likeCount: number }> {
+    return this.request(`/households/${householdId}/community/forums/posts/${postId}/like`, { method: 'POST' });
+  }
+
+  async deleteForumPost(householdId: string, postId: string): Promise<void> {
+    return this.request(`/households/${householdId}/community/forums/posts/${postId}`, { method: 'DELETE' });
+  }
+
+  async getSocialChallenges(householdId: string, status?: string): Promise<{ challenges: SocialChallenge[]; total: number }> {
+    const q = status ? `?status=${status}` : '';
+    return this.request(`/households/${householdId}/community/social-challenges${q}`);
+  }
+
+  async createSocialChallenge(householdId: string, data: CreateSocialChallengeRequest): Promise<SocialChallenge> {
+    return this.request(`/households/${householdId}/community/social-challenges`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getSocialChallenge(householdId: string, challengeId: string): Promise<{ challenge: SocialChallenge; participants: SocialChallengeParticipant[] }> {
+    return this.request(`/households/${householdId}/community/social-challenges/${challengeId}`);
+  }
+
+  async joinSocialChallenge(householdId: string, challengeId: string): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/community/social-challenges/${challengeId}/join`, { method: 'POST' });
+  }
+
+  async updateSocialChallengeProgress(householdId: string, challengeId: string, value: number): Promise<{ currentValue: number; rank: number }> {
+    return this.request(`/households/${householdId}/community/social-challenges/${challengeId}/progress`, { method: 'POST', body: JSON.stringify({ value }) });
+  }
+
+  async getSocialFeed(householdId: string, params?: { visibility?: string; limit?: number; offset?: number }): Promise<{ posts: SocialPost[]; total: number }> {
+    const qp = new URLSearchParams();
+    if (params?.visibility) qp.set('visibility', params.visibility);
+    if (params?.limit) qp.set('limit', String(params.limit));
+    if (params?.offset) qp.set('offset', String(params.offset));
+    const q = qp.toString();
+    return this.request(`/households/${householdId}/community/social/feed${q ? `?${q}` : ''}`);
+  }
+
+  async createSocialPost(householdId: string, data: CreateSocialPostRequest): Promise<SocialPost> {
+    return this.request(`/households/${householdId}/community/social/posts`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getSocialPost(householdId: string, postId: string): Promise<{ post: SocialPost; comments: SocialComment[] }> {
+    return this.request(`/households/${householdId}/community/social/posts/${postId}`);
+  }
+
+  async createSocialComment(householdId: string, postId: string, data: CreateSocialCommentRequest): Promise<SocialComment> {
+    return this.request(`/households/${householdId}/community/social/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async likeSocialPost(householdId: string, postId: string): Promise<{ liked: boolean; likeCount: number }> {
+    return this.request(`/households/${householdId}/community/social/posts/${postId}/like`, { method: 'POST' });
+  }
+
+  async deleteSocialPost(householdId: string, postId: string): Promise<void> {
+    return this.request(`/households/${householdId}/community/social/posts/${postId}`, { method: 'DELETE' });
+  }
+
+  async getFriends(householdId: string): Promise<{ friends: FriendConnection[]; pending: FriendConnection[]; total: number }> {
+    return this.request(`/households/${householdId}/community/friends`);
+  }
+
+  async sendFriendRequest(householdId: string, data: CreateFriendRequestPayload): Promise<FriendConnection> {
+    return this.request(`/households/${householdId}/community/friends/request`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async respondToFriendRequest(householdId: string, connectionId: string, status: 'accepted' | 'declined'): Promise<{ id: string; status: string }> {
+    return this.request(`/households/${householdId}/community/friends/${connectionId}/respond`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  }
+
+  async removeFriend(householdId: string, connectionId: string): Promise<void> {
+    return this.request(`/households/${householdId}/community/friends/${connectionId}`, { method: 'DELETE' });
+  }
+
+  async getFriendSuggestions(householdId: string): Promise<{ suggestions: FriendSuggestion[] }> {
+    return this.request(`/households/${householdId}/community/friends/suggestions`);
+  }
+
+  async getCommunityEvents(householdId: string, params?: { status?: string; eventType?: string }): Promise<{ events: CommunityEvent[]; total: number }> {
+    const qp = new URLSearchParams();
+    if (params?.status) qp.set('status', params.status);
+    if (params?.eventType) qp.set('eventType', params.eventType);
+    const q = qp.toString();
+    return this.request(`/households/${householdId}/community/community-events${q ? `?${q}` : ''}`);
+  }
+
+  async createCommunityEvent(householdId: string, data: CreateCommunityEventRequest): Promise<CommunityEvent> {
+    return this.request(`/households/${householdId}/community/community-events`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getCommunityEvent(householdId: string, eventId: string): Promise<{ event: CommunityEvent; participants: CommunityEventParticipation[] }> {
+    return this.request(`/households/${householdId}/community/community-events/${eventId}`);
+  }
+
+  async joinCommunityEvent(householdId: string, eventId: string): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/community/community-events/${eventId}/join`, { method: 'POST' });
+  }
+
+  async updateCommunityEvent(householdId: string, eventId: string, data: Partial<CreateCommunityEventRequest>): Promise<CommunityEvent> {
+    return this.request(`/households/${householdId}/community/community-events/${eventId}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  async deleteCommunityEvent(householdId: string, eventId: string): Promise<void> {
+    return this.request(`/households/${householdId}/community/community-events/${eventId}`, { method: 'DELETE' });
   }
 }
 
