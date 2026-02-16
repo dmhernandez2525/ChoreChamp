@@ -262,6 +262,26 @@ import type {
   CreateApiPlatformSdkPackageRequest,
   ApiPlatformAnalyticsResponse,
   UpdateApiPlatformKeySettingsRequest,
+  SmartScheduleConfig,
+  UpdateSmartScheduleConfigRequest,
+  ScheduleOptimizationResult,
+  SmartScheduleConflict,
+  AIChoreSuggestion,
+  SuggestionFeedback,
+  SuggestionPreferences,
+  UpdateSuggestionPreferencesRequest,
+  AutomationRule,
+  CreateAutomationRuleRequest,
+  UpdateAutomationRuleRequest,
+  AutomationExecutionLog,
+  Prediction,
+  PredictiveInsight,
+  PredictiveAnalyticsConfig,
+  UpdatePredictiveAnalyticsConfigRequest,
+  CommandRequest,
+  CommandResponse,
+  CommandHistory,
+  CommandCapability,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -3003,6 +3023,118 @@ class ApiClient {
 
   async deleteCommunityEvent(householdId: string, eventId: string): Promise<void> {
     return this.request(`/households/${householdId}/community/community-events/${eventId}`, { method: 'DELETE' });
+  }
+
+  // Phase 17: Smart Automation & AI
+
+  // F17.1 Smart Scheduling
+  async getSmartScheduleConfig(householdId: string): Promise<SmartScheduleConfig> {
+    return this.request(`/households/${householdId}/automation/schedule/config`);
+  }
+
+  async updateSmartScheduleConfig(householdId: string, data: UpdateSmartScheduleConfigRequest): Promise<SmartScheduleConfig> {
+    return this.request(`/households/${householdId}/automation/schedule/config`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async runScheduleOptimization(householdId: string): Promise<ScheduleOptimizationResult> {
+    return this.request(`/households/${householdId}/automation/schedule/optimize`, { method: 'POST' });
+  }
+
+  async getScheduleConflicts(householdId: string): Promise<{ conflicts: SmartScheduleConflict[]; total: number }> {
+    return this.request(`/households/${householdId}/automation/schedule/conflicts`);
+  }
+
+  async resolveScheduleConflict(householdId: string, conflictId: string, resolution: string): Promise<{ success: boolean }> {
+    return this.request(`/households/${householdId}/automation/schedule/resolve-conflict`, { method: 'POST', body: JSON.stringify({ conflictId, resolution }) });
+  }
+
+  // F17.2 AI Chore Suggestions
+  async getAISuggestions(householdId: string): Promise<{ suggestions: AIChoreSuggestion[]; total: number }> {
+    return this.request(`/households/${householdId}/automation/suggestions`);
+  }
+
+  async provideSuggestionFeedback(householdId: string, feedback: SuggestionFeedback): Promise<{ suggestionId: string; accepted: boolean }> {
+    return this.request(`/households/${householdId}/automation/suggestions/${feedback.suggestionId}/feedback`, { method: 'POST', body: JSON.stringify(feedback) });
+  }
+
+  async getSuggestionPreferences(householdId: string): Promise<SuggestionPreferences> {
+    return this.request(`/households/${householdId}/automation/suggestions/preferences`);
+  }
+
+  async updateSuggestionPreferences(householdId: string, data: UpdateSuggestionPreferencesRequest): Promise<SuggestionPreferences> {
+    return this.request(`/households/${householdId}/automation/suggestions/preferences`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async generateSuggestions(householdId: string): Promise<{ generated: number; message: string }> {
+    return this.request(`/households/${householdId}/automation/suggestions/generate`, { method: 'POST' });
+  }
+
+  // F17.3 Automation Rules
+  async getAutomationRules(householdId: string): Promise<{ rules: AutomationRule[]; total: number }> {
+    return this.request(`/households/${householdId}/automation/automation/rules`);
+  }
+
+  async createAutomationRule(householdId: string, data: CreateAutomationRuleRequest): Promise<AutomationRule> {
+    return this.request(`/households/${householdId}/automation/automation/rules`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getAutomationRule(householdId: string, ruleId: string): Promise<AutomationRule> {
+    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}`);
+  }
+
+  async updateAutomationRule(householdId: string, ruleId: string, data: UpdateAutomationRuleRequest): Promise<AutomationRule> {
+    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteAutomationRule(householdId: string, ruleId: string): Promise<void> {
+    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}`, { method: 'DELETE' });
+  }
+
+  async getAutomationRuleLogs(householdId: string, ruleId: string): Promise<{ logs: AutomationExecutionLog[]; total: number }> {
+    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}/logs`);
+  }
+
+  async testAutomationRule(householdId: string, ruleId: string): Promise<{ ruleId: string; success: boolean; message: string }> {
+    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}/test`, { method: 'POST' });
+  }
+
+  // F17.4 Predictive Analytics
+  async getPredictions(householdId: string): Promise<{ predictions: Prediction[]; total: number }> {
+    return this.request(`/households/${householdId}/automation/predictions`);
+  }
+
+  async getPredictiveInsights(householdId: string): Promise<{ insights: PredictiveInsight[]; total: number }> {
+    return this.request(`/households/${householdId}/automation/predictions/insights`);
+  }
+
+  async markInsightRead(householdId: string, insightId: string): Promise<{ id: string; isRead: boolean }> {
+    return this.request(`/households/${householdId}/automation/predictions/insights/${insightId}/read`, { method: 'PUT' });
+  }
+
+  async getPredictiveAnalyticsConfig(householdId: string): Promise<PredictiveAnalyticsConfig> {
+    return this.request(`/households/${householdId}/automation/predictions/config`);
+  }
+
+  async updatePredictiveAnalyticsConfig(householdId: string, data: UpdatePredictiveAnalyticsConfigRequest): Promise<PredictiveAnalyticsConfig> {
+    return this.request(`/households/${householdId}/automation/predictions/config`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async generatePredictions(householdId: string): Promise<{ generated: number; message: string }> {
+    return this.request(`/households/${householdId}/automation/predictions/generate`, { method: 'POST' });
+  }
+
+  // F17.5 Natural Language Commands
+  async executeCommand(householdId: string, data: CommandRequest): Promise<CommandResponse> {
+    return this.request(`/households/${householdId}/automation/commands`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getCommandHistory(householdId: string, params?: { page?: number; pageSize?: number }): Promise<CommandHistory> {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return this.request(`/households/${householdId}/automation/commands/history${query}`);
+  }
+
+  async getCommandCapabilities(householdId: string): Promise<{ capabilities: CommandCapability[] }> {
+    return this.request(`/households/${householdId}/automation/commands/capabilities`);
   }
 }
 

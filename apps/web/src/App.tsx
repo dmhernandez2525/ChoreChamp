@@ -44,6 +44,7 @@ import ApiPlatformIntegrations from './pages/ApiPlatformIntegrations';
 import WellnessHub from './pages/WellnessHub';
 import AdminAnalytics from './pages/AdminAnalytics';
 import CommunityHub from './pages/CommunityHub';
+import SmartAutomation from './pages/SmartAutomation';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -408,6 +409,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CommunityHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/automation"
+        element={
+          <ProtectedRoute>
+            <SmartAutomation />
           </ProtectedRoute>
         }
       />

@@ -33,3 +33,4 @@ export * from './webhook-events';
 export * from './activity-tracking';
 export * from './advanced-analytics';
 export * from './community-social';
+export * from './smart-automation';
