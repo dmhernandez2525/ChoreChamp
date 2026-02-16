@@ -69,6 +69,14 @@ import type {
   UpdateAutomationRuleRequest,
   UpdatePredictiveAnalyticsConfigRequest,
   CommandRequest,
+  CreateCalendarConnectionRequest,
+  UpdateCalendarSyncConfigRequest,
+  CreateChatChannelRequest,
+  CreateChatMessageRequest,
+  CreatePhotoAlbumRequest,
+  UploadPhotoRequest,
+  CreateShareableAchievementRequest,
+  UpdateShareSettingsRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -235,6 +243,21 @@ export const queryKeys = {
   predictiveAnalyticsConfig: (householdId: string) => ['predictiveAnalyticsConfig', householdId] as const,
   commandHistory: (householdId: string, params?: Record<string, unknown>) => ['commandHistory', householdId, params] as const,
   commandCapabilities: (householdId: string) => ['commandCapabilities', householdId] as const,
+
+  // Phase 18: Communication & Calendar Integration
+  calendarConnections: (householdId: string) => ['calendarConnections', householdId] as const,
+  calendarEvents: (householdId: string, params?: Record<string, unknown>) => ['calendarEvents', householdId, params] as const,
+  calendarSyncConfig: (householdId: string) => ['calendarSyncConfig', householdId] as const,
+  chatChannels: (householdId: string) => ['chatChannels', householdId] as const,
+  chatMessages: (householdId: string, channelId: string, params?: Record<string, unknown>) => ['chatMessages', householdId, channelId, params] as const,
+  chatUnread: (householdId: string) => ['chatUnread', householdId] as const,
+  photoAlbums: (householdId: string) => ['photoAlbums', householdId] as const,
+  albumPhotos: (householdId: string, albumId: string, params?: Record<string, unknown>) => ['albumPhotos', householdId, albumId, params] as const,
+  shareableAchievements: (householdId: string) => ['shareableAchievements', householdId] as const,
+  shareSettings: (householdId: string) => ['shareSettings', householdId] as const,
+  progressiveUnlocks: (householdId: string, params?: Record<string, unknown>) => ['progressiveUnlocks', householdId, params] as const,
+  memberUnlockProgress: (householdId: string, memberId: string) => ['memberUnlockProgress', householdId, memberId] as const,
+  unlockProgressSummary: (householdId: string, memberId: string) => ['unlockProgressSummary', householdId, memberId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -2763,5 +2786,220 @@ export function useCommandCapabilities(householdId: string) {
   return useQuery({
     queryKey: queryKeys.commandCapabilities(householdId),
     queryFn: () => apiClient.getCommandCapabilities(householdId),
+  });
+}
+
+// ===== Phase 18: Communication & Calendar Integration =====
+
+// F18.1 Calendar Sync
+export function useCalendarConnections(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.calendarConnections(householdId),
+    queryFn: () => apiClient.getCalendarConnections(householdId),
+  });
+}
+
+export function useCreateCalendarConnection(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { memberId: string } & CreateCalendarConnectionRequest) => apiClient.createCalendarConnection(householdId, data.memberId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.calendarConnections(householdId) }); },
+  });
+}
+
+export function useDeleteCalendarConnection(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (connectionId: string) => apiClient.deleteCalendarConnection(householdId, connectionId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.calendarConnections(householdId) }); },
+  });
+}
+
+export function useSyncCalendarConnection(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (connectionId: string) => apiClient.syncCalendarConnection(householdId, connectionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendarConnections(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendarEvents(householdId) });
+    },
+  });
+}
+
+export function useCalendarEvents(householdId: string, params?: { start?: string; end?: string }) {
+  return useQuery({
+    queryKey: queryKeys.calendarEvents(householdId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getCalendarEvents(householdId, params),
+  });
+}
+
+export function useCalendarSyncConfig(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.calendarSyncConfig(householdId),
+    queryFn: () => apiClient.getCalendarSyncConfig(householdId),
+  });
+}
+
+export function useUpdateCalendarSyncConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateCalendarSyncConfigRequest) => apiClient.updateCalendarSyncConfig(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.calendarSyncConfig(householdId) }); },
+  });
+}
+
+// F18.2 Family Chat
+export function useChatChannels(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.chatChannels(householdId),
+    queryFn: () => apiClient.getChatChannels(householdId),
+  });
+}
+
+export function useCreateChatChannel(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateChatChannelRequest) => apiClient.createChatChannel(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.chatChannels(householdId) }); },
+  });
+}
+
+export function useChatMessages(householdId: string, channelId: string, params?: { page?: number; pageSize?: number }) {
+  return useQuery({
+    queryKey: queryKeys.chatMessages(householdId, channelId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getChatMessages(householdId, channelId, params),
+    enabled: !!channelId,
+  });
+}
+
+export function useSendChatMessage(householdId: string, channelId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateChatMessageRequest) => apiClient.sendChatMessage(householdId, channelId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.chatMessages(householdId, channelId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.chatUnread(householdId) });
+    },
+  });
+}
+
+export function useChatUnreadCounts(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.chatUnread(householdId),
+    queryFn: () => apiClient.getChatUnreadCounts(householdId),
+  });
+}
+
+// F18.3 Photo Albums
+export function usePhotoAlbums(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.photoAlbums(householdId),
+    queryFn: () => apiClient.getPhotoAlbums(householdId),
+  });
+}
+
+export function useCreatePhotoAlbum(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreatePhotoAlbumRequest) => apiClient.createPhotoAlbum(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.photoAlbums(householdId) }); },
+  });
+}
+
+export function useAlbumPhotos(householdId: string, albumId: string, params?: { page?: number; pageSize?: number }) {
+  return useQuery({
+    queryKey: queryKeys.albumPhotos(householdId, albumId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getAlbumPhotos(householdId, albumId, params),
+    enabled: !!albumId,
+  });
+}
+
+export function useUploadPhoto(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UploadPhotoRequest) => apiClient.uploadPhoto(householdId, data),
+    onSuccess: (_, variables) => { queryClient.invalidateQueries({ queryKey: queryKeys.albumPhotos(householdId, variables.albumId) }); },
+  });
+}
+
+export function useDeletePhoto(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (photoId: string) => apiClient.deletePhoto(householdId, photoId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.photoAlbums(householdId) }); },
+  });
+}
+
+// F18.4 Shareable Achievements
+export function useShareableAchievements(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.shareableAchievements(householdId),
+    queryFn: () => apiClient.getShareableAchievements(householdId),
+  });
+}
+
+export function useCreateShareableAchievement(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { memberId: string } & CreateShareableAchievementRequest) => apiClient.createShareableAchievement(householdId, data.memberId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.shareableAchievements(householdId) }); },
+  });
+}
+
+export function useShareAchievement(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { achievementId: string; platform: string }) => apiClient.shareAchievementToSocial(householdId, data.achievementId, data.platform),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.shareableAchievements(householdId) }); },
+  });
+}
+
+export function useShareSettings(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.shareSettings(householdId),
+    queryFn: () => apiClient.getShareSettings(householdId),
+  });
+}
+
+export function useUpdateShareSettings(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateShareSettingsRequest) => apiClient.updateShareSettings(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.shareSettings(householdId) }); },
+  });
+}
+
+// F18.5 Progressive Unlocks
+export function useProgressiveUnlocks(householdId: string, params?: { category?: string }) {
+  return useQuery({
+    queryKey: queryKeys.progressiveUnlocks(householdId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getProgressiveUnlocks(householdId, params),
+  });
+}
+
+export function useMemberUnlockProgress(householdId: string, memberId: string) {
+  return useQuery({
+    queryKey: queryKeys.memberUnlockProgress(householdId, memberId),
+    queryFn: () => apiClient.getMemberUnlockProgress(householdId, memberId),
+    enabled: !!memberId,
+  });
+}
+
+export function useUnlockProgressSummary(householdId: string, memberId: string) {
+  return useQuery({
+    queryKey: queryKeys.unlockProgressSummary(householdId, memberId),
+    queryFn: () => apiClient.getUnlockProgressSummary(householdId, memberId),
+    enabled: !!memberId,
+  });
+}
+
+export function useCheckUnlocks(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (memberId: string) => apiClient.checkUnlocks(householdId, memberId),
+    onSuccess: (_, memberId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberUnlockProgress(householdId, memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.unlockProgressSummary(householdId, memberId) });
+    },
   });
 }
