@@ -77,6 +77,17 @@ import type {
   UploadPhotoRequest,
   CreateShareableAchievementRequest,
   UpdateShareSettingsRequest,
+  CreateBankingConnectionRequest,
+  CreateAllowanceDepositConfigRequest,
+  UpdateAllowanceDepositConfigRequest,
+  CreateChoreRotationRequest,
+  UpdateChoreRotationRequest,
+  CreateChoreChainRequest,
+  UpdateChoreChainRequest,
+  UpdateResponsibilityConfigRequest,
+  ClassifyChoreRequest,
+  CreateMarketplaceListingRequest,
+  UpdateMarketplaceConfigRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -258,6 +269,24 @@ export const queryKeys = {
   progressiveUnlocks: (householdId: string, params?: Record<string, unknown>) => ['progressiveUnlocks', householdId, params] as const,
   memberUnlockProgress: (householdId: string, memberId: string) => ['memberUnlockProgress', householdId, memberId] as const,
   unlockProgressSummary: (householdId: string, memberId: string) => ['unlockProgressSummary', householdId, memberId] as const,
+
+  // Phase 19: Financial Integration & Advanced Scheduling
+  bankingConnections: (householdId: string) => ['bankingConnections', householdId] as const,
+  allowanceDeposits: (householdId: string) => ['allowanceDeposits', householdId] as const,
+  depositConfigs: (householdId: string) => ['depositConfigs', householdId] as const,
+  depositSummary: (householdId: string) => ['depositSummary', householdId] as const,
+  choreRotations: (householdId: string) => ['choreRotations', householdId] as const,
+  choreRotation: (householdId: string, rotationId: string) => ['choreRotation', householdId, rotationId] as const,
+  rotationHistory: (householdId: string, rotationId: string) => ['rotationHistory', householdId, rotationId] as const,
+  rotationFairness: (householdId: string, rotationId: string) => ['rotationFairness', householdId, rotationId] as const,
+  choreChains: (householdId: string) => ['choreChains', householdId] as const,
+  choreChainProgress: (householdId: string, chainId: string) => ['choreChainProgress', householdId, chainId] as const,
+  responsibilityConfig: (householdId: string) => ['responsibilityConfig', householdId] as const,
+  choreClassifications: (householdId: string) => ['choreClassifications', householdId] as const,
+  classificationSummary: (householdId: string) => ['classificationSummary', householdId] as const,
+  marketplaceListings: (householdId: string) => ['marketplaceListings', householdId] as const,
+  marketplaceStats: (householdId: string) => ['marketplaceStats', householdId] as const,
+  marketplaceConfig: (householdId: string) => ['marketplaceConfig', householdId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -3001,5 +3030,324 @@ export function useCheckUnlocks(householdId: string) {
       queryClient.invalidateQueries({ queryKey: queryKeys.memberUnlockProgress(householdId, memberId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.unlockProgressSummary(householdId, memberId) });
     },
+  });
+}
+
+// ===== Phase 19: Financial Integration & Advanced Scheduling =====
+
+// F19.1 Banking Integration
+export function useBankingConnections(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.bankingConnections(householdId),
+    queryFn: () => apiClient.getBankingConnections(householdId),
+  });
+}
+
+export function useCreateBankingConnection(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateBankingConnectionRequest) => apiClient.createBankingConnection(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.bankingConnections(householdId) }); },
+  });
+}
+
+export function useDeleteBankingConnection(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (connectionId: string) => apiClient.deleteBankingConnection(householdId, connectionId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.bankingConnections(householdId) }); },
+  });
+}
+
+export function useVerifyBankingConnection(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (connectionId: string) => apiClient.verifyBankingConnection(householdId, connectionId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.bankingConnections(householdId) }); },
+  });
+}
+
+export function useAllowanceDeposits(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.allowanceDeposits(householdId),
+    queryFn: () => apiClient.getAllowanceDeposits(householdId),
+  });
+}
+
+export function useTriggerDeposit(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { memberId: string; bankingConnectionId: string; amount: number; currency?: string }) => apiClient.triggerDeposit(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.allowanceDeposits(householdId) }); },
+  });
+}
+
+export function useDepositConfigs(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.depositConfigs(householdId),
+    queryFn: () => apiClient.getDepositConfigs(householdId),
+  });
+}
+
+export function useCreateDepositConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateAllowanceDepositConfigRequest) => apiClient.createDepositConfig(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.depositConfigs(householdId) }); },
+  });
+}
+
+export function useUpdateDepositConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { configId: string } & UpdateAllowanceDepositConfigRequest) => apiClient.updateDepositConfig(householdId, data.configId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.depositConfigs(householdId) }); },
+  });
+}
+
+export function useDeleteDepositConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (configId: string) => apiClient.deleteDepositConfig(householdId, configId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.depositConfigs(householdId) }); },
+  });
+}
+
+export function useDepositSummary(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.depositSummary(householdId),
+    queryFn: () => apiClient.getDepositSummary(householdId),
+  });
+}
+
+// F19.2 Rotation System
+export function useChoreRotations(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.choreRotations(householdId),
+    queryFn: () => apiClient.getChoreRotations(householdId),
+  });
+}
+
+export function useCreateChoreRotation(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateChoreRotationRequest) => apiClient.createChoreRotation(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.choreRotations(householdId) }); },
+  });
+}
+
+export function useChoreRotation(householdId: string, rotationId: string) {
+  return useQuery({
+    queryKey: queryKeys.choreRotation(householdId, rotationId),
+    queryFn: () => apiClient.getChoreRotation(householdId, rotationId),
+    enabled: !!rotationId,
+  });
+}
+
+export function useUpdateChoreRotation(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { rotationId: string } & UpdateChoreRotationRequest) => apiClient.updateChoreRotation(householdId, data.rotationId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.choreRotations(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.choreRotation(householdId, variables.rotationId) });
+    },
+  });
+}
+
+export function useDeleteChoreRotation(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rotationId: string) => apiClient.deleteChoreRotation(householdId, rotationId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.choreRotations(householdId) }); },
+  });
+}
+
+export function useAdvanceRotation(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rotationId: string) => apiClient.advanceRotation(householdId, rotationId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.choreRotations(householdId) }); },
+  });
+}
+
+export function useSkipRotation(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { rotationId: string; reason?: string }) => apiClient.skipRotation(householdId, data.rotationId, data.reason),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.choreRotations(householdId) }); },
+  });
+}
+
+export function useRotationHistory(householdId: string, rotationId: string) {
+  return useQuery({
+    queryKey: queryKeys.rotationHistory(householdId, rotationId),
+    queryFn: () => apiClient.getRotationHistory(householdId, rotationId),
+    enabled: !!rotationId,
+  });
+}
+
+export function useRotationFairness(householdId: string, rotationId: string) {
+  return useQuery({
+    queryKey: queryKeys.rotationFairness(householdId, rotationId),
+    queryFn: () => apiClient.getRotationFairness(householdId, rotationId),
+    enabled: !!rotationId,
+  });
+}
+
+// F19.3 Chore Chains
+export function useChoreChains(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.choreChains(householdId),
+    queryFn: () => apiClient.getChoreChains(householdId),
+  });
+}
+
+export function useCreateChoreChain(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateChoreChainRequest) => apiClient.createChoreChain(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.choreChains(householdId) }); },
+  });
+}
+
+export function useChoreChainProgress(householdId: string, chainId: string) {
+  return useQuery({
+    queryKey: queryKeys.choreChainProgress(householdId, chainId),
+    queryFn: () => apiClient.getChoreChainProgress(householdId, chainId),
+    enabled: !!chainId,
+  });
+}
+
+export function useUpdateChoreChain(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { chainId: string } & UpdateChoreChainRequest) => apiClient.updateChoreChain(householdId, data.chainId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.choreChains(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.choreChainProgress(householdId, variables.chainId) });
+    },
+  });
+}
+
+export function useDeleteChoreChain(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (chainId: string) => apiClient.deleteChoreChain(householdId, chainId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.choreChains(householdId) }); },
+  });
+}
+
+export function useCompleteChainStep(householdId: string, chainId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (stepId: string) => apiClient.completeChainStep(householdId, chainId, stepId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.choreChainProgress(householdId, chainId) }); },
+  });
+}
+
+// F19.4 Responsibilities vs Jobs
+export function useResponsibilityConfig(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.responsibilityConfig(householdId),
+    queryFn: () => apiClient.getResponsibilityConfig(householdId),
+  });
+}
+
+export function useUpdateResponsibilityConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateResponsibilityConfigRequest) => apiClient.updateResponsibilityConfig(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.responsibilityConfig(householdId) }); },
+  });
+}
+
+export function useChoreClassifications(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.choreClassifications(householdId),
+    queryFn: () => apiClient.getChoreClassifications(householdId),
+  });
+}
+
+export function useClassifyChore(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: ClassifyChoreRequest) => apiClient.classifyChore(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.choreClassifications(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classificationSummary(householdId) });
+    },
+  });
+}
+
+export function useClassificationSummary(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.classificationSummary(householdId),
+    queryFn: () => apiClient.getClassificationSummary(householdId),
+  });
+}
+
+// F19.5 Chore Marketplace
+export function useMarketplaceListings(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.marketplaceListings(householdId),
+    queryFn: () => apiClient.getMarketplaceListings(householdId),
+  });
+}
+
+export function useCreateMarketplaceListing(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateMarketplaceListingRequest) => apiClient.createMarketplaceListing(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceListings(householdId) }); },
+  });
+}
+
+export function useClaimMarketplaceListing(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (listingId: string) => apiClient.claimMarketplaceListing(householdId, listingId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceListings(householdId) }); },
+  });
+}
+
+export function useCompleteMarketplaceListing(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (listingId: string) => apiClient.completeMarketplaceListing(householdId, listingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceListings(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceStats(householdId) });
+    },
+  });
+}
+
+export function useCancelMarketplaceListing(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (listingId: string) => apiClient.cancelMarketplaceListing(householdId, listingId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceListings(householdId) }); },
+  });
+}
+
+export function useMarketplaceStats(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.marketplaceStats(householdId),
+    queryFn: () => apiClient.getMarketplaceStats(householdId),
+  });
+}
+
+export function useMarketplaceConfig(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.marketplaceConfig(householdId),
+    queryFn: () => apiClient.getMarketplaceConfig(householdId),
+  });
+}
+
+export function useUpdateMarketplaceConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateMarketplaceConfigRequest) => apiClient.updateMarketplaceConfig(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceConfig(householdId) }); },
   });
 }

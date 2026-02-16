@@ -22,6 +22,7 @@ import {
   BarChart,
   MessageSquare,
   Sparkles,
+  Landmark,
 } from 'lucide-react';
 
 interface MobileBottomNavProps {
@@ -74,6 +75,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
     { to: `${base}/community`, label: 'Community', icon: <MessageSquare className="h-5 w-5" /> },
     { to: `${base}/automation`, label: 'Automation', icon: <Sparkles className="h-5 w-5" /> },
     { to: `${base}/family-hub`, label: 'Family Hub', icon: <Users className="h-5 w-5" /> },
+    { to: `${base}/financial`, label: 'Financial', icon: <Landmark className="h-5 w-5" /> },
     { to: `${base}/settings`, label: 'Settings', icon: <Settings className="h-5 w-5" /> },
   ];
 

@@ -304,6 +304,32 @@ import type {
   ProgressiveUnlock,
   MemberUnlockProgress,
   UnlockProgressSummary,
+  BankingConnection,
+  CreateBankingConnectionRequest,
+  AllowanceDeposit,
+  AllowanceDepositConfig,
+  CreateAllowanceDepositConfigRequest,
+  UpdateAllowanceDepositConfigRequest,
+  AllowanceDepositSummary,
+  ChoreRotation,
+  CreateChoreRotationRequest,
+  UpdateChoreRotationRequest,
+  RotationHistory,
+  RotationFairnessReport,
+  ChoreChain,
+  ChoreChainProgress,
+  CreateChoreChainRequest,
+  UpdateChoreChainRequest,
+  ResponsibilityConfig,
+  UpdateResponsibilityConfigRequest,
+  ChoreClassification,
+  ClassifyChoreRequest,
+  ClassificationSummary,
+  MarketplaceListing,
+  CreateMarketplaceListingRequest,
+  MarketplaceStats,
+  MarketplaceConfig,
+  UpdateMarketplaceConfigRequest,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -3272,6 +3298,173 @@ class ApiClient {
 
   async checkUnlocks(householdId: string, memberId: string): Promise<{ newUnlocks: ProgressiveUnlock[]; message: string }> {
     return this.request(`/households/${householdId}/family-hub/unlocks/members/${memberId}/check`, { method: 'POST' });
+  }
+
+  // ===== Phase 19: Financial Integration & Advanced Scheduling =====
+
+  // F19.1 Banking Integration
+  async getBankingConnections(householdId: string): Promise<{ connections: BankingConnection[] }> {
+    return this.request(`/households/${householdId}/financial/banking/connections`);
+  }
+
+  async createBankingConnection(householdId: string, data: CreateBankingConnectionRequest): Promise<BankingConnection> {
+    return this.request(`/households/${householdId}/financial/banking/connections`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async deleteBankingConnection(householdId: string, connectionId: string): Promise<void> {
+    return this.request(`/households/${householdId}/financial/banking/connections/${connectionId}`, { method: 'DELETE' });
+  }
+
+  async verifyBankingConnection(householdId: string, connectionId: string): Promise<{ verified: boolean }> {
+    return this.request(`/households/${householdId}/financial/banking/connections/${connectionId}/verify`, { method: 'POST' });
+  }
+
+  async getAllowanceDeposits(householdId: string): Promise<{ deposits: AllowanceDeposit[]; total: number }> {
+    return this.request(`/households/${householdId}/financial/banking/deposits`);
+  }
+
+  async triggerDeposit(householdId: string, data: { memberId: string; bankingConnectionId: string; amount: number; currency?: string }): Promise<AllowanceDeposit> {
+    return this.request(`/households/${householdId}/financial/banking/deposits/trigger`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getDepositConfigs(householdId: string): Promise<{ configs: AllowanceDepositConfig[] }> {
+    return this.request(`/households/${householdId}/financial/banking/deposit-configs`);
+  }
+
+  async createDepositConfig(householdId: string, data: CreateAllowanceDepositConfigRequest): Promise<AllowanceDepositConfig> {
+    return this.request(`/households/${householdId}/financial/banking/deposit-configs`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateDepositConfig(householdId: string, configId: string, data: UpdateAllowanceDepositConfigRequest): Promise<AllowanceDepositConfig> {
+    return this.request(`/households/${householdId}/financial/banking/deposit-configs/${configId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteDepositConfig(householdId: string, configId: string): Promise<void> {
+    return this.request(`/households/${householdId}/financial/banking/deposit-configs/${configId}`, { method: 'DELETE' });
+  }
+
+  async getDepositSummary(householdId: string): Promise<AllowanceDepositSummary> {
+    return this.request(`/households/${householdId}/financial/banking/summary`);
+  }
+
+  // F19.2 Rotation System
+  async getChoreRotations(householdId: string): Promise<{ rotations: ChoreRotation[] }> {
+    return this.request(`/households/${householdId}/financial/rotations`);
+  }
+
+  async createChoreRotation(householdId: string, data: CreateChoreRotationRequest): Promise<ChoreRotation> {
+    return this.request(`/households/${householdId}/financial/rotations`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getChoreRotation(householdId: string, rotationId: string): Promise<ChoreRotation> {
+    return this.request(`/households/${householdId}/financial/rotations/${rotationId}`);
+  }
+
+  async updateChoreRotation(householdId: string, rotationId: string, data: UpdateChoreRotationRequest): Promise<ChoreRotation> {
+    return this.request(`/households/${householdId}/financial/rotations/${rotationId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteChoreRotation(householdId: string, rotationId: string): Promise<void> {
+    return this.request(`/households/${householdId}/financial/rotations/${rotationId}`, { method: 'DELETE' });
+  }
+
+  async advanceRotation(householdId: string, rotationId: string): Promise<{ nextAssigneeId: string }> {
+    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/advance`, { method: 'POST' });
+  }
+
+  async skipRotation(householdId: string, rotationId: string, reason?: string): Promise<{ skipped: boolean }> {
+    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/skip`, { method: 'POST', body: JSON.stringify({ reason }) });
+  }
+
+  async getRotationHistory(householdId: string, rotationId: string): Promise<{ history: RotationHistory[]; total: number }> {
+    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/history`);
+  }
+
+  async getRotationFairness(householdId: string, rotationId: string): Promise<RotationFairnessReport> {
+    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/fairness`);
+  }
+
+  // F19.3 Chore Chains
+  async getChoreChains(householdId: string): Promise<{ chains: ChoreChain[] }> {
+    return this.request(`/households/${householdId}/financial/chains`);
+  }
+
+  async createChoreChain(householdId: string, data: CreateChoreChainRequest): Promise<ChoreChain> {
+    return this.request(`/households/${householdId}/financial/chains`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getChoreChainProgress(householdId: string, chainId: string): Promise<ChoreChainProgress> {
+    return this.request(`/households/${householdId}/financial/chains/${chainId}`);
+  }
+
+  async updateChoreChain(householdId: string, chainId: string, data: UpdateChoreChainRequest): Promise<ChoreChain> {
+    return this.request(`/households/${householdId}/financial/chains/${chainId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteChoreChain(householdId: string, chainId: string): Promise<void> {
+    return this.request(`/households/${householdId}/financial/chains/${chainId}`, { method: 'DELETE' });
+  }
+
+  async completeChainStep(householdId: string, chainId: string, stepId: string): Promise<{ completed: boolean }> {
+    return this.request(`/households/${householdId}/financial/chains/${chainId}/steps/${stepId}/complete`, { method: 'POST' });
+  }
+
+  // F19.4 Responsibilities vs Jobs
+  async getResponsibilityConfig(householdId: string): Promise<ResponsibilityConfig> {
+    return this.request(`/households/${householdId}/financial/classification/config`);
+  }
+
+  async updateResponsibilityConfig(householdId: string, data: UpdateResponsibilityConfigRequest): Promise<ResponsibilityConfig> {
+    return this.request(`/households/${householdId}/financial/classification/config`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async getChoreClassifications(householdId: string): Promise<{ classifications: ChoreClassification[] }> {
+    return this.request(`/households/${householdId}/financial/classification/chores`);
+  }
+
+  async classifyChore(householdId: string, data: ClassifyChoreRequest): Promise<ChoreClassification> {
+    return this.request(`/households/${householdId}/financial/classification/chores`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateChoreClassification(householdId: string, choreId: string, data: Partial<ClassifyChoreRequest>): Promise<ChoreClassification> {
+    return this.request(`/households/${householdId}/financial/classification/chores/${choreId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async getClassificationSummary(householdId: string): Promise<ClassificationSummary> {
+    return this.request(`/households/${householdId}/financial/classification/summary`);
+  }
+
+  // F19.5 Chore Marketplace
+  async getMarketplaceListings(householdId: string): Promise<{ listings: MarketplaceListing[]; total: number }> {
+    return this.request(`/households/${householdId}/financial/marketplace/listings`);
+  }
+
+  async createMarketplaceListing(householdId: string, data: CreateMarketplaceListingRequest): Promise<MarketplaceListing> {
+    return this.request(`/households/${householdId}/financial/marketplace/listings`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async claimMarketplaceListing(householdId: string, listingId: string): Promise<MarketplaceListing> {
+    return this.request(`/households/${householdId}/financial/marketplace/listings/${listingId}/claim`, { method: 'POST' });
+  }
+
+  async completeMarketplaceListing(householdId: string, listingId: string): Promise<MarketplaceListing> {
+    return this.request(`/households/${householdId}/financial/marketplace/listings/${listingId}/complete`, { method: 'POST' });
+  }
+
+  async cancelMarketplaceListing(householdId: string, listingId: string): Promise<MarketplaceListing> {
+    return this.request(`/households/${householdId}/financial/marketplace/listings/${listingId}/cancel`, { method: 'POST' });
+  }
+
+  async getMarketplaceStats(householdId: string): Promise<MarketplaceStats> {
+    return this.request(`/households/${householdId}/financial/marketplace/stats`);
+  }
+
+  async getMarketplaceConfig(householdId: string): Promise<MarketplaceConfig> {
+    return this.request(`/households/${householdId}/financial/marketplace/config`);
+  }
+
+  async updateMarketplaceConfig(householdId: string, data: UpdateMarketplaceConfigRequest): Promise<MarketplaceConfig> {
+    return this.request(`/households/${householdId}/financial/marketplace/config`, { method: 'PUT', body: JSON.stringify(data) });
   }
 }
 

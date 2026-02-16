@@ -536,6 +536,18 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 
 ---
 
+## Phase 19: Financial Integration & Advanced Scheduling
+
+**Goal:** Add banking integration, chore rotation, task chains, chore classification, and a chore marketplace.
+
+- [x] F19.1 - Banking integration (Plaid, Stripe, manual; automated allowance deposits)
+- [x] F19.2 - Chore rotation system (round robin, weighted, random, skill-based)
+- [x] F19.3 - Chore chains (task dependency chains with bonus points)
+- [x] F19.4 - Responsibilities vs jobs (financial literacy classification)
+- [x] F19.5 - Chore marketplace (point-bounty listings with parent approval)
+
+---
+
 ## Decision Log
 
 | Date       | Decision                           | Rationale                                                   |
