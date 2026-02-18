@@ -40,6 +40,7 @@ ChoreChamp is a cross-platform family chore management application that gamifies
 | [SDD-014: Screen Reader & Assistive Technology](./sdd/SDD-014-screen-reader-assistive-tech.md) | Implemented |
 | [SDD-015: Dyslexia & Reading Accommodations](./sdd/SDD-015-dyslexia-reading-accommodations.md) | Implemented |
 | [SDD-016: Cognitive Accessibility Mode](./sdd/SDD-016-cognitive-accessibility-mode.md) | Implemented |
+| [SDD-017: Multi-Language Support (i18n)](./sdd/SDD-017-multi-language-support.md) | Implemented |
 
 ---
 
