@@ -85,6 +85,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
                   key={item.to}
                   to={item.to}
                   onClick={() => setMenuOpen(false)}
+                  aria-label={item.label}
                   className={`flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors ${
                     isActive(item.to)
                       ? 'bg-[var(--app-accent-soft)] text-[var(--app-accent)]'
@@ -102,12 +103,13 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
 
       {/* Bottom Tab Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--app-surface)]/95 backdrop-blur-md border-t border-[var(--app-border)] safe-area-pb">
-        <div className="flex items-center justify-around h-16 px-2">
+        <nav className="flex items-center justify-around h-16 px-2" aria-label="Bottom navigation">
           {/* Left tabs */}
           {primaryTabs.map((tab) => (
             <Link
               key={tab.to}
               to={tab.to}
+              aria-label={tab.label}
               className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${
                 isActive(tab.to) ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'
               }`}
@@ -120,6 +122,8 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
           {/* Center FAB */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
             className={`flex items-center justify-center w-14 h-14 -mt-6 rounded-full border-4 border-[var(--app-surface)] shadow-lg transition-colors ${
               menuOpen
                 ? 'bg-[var(--app-accent)] text-white'
@@ -134,6 +138,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
             <Link
               key={tab.to}
               to={tab.to}
+              aria-label={tab.label}
               className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${
                 isActive(tab.to) ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'
               }`}
@@ -142,7 +147,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
               <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
             </Link>
           ))}
-        </div>
+        </nav>
       </div>
     </>
   );

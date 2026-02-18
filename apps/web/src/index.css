@@ -107,3 +107,199 @@ body {
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+/* Keyboard focus visibility */
+:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+/* Skip navigation link */
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 0.75rem;
+  z-index: 60;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transform: translateY(-140%);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* High contrast mode (WCAG AAA-oriented palette) */
+:root[data-high-contrast='true'] {
+  --app-bg: #000000;
+  --app-surface: #000000;
+  --app-surface-muted: #111111;
+  --app-border: #ffffff;
+  --app-accent: #ffff00;
+  --app-accent-soft: #1f1f00;
+  --app-text: #ffffff;
+  --app-text-muted: #f5f5f5;
+  --primary: #ffff00;
+  --primary-dark: #d6d600;
+}
+
+:root[data-high-contrast='true'] * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+:root[data-high-contrast='true'] a {
+  text-decoration: underline;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-reduced-motion='true'] *, :root[data-reduced-motion='true'] *::before, :root[data-reduced-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ===== F13.2: Dyslexia & Reading Accommodations ===== */
+
+/* Reading font: OpenDyslexic */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Reading font: Lexie Readable (Lexend as a high-readability substitute) */
+@font-face {
+  font-family: 'LexieReadable';
+  src: url('https://fonts.gstatic.com/s/lexend/v23/wlptgwvFAVdoq2_F94zlCfv0bz1WCzsX_LBte6KuGEo.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LexieReadable';
+  src: url('https://fonts.gstatic.com/s/lexend/v23/wlptgwvFAVdoq2_F94zlCfv0bz1WC2UQ_LBte6KuGEo.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Apply reading font by data attribute */
+:root[data-reading-font='open-dyslexic'] body {
+  font-family: 'OpenDyslexic', sans-serif;
+}
+
+:root[data-reading-font='lexie-readable'] body {
+  font-family: 'LexieReadable', sans-serif;
+}
+
+/* Font size scaling via CSS custom property */
+:root {
+  --reading-font-scale: 1;
+  --reading-line-height: 1.5;
+  --reading-letter-spacing: 0em;
+  --reading-word-spacing: 0em;
+  --reading-overlay-color: rgba(0, 0, 0, 0);
+  --reading-ruler-y: -200px;
+}
+
+body {
+  font-size: calc(1rem * var(--reading-font-scale));
+  line-height: var(--reading-line-height);
+  letter-spacing: var(--reading-letter-spacing);
+  word-spacing: var(--reading-word-spacing);
+}
+
+/* Color overlay (full-page tinted layer) */
+:root[data-reading-overlay]:not([data-reading-overlay='none'])::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background-color: var(--reading-overlay-color);
+  mix-blend-mode: multiply;
+}
+
+/* Reading ruler (highlight band that follows cursor) */
+:root[data-reading-ruler='true']::before {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(var(--reading-ruler-y) - 18px);
+  height: 36px;
+  z-index: 9997;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 0, 0) 0%,
+    rgba(255, 255, 0, 0.12) 15%,
+    rgba(255, 255, 0, 0.18) 50%,
+    rgba(255, 255, 0, 0.12) 85%,
+    rgba(255, 255, 0, 0) 100%
+  );
+  border-top: 1px solid rgba(255, 200, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 200, 0, 0.15);
+}
+
+/* Bionic reading: bold the first half of each word */
+:root[data-bionic-reading='true'] p,
+:root[data-bionic-reading='true'] li,
+:root[data-bionic-reading='true'] td,
+:root[data-bionic-reading='true'] span:not(.sr-only):not([class*="icon"]),
+:root[data-bionic-reading='true'] label,
+:root[data-bionic-reading='true'] h1,
+:root[data-bionic-reading='true'] h2,
+:root[data-bionic-reading='true'] h3,
+:root[data-bionic-reading='true'] h4 {
+  font-weight: 400;
+}
+
+/* Icon-heavy navigation: enlarge icons and make labels more prominent */
+:root[data-icon-heavy-navigation='true'] nav a svg,
+:root[data-icon-heavy-navigation='true'] nav button svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+:root[data-icon-heavy-navigation='true'] nav a span,
+:root[data-icon-heavy-navigation='true'] nav button span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Simplified language mode: slightly reduce visual clutter */
+:root[data-simplified-language='true'] .decorative-only {
+  display: none;
+}

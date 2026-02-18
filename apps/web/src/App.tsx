@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DemoAuthProvider, useDemoAuth } from './context/DemoAuthContext';
 import { CelebrationProvider } from './components/celebrations';
 import { PWAProvider } from './components/pwa';
+import { AccessibilityProvider } from './components/accessibility';
 import { AppShell } from './components/app/AppShell';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -395,9 +396,11 @@ export default function App() {
       <AuthProvider>
         <CelebrationProvider>
           <PWAProvider>
-            <AppShell>
-              <AppRoutes />
-            </AppShell>
+            <AccessibilityProvider>
+              <AppShell>
+                <AppRoutes />
+              </AppShell>
+            </AccessibilityProvider>
           </PWAProvider>
         </CelebrationProvider>
       </AuthProvider>
