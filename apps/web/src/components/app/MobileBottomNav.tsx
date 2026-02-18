@@ -16,6 +16,7 @@ import {
   Star,
   Swords,
   ShoppingBag,
+  Building2,
 } from 'lucide-react';
 
 interface MobileBottomNavProps {
@@ -61,6 +62,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
     { to: `${base}/activity`, label: 'Activity', icon: <Bell className="h-5 w-5" /> },
     { to: `${base}/collection`, label: 'Collection', icon: <Star className="h-5 w-5" /> },
     { to: `${base}/store`, label: 'Store', icon: <ShoppingBag className="h-5 w-5" /> },
+    { to: `${base}/enterprise`, label: 'Enterprise', icon: <Building2 className="h-5 w-5" /> },
     { to: `${base}/settings`, label: 'Settings', icon: <Settings className="h-5 w-5" /> },
   ];
 
@@ -105,9 +107,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
               key={tab.to}
               to={tab.to}
               className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${
-                isActive(tab.to)
-                  ? 'text-[var(--app-accent)]'
-                  : 'text-[var(--app-text-muted)]'
+                isActive(tab.to) ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'
               }`}
             >
               {tab.icon}
@@ -133,9 +133,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
               key={tab.to}
               to={tab.to}
               className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${
-                isActive(tab.to)
-                  ? 'text-[var(--app-accent)]'
-                  : 'text-[var(--app-text-muted)]'
+                isActive(tab.to) ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'
               }`}
             >
               {tab.icon}

@@ -44,80 +44,87 @@ import { rewardRoutes } from './rewards';
 import { supportRoutes } from './support';
 import { apiKeyRoutes } from './api-keys';
 import { inAppStoreRoutes } from './in-app-store';
+import { enterpriseSchoolRoutes } from './enterprise-school';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
   fastify.register(authRoutes, { prefix: '/api/auth' });
 
   // API routes with version prefix
-  fastify.register(async (api) => {
-    // Household routes
-    api.register(householdRoutes, { prefix: '/households' });
+  fastify.register(
+    async (api) => {
+      // Household routes
+      api.register(householdRoutes, { prefix: '/households' });
 
-    // Nested member routes under households
-    api.register(async (householdApi) => {
-      householdApi.register(memberRoutes, { prefix: '/:householdId/members' });
-      householdApi.register(choreRoutes, { prefix: '/:householdId/chores' });
-      householdApi.register(scheduleRoutes, { prefix: '/:householdId/schedule' });
-      householdApi.register(bossBattleRoutes, { prefix: '/:householdId/boss-battles' });
-      householdApi.register(activityRoutes, { prefix: '/:householdId/activity' });
-      householdApi.register(reportsRoutes, { prefix: '/:householdId/reports' });
-      householdApi.register(tradeRoutes, { prefix: '/:householdId/trades' });
-      householdApi.register(allowanceRoutes, { prefix: '/:householdId/allowance' });
-      householdApi.register(dashboardRoutes, { prefix: '/:householdId/dashboard' });
-      householdApi.register(ageAppropriateRoutes, { prefix: '/:householdId/age-appropriate' });
-      householdApi.register(aiSchedulingRoutes, { prefix: '/:householdId/ai-schedule' });
-      householdApi.register(reminderRoutes, { prefix: '/:householdId/reminders' });
-      householdApi.register(voiceAssistantRoutes, { prefix: '/:householdId/voice' });
-      householdApi.register(difficultyCalibrationRoutes, { prefix: '/:householdId/calibration' });
-      householdApi.register(streakProtectionRoutes, { prefix: '/:householdId/streak-protection' });
-      householdApi.register(familyChallengeRoutes, { prefix: '/:householdId/challenges' });
-      householdApi.register(achievementShowcaseRoutes, { prefix: '/:householdId/achievements' });
-      householdApi.register(seasonalEventRoutes, { prefix: '/:householdId/events' });
-      householdApi.register(familyAnalyticsRoutes, { prefix: '/:householdId/analytics' });
-      householdApi.register(rpgCharacterRoutes, { prefix: '/:householdId/characters' });
-      householdApi.register(virtualPetRoutes, { prefix: '/:householdId/pets' });
-      householdApi.register(miniGamesRoutes, { prefix: '/:householdId/games' });
-      householdApi.register(collectibleCardsRoutes, { prefix: '/:householdId/cards' });
-      householdApi.register(storyModeRoutes, { prefix: '/:householdId/story' });
-      householdApi.register(smartHomeRoutes, { prefix: '/:householdId/smart-home' });
-      householdApi.register(choreDetectionRoutes, { prefix: '/:householdId/detection' });
-      householdApi.register(qrVerificationRoutes, { prefix: '/:householdId' });
-      householdApi.register(geofencingRoutes, { prefix: '/:householdId' });
-      householdApi.register(screenTimeRoutes, { prefix: '/:householdId/screen-time' });
-      householdApi.register(homeworkRoutes, { prefix: '/:householdId/homework' });
-      householdApi.register(educationalChoreRoutes, { prefix: '/:householdId/educational' });
-      householdApi.register(reportCardRoutes, { prefix: '/:householdId/report-cards' });
-      householdApi.register(skillBuildingRoutes, { prefix: '/:householdId/skills' });
-      householdApi.register(schoolExtracurricularRoutes, { prefix: '/:householdId/school' });
-      householdApi.register(rewardRoutes, { prefix: '/:householdId' });
-      householdApi.register(supportRoutes, { prefix: '/:householdId' });
-      householdApi.register(apiKeyRoutes, { prefix: '/:householdId' });
-      householdApi.register(inAppStoreRoutes, { prefix: '/:householdId/store' });
-    });
+      // Nested member routes under households
+      api.register(async (householdApi) => {
+        householdApi.register(memberRoutes, { prefix: '/:householdId/members' });
+        householdApi.register(choreRoutes, { prefix: '/:householdId/chores' });
+        householdApi.register(scheduleRoutes, { prefix: '/:householdId/schedule' });
+        householdApi.register(bossBattleRoutes, { prefix: '/:householdId/boss-battles' });
+        householdApi.register(activityRoutes, { prefix: '/:householdId/activity' });
+        householdApi.register(reportsRoutes, { prefix: '/:householdId/reports' });
+        householdApi.register(tradeRoutes, { prefix: '/:householdId/trades' });
+        householdApi.register(allowanceRoutes, { prefix: '/:householdId/allowance' });
+        householdApi.register(dashboardRoutes, { prefix: '/:householdId/dashboard' });
+        householdApi.register(ageAppropriateRoutes, { prefix: '/:householdId/age-appropriate' });
+        householdApi.register(aiSchedulingRoutes, { prefix: '/:householdId/ai-schedule' });
+        householdApi.register(reminderRoutes, { prefix: '/:householdId/reminders' });
+        householdApi.register(voiceAssistantRoutes, { prefix: '/:householdId/voice' });
+        householdApi.register(difficultyCalibrationRoutes, { prefix: '/:householdId/calibration' });
+        householdApi.register(streakProtectionRoutes, {
+          prefix: '/:householdId/streak-protection',
+        });
+        householdApi.register(familyChallengeRoutes, { prefix: '/:householdId/challenges' });
+        householdApi.register(achievementShowcaseRoutes, { prefix: '/:householdId/achievements' });
+        householdApi.register(seasonalEventRoutes, { prefix: '/:householdId/events' });
+        householdApi.register(familyAnalyticsRoutes, { prefix: '/:householdId/analytics' });
+        householdApi.register(rpgCharacterRoutes, { prefix: '/:householdId/characters' });
+        householdApi.register(virtualPetRoutes, { prefix: '/:householdId/pets' });
+        householdApi.register(miniGamesRoutes, { prefix: '/:householdId/games' });
+        householdApi.register(collectibleCardsRoutes, { prefix: '/:householdId/cards' });
+        householdApi.register(storyModeRoutes, { prefix: '/:householdId/story' });
+        householdApi.register(smartHomeRoutes, { prefix: '/:householdId/smart-home' });
+        householdApi.register(choreDetectionRoutes, { prefix: '/:householdId/detection' });
+        householdApi.register(qrVerificationRoutes, { prefix: '/:householdId' });
+        householdApi.register(geofencingRoutes, { prefix: '/:householdId' });
+        householdApi.register(screenTimeRoutes, { prefix: '/:householdId/screen-time' });
+        householdApi.register(homeworkRoutes, { prefix: '/:householdId/homework' });
+        householdApi.register(educationalChoreRoutes, { prefix: '/:householdId/educational' });
+        householdApi.register(reportCardRoutes, { prefix: '/:householdId/report-cards' });
+        householdApi.register(skillBuildingRoutes, { prefix: '/:householdId/skills' });
+        householdApi.register(schoolExtracurricularRoutes, { prefix: '/:householdId/school' });
+        householdApi.register(rewardRoutes, { prefix: '/:householdId' });
+        householdApi.register(supportRoutes, { prefix: '/:householdId' });
+        householdApi.register(apiKeyRoutes, { prefix: '/:householdId' });
+        householdApi.register(inAppStoreRoutes, { prefix: '/:householdId/store' });
+        householdApi.register(enterpriseSchoolRoutes, { prefix: '/:householdId' });
+      });
 
-    // Chore templates (public)
-    api.register(templateRoutes, { prefix: '/chore-templates' });
+      // Chore templates (public)
+      api.register(templateRoutes, { prefix: '/chore-templates' });
 
-    // Community templates
-    api.register(communityTemplateRoutes, { prefix: '/community-templates' });
+      // Community templates
+      api.register(communityTemplateRoutes, { prefix: '/community-templates' });
 
-    // Notification routes
-    api.register(notificationRoutes, { prefix: '/notifications' });
+      // Notification routes
+      api.register(notificationRoutes, { prefix: '/notifications' });
 
-    // Subscription & billing routes
-    api.register(subscriptionRoutes, { prefix: '/subscription' });
+      // Subscription & billing routes
+      api.register(subscriptionRoutes, { prefix: '/subscription' });
 
-    // Multi-household routes (household switching, member links, etc.)
-    api.register(multiHouseholdRoutes);
+      // Multi-household routes (household switching, member links, etc.)
+      api.register(multiHouseholdRoutes);
 
-    // Health/status check at API level
-    api.get('/status', async () => {
-      return {
-        version: '0.1.0',
-        environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString(),
-      };
-    });
-  }, { prefix: '/api' });
+      // Health/status check at API level
+      api.get('/status', async () => {
+        return {
+          version: '0.1.0',
+          environment: process.env.NODE_ENV || 'development',
+          timestamp: new Date().toISOString(),
+        };
+      });
+    },
+    { prefix: '/api' }
+  );
 }
