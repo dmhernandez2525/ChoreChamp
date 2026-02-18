@@ -282,6 +282,28 @@ import type {
   CommandResponse,
   CommandHistory,
   CommandCapability,
+  CalendarConnection,
+  CreateCalendarConnectionRequest,
+  CalendarEvent,
+  CalendarSyncConfig,
+  UpdateCalendarSyncConfigRequest,
+  ChatChannel,
+  ChatMessage,
+  CreateChatMessageRequest,
+  CreateChatChannelRequest,
+  ChatUnreadCount,
+  PhotoAlbum,
+  AlbumPhoto,
+  CreatePhotoAlbumRequest,
+  UploadPhotoRequest,
+  ShareableAchievement,
+  CreateShareableAchievementRequest,
+  ShareRecord,
+  ShareSettings,
+  UpdateShareSettingsRequest,
+  ProgressiveUnlock,
+  MemberUnlockProgress,
+  UnlockProgressSummary,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -3135,6 +3157,121 @@ class ApiClient {
 
   async getCommandCapabilities(householdId: string): Promise<{ capabilities: CommandCapability[] }> {
     return this.request(`/households/${householdId}/automation/commands/capabilities`);
+  }
+
+  // ===== Phase 18: Communication & Calendar Integration =====
+
+  // F18.1 Calendar Sync
+  async getCalendarConnections(householdId: string): Promise<{ connections: CalendarConnection[] }> {
+    return this.request(`/households/${householdId}/family-hub/calendar/connections`);
+  }
+
+  async createCalendarConnection(householdId: string, memberId: string, data: CreateCalendarConnectionRequest): Promise<CalendarConnection> {
+    return this.request(`/households/${householdId}/family-hub/calendar/connections`, { method: 'POST', body: JSON.stringify({ ...data, memberId }) });
+  }
+
+  async deleteCalendarConnection(householdId: string, connectionId: string): Promise<void> {
+    return this.request(`/households/${householdId}/family-hub/calendar/connections/${connectionId}`, { method: 'DELETE' });
+  }
+
+  async syncCalendarConnection(householdId: string, connectionId: string): Promise<{ synced: number; message: string }> {
+    return this.request(`/households/${householdId}/family-hub/calendar/connections/${connectionId}/sync`, { method: 'POST' });
+  }
+
+  async getCalendarEvents(householdId: string, params?: { start?: string; end?: string }): Promise<{ events: CalendarEvent[] }> {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return this.request(`/households/${householdId}/family-hub/calendar/events${query}`);
+  }
+
+  async getCalendarSyncConfig(householdId: string): Promise<CalendarSyncConfig> {
+    return this.request(`/households/${householdId}/family-hub/calendar/config`);
+  }
+
+  async updateCalendarSyncConfig(householdId: string, data: UpdateCalendarSyncConfigRequest): Promise<CalendarSyncConfig> {
+    return this.request(`/households/${householdId}/family-hub/calendar/config`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  // F18.2 Family Chat
+  async getChatChannels(householdId: string): Promise<{ channels: ChatChannel[] }> {
+    return this.request(`/households/${householdId}/family-hub/chat/channels`);
+  }
+
+  async createChatChannel(householdId: string, data: CreateChatChannelRequest): Promise<ChatChannel> {
+    return this.request(`/households/${householdId}/family-hub/chat/channels`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getChatMessages(householdId: string, channelId: string, params?: { page?: number; pageSize?: number }): Promise<{ messages: ChatMessage[]; total: number }> {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return this.request(`/households/${householdId}/family-hub/chat/channels/${channelId}/messages${query}`);
+  }
+
+  async sendChatMessage(householdId: string, channelId: string, data: CreateChatMessageRequest): Promise<ChatMessage> {
+    return this.request(`/households/${householdId}/family-hub/chat/channels/${channelId}/messages`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getChatUnreadCounts(householdId: string): Promise<{ unread: ChatUnreadCount[] }> {
+    return this.request(`/households/${householdId}/family-hub/chat/unread`);
+  }
+
+  // F18.3 Photo Albums
+  async getPhotoAlbums(householdId: string): Promise<{ albums: PhotoAlbum[] }> {
+    return this.request(`/households/${householdId}/family-hub/photos/albums`);
+  }
+
+  async createPhotoAlbum(householdId: string, data: CreatePhotoAlbumRequest): Promise<PhotoAlbum> {
+    return this.request(`/households/${householdId}/family-hub/photos/albums`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getAlbumPhotos(householdId: string, albumId: string, params?: { page?: number; pageSize?: number }): Promise<{ photos: AlbumPhoto[]; total: number }> {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return this.request(`/households/${householdId}/family-hub/photos/albums/${albumId}/photos${query}`);
+  }
+
+  async uploadPhoto(householdId: string, data: UploadPhotoRequest): Promise<AlbumPhoto> {
+    return this.request(`/households/${householdId}/family-hub/photos/upload`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async deletePhoto(householdId: string, photoId: string): Promise<void> {
+    return this.request(`/households/${householdId}/family-hub/photos/${photoId}`, { method: 'DELETE' });
+  }
+
+  // F18.4 Shareable Achievements
+  async getShareableAchievements(householdId: string): Promise<{ achievements: ShareableAchievement[] }> {
+    return this.request(`/households/${householdId}/family-hub/sharing/achievements`);
+  }
+
+  async createShareableAchievement(householdId: string, memberId: string, data: CreateShareableAchievementRequest): Promise<ShareableAchievement> {
+    return this.request(`/households/${householdId}/family-hub/sharing/achievements`, { method: 'POST', body: JSON.stringify({ ...data, memberId }) });
+  }
+
+  async shareAchievementToSocial(householdId: string, achievementId: string, platform: string): Promise<ShareRecord> {
+    return this.request(`/households/${householdId}/family-hub/sharing/achievements/${achievementId}/share`, { method: 'POST', body: JSON.stringify({ platform }) });
+  }
+
+  async getShareSettings(householdId: string): Promise<ShareSettings> {
+    return this.request(`/households/${householdId}/family-hub/sharing/settings`);
+  }
+
+  async updateShareSettings(householdId: string, data: UpdateShareSettingsRequest): Promise<ShareSettings> {
+    return this.request(`/households/${householdId}/family-hub/sharing/settings`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  // F18.5 Progressive Unlocks
+  async getProgressiveUnlocks(householdId: string, params?: { category?: string }): Promise<{ unlocks: ProgressiveUnlock[] }> {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return this.request(`/households/${householdId}/family-hub/unlocks${query}`);
+  }
+
+  async getMemberUnlockProgress(householdId: string, memberId: string): Promise<{ progress: MemberUnlockProgress[] }> {
+    return this.request(`/households/${householdId}/family-hub/unlocks/members/${memberId}`);
+  }
+
+  async getUnlockProgressSummary(householdId: string, memberId: string): Promise<UnlockProgressSummary> {
+    return this.request(`/households/${householdId}/family-hub/unlocks/members/${memberId}/summary`);
+  }
+
+  async checkUnlocks(householdId: string, memberId: string): Promise<{ newUnlocks: ProgressiveUnlock[]; message: string }> {
+    return this.request(`/households/${householdId}/family-hub/unlocks/members/${memberId}/check`, { method: 'POST' });
   }
 }
 
