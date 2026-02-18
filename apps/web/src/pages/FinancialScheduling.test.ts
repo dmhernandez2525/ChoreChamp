@@ -107,13 +107,6 @@ const mockCreateDepositConfigRequest: CreateAllowanceDepositConfigRequest = {
   dayOfWeek: 1,
 };
 
-const mockUpdateDepositConfigRequest: UpdateAllowanceDepositConfigRequest = {
-  amount: 20.0,
-  frequency: 'monthly',
-  dayOfMonth: 15,
-  isActive: true,
-};
-
 const mockDepositSummary: AllowanceDepositSummary = {
   totalDeposited: 240.0,
   pendingDeposits: 2,
@@ -148,12 +141,6 @@ const mockCreateRotationRequest: CreateChoreRotationRequest = {
   frequency: 'weekly',
   participantIds: ['mem-child-001', 'mem-child-002'],
   skipWeekends: true,
-};
-
-const mockUpdateRotationRequest: UpdateChoreRotationRequest = {
-  rotationType: 'random',
-  frequency: 'biweekly',
-  participantIds: ['mem-child-001', 'mem-child-002', 'mem-child-003'],
 };
 
 const mockRotationHistory: RotationHistory = {
@@ -564,7 +551,7 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
     });
 
     it('validates CreateBankingConnectionRequest with valid data', () => {
-      const result = validateBankingConnectionRequest(mockCreateBankingConnectionRequest);
+      const result = validateBankingConnectionRequest({ ...mockCreateBankingConnectionRequest });
       expect(result).toEqual({ valid: true, errors: [] });
     });
 
@@ -595,7 +582,7 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
     });
 
     it('validates CreateAllowanceDepositConfigRequest with valid data', () => {
-      const result = validateDepositConfigRequest(mockCreateDepositConfigRequest);
+      const result = validateDepositConfigRequest({ ...mockCreateDepositConfigRequest });
       expect(result).toEqual({ valid: true, errors: [] });
     });
 
@@ -665,7 +652,7 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
     });
 
     it('validates CreateChoreRotationRequest with valid data', () => {
-      const result = validateCreateRotationRequest(mockCreateRotationRequest);
+      const result = validateCreateRotationRequest({ ...mockCreateRotationRequest });
       expect(result).toEqual({ valid: true, errors: [] });
     });
 
@@ -764,7 +751,7 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
     });
 
     it('validates CreateChoreChainRequest with valid data', () => {
-      const result = validateCreateChainRequest(mockCreateChainRequest);
+      const result = validateCreateChainRequest({ ...mockCreateChainRequest });
       expect(result).toEqual({ valid: true, errors: [] });
     });
 
@@ -840,7 +827,7 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
     });
 
     it('validates ClassifyChoreRequest with valid data', () => {
-      const result = validateClassifyChoreRequest(mockClassifyChoreRequest);
+      const result = validateClassifyChoreRequest({ ...mockClassifyChoreRequest });
       expect(result).toEqual({ valid: true, errors: [] });
     });
 
@@ -902,7 +889,7 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
     });
 
     it('validates CreateMarketplaceListingRequest with valid data', () => {
-      const result = validateCreateListingRequest(mockCreateListingRequest);
+      const result = validateCreateListingRequest({ ...mockCreateListingRequest });
       expect(result).toEqual({ valid: true, errors: [] });
     });
 
