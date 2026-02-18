@@ -55,6 +55,13 @@ import type {
   UpdateAdvancedReportRequest,
   DataExportRequest,
   AuditLogQuery,
+  CreateForumPostRequest,
+  CreateForumReplyRequest,
+  CreateSocialChallengeRequest,
+  CreateSocialPostRequest,
+  CreateSocialCommentRequest,
+  CreateFriendRequestPayload,
+  CreateCommunityEventRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -196,6 +203,17 @@ export const queryKeys = {
   performanceHistory: (householdId: string, period?: string) => ['performanceHistory', householdId, period] as const,
   usageMetrics: (householdId: string) => ['usageMetrics', householdId] as const,
   errorMetrics: (householdId: string) => ['errorMetrics', householdId] as const,
+  // Community & Social
+  forumPosts: (householdId: string, params?: Record<string, unknown>) => ['forumPosts', householdId, params] as const,
+  forumPost: (householdId: string, postId: string) => ['forumPost', householdId, postId] as const,
+  socialChallenges: (householdId: string, status?: string) => ['socialChallenges', householdId, status] as const,
+  socialChallenge: (householdId: string, challengeId: string) => ['socialChallenge', householdId, challengeId] as const,
+  socialFeed: (householdId: string, params?: Record<string, unknown>) => ['socialFeed', householdId, params] as const,
+  socialPost: (householdId: string, postId: string) => ['socialPost', householdId, postId] as const,
+  friends: (householdId: string) => ['friends', householdId] as const,
+  friendSuggestions: (householdId: string) => ['friendSuggestions', householdId] as const,
+  communityEvents: (householdId: string, params?: Record<string, unknown>) => ['communityEvents', householdId, params] as const,
+  communityEvent: (householdId: string, eventId: string) => ['communityEvent', householdId, eventId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -2298,5 +2316,220 @@ export function useResolveError(householdId: string) {
       queryClient.invalidateQueries({ queryKey: queryKeys.errorMetrics(householdId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.performanceMetrics(householdId) });
     },
+  });
+}
+
+// ===== Community & Social Hooks (F16.1-F16.5) =====
+
+export function useForumPosts(householdId: string, params?: { category?: string; limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: queryKeys.forumPosts(householdId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getForumPosts(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useForumPost(householdId: string, postId: string) {
+  return useQuery({
+    queryKey: queryKeys.forumPost(householdId, postId),
+    queryFn: () => apiClient.getForumPost(householdId, postId),
+    enabled: !!householdId && !!postId,
+  });
+}
+
+export function useCreateForumPost(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateForumPostRequest) => apiClient.createForumPost(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'forumPosts' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useCreateForumReply(householdId: string, postId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateForumReplyRequest) => apiClient.createForumReply(householdId, postId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.forumPost(householdId, postId) }); },
+  });
+}
+
+export function useLikeForumPost(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => apiClient.likeForumPost(householdId, postId),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'forumPosts' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useDeleteForumPost(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => apiClient.deleteForumPost(householdId, postId),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'forumPosts' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useSocialChallenges(householdId: string, status?: string) {
+  return useQuery({
+    queryKey: queryKeys.socialChallenges(householdId, status),
+    queryFn: () => apiClient.getSocialChallenges(householdId, status),
+    enabled: !!householdId,
+  });
+}
+
+export function useSocialChallenge(householdId: string, challengeId: string) {
+  return useQuery({
+    queryKey: queryKeys.socialChallenge(householdId, challengeId),
+    queryFn: () => apiClient.getSocialChallenge(householdId, challengeId),
+    enabled: !!householdId && !!challengeId,
+  });
+}
+
+export function useCreateSocialChallenge(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateSocialChallengeRequest) => apiClient.createSocialChallenge(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'socialChallenges' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useJoinSocialChallenge(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (challengeId: string) => apiClient.joinSocialChallenge(householdId, challengeId),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'socialChallenges' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useSocialFeed(householdId: string, params?: { visibility?: string; limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: queryKeys.socialFeed(householdId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getSocialFeed(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useSocialPost(householdId: string, postId: string) {
+  return useQuery({
+    queryKey: queryKeys.socialPost(householdId, postId),
+    queryFn: () => apiClient.getSocialPost(householdId, postId),
+    enabled: !!householdId && !!postId,
+  });
+}
+
+export function useCreateSocialPost(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateSocialPostRequest) => apiClient.createSocialPost(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'socialFeed' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useCreateSocialComment(householdId: string, postId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateSocialCommentRequest) => apiClient.createSocialComment(householdId, postId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.socialPost(householdId, postId) }); },
+  });
+}
+
+export function useLikeSocialPost(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => apiClient.likeSocialPost(householdId, postId),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'socialFeed' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useFriends(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.friends(householdId),
+    queryFn: () => apiClient.getFriends(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useSendFriendRequest(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateFriendRequestPayload) => apiClient.sendFriendRequest(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.friends(householdId) }); },
+  });
+}
+
+export function useRespondToFriendRequest(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ connectionId, status }: { connectionId: string; status: 'accepted' | 'declined' }) =>
+      apiClient.respondToFriendRequest(householdId, connectionId, status),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.friends(householdId) }); },
+  });
+}
+
+export function useRemoveFriend(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (connectionId: string) => apiClient.removeFriend(householdId, connectionId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.friends(householdId) }); },
+  });
+}
+
+export function useFriendSuggestions(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.friendSuggestions(householdId),
+    queryFn: () => apiClient.getFriendSuggestions(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCommunityEvents(householdId: string, params?: { status?: string; eventType?: string }) {
+  return useQuery({
+    queryKey: queryKeys.communityEvents(householdId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getCommunityEvents(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useCommunityEvent(householdId: string, eventId: string) {
+  return useQuery({
+    queryKey: queryKeys.communityEvent(householdId, eventId),
+    queryFn: () => apiClient.getCommunityEvent(householdId, eventId),
+    enabled: !!householdId && !!eventId,
+  });
+}
+
+export function useCreateCommunityEvent(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateCommunityEventRequest) => apiClient.createCommunityEvent(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'communityEvents' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useJoinCommunityEvent(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: string) => apiClient.joinCommunityEvent(householdId, eventId),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'communityEvents' && q.queryKey[1] === householdId }); },
+  });
+}
+
+export function useUpdateCommunityEvent(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ eventId, data }: { eventId: string; data: Partial<CreateCommunityEventRequest> }) =>
+      apiClient.updateCommunityEvent(householdId, eventId, data),
+    onSuccess: (_, { eventId }) => {
+      queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'communityEvents' && q.queryKey[1] === householdId });
+      queryClient.invalidateQueries({ queryKey: queryKeys.communityEvent(householdId, eventId) });
+    },
+  });
+}
+
+export function useDeleteCommunityEvent(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: string) => apiClient.deleteCommunityEvent(householdId, eventId),
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'communityEvents' && q.queryKey[1] === householdId }); },
   });
 }

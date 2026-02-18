@@ -40,6 +40,11 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 - [x] F15.3 Data export
 - [x] F15.4 Audit logging
 - [x] F15.5 Performance monitoring
+- [x] F16.1 Community forums
+- [x] F16.2 Social challenges
+- [x] F16.3 Social sharing and feed
+- [x] F16.4 Friend system
+- [x] F16.5 Community events
 
 ---
 

@@ -44,3 +44,4 @@ export * from './school-extracurricular';
 export * from './enterprise-school';
 export * from './activity-tracking';
 export * from './advanced-analytics';
+export * from './community-social';
