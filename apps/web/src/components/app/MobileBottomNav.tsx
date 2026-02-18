@@ -15,6 +15,7 @@ import {
   Bell,
   Star,
   Swords,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface MobileBottomNavProps {
@@ -59,6 +60,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
     { to: `${base}/templates`, label: 'Templates', icon: <BookOpen className="h-5 w-5" /> },
     { to: `${base}/activity`, label: 'Activity', icon: <Bell className="h-5 w-5" /> },
     { to: `${base}/collection`, label: 'Collection', icon: <Star className="h-5 w-5" /> },
+    { to: `${base}/store`, label: 'Store', icon: <ShoppingBag className="h-5 w-5" /> },
     { to: `${base}/settings`, label: 'Settings', icon: <Settings className="h-5 w-5" /> },
   ];
 

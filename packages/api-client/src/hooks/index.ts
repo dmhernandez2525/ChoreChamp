@@ -15,6 +15,13 @@ import type {
   CreateSupportThreadRequest,
   CreateSupportMessageRequest,
   CreateApiKeyRequest,
+  CreateStorePurchaseRequest,
+  ApproveStorePurchaseRequest,
+  RequestStoreRefundRequest,
+  ResolveStoreRefundRequest,
+  UpdateStorePurchaseControlsRequest,
+  CreateStoreGiftCardRequest,
+  RedeemStoreGiftCardRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -50,6 +57,21 @@ export const queryKeys = {
   supportThread: (householdId: string, threadId: string) =>
     ['supportThread', householdId, threadId] as const,
   apiKeys: (householdId: string) => ['apiKeys', householdId] as const,
+  storeCatalog: (householdId: string, options?: Record<string, unknown>) =>
+    ['storeCatalog', householdId, options] as const,
+  storeOffers: (householdId: string) => ['storeOffers', householdId] as const,
+  storeWallet: (householdId: string) => ['storeWallet', householdId] as const,
+  storeWalletMember: (householdId: string, memberId: string) =>
+    ['storeWalletMember', householdId, memberId] as const,
+  storeEntitlements: (householdId: string) => ['storeEntitlements', householdId] as const,
+  storePurchases: (householdId: string) => ['storePurchases', householdId] as const,
+  storeReceipt: (householdId: string, purchaseId: string) =>
+    ['storeReceipt', householdId, purchaseId] as const,
+  storeRefunds: (householdId: string) => ['storeRefunds', householdId] as const,
+  storeControls: (householdId: string) => ['storeControls', householdId] as const,
+  storeControlsMember: (householdId: string, memberId: string) =>
+    ['storeControlsMember', householdId, memberId] as const,
+  storeGiftCards: (householdId: string) => ['storeGiftCards', householdId] as const,
   // Boss Battles
   currentBossBattle: (householdId: string) =>
     ['currentBossBattle', householdId] as const,
@@ -662,6 +684,226 @@ export function useRevokeApiKey(householdId: string) {
     mutationFn: (keyId: string) => apiClient.revokeApiKey(householdId, keyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys(householdId) });
+    },
+  });
+}
+
+// ===== In-App Store Hooks =====
+export function useStoreCatalog(
+  householdId: string,
+  options?: { category?: string; type?: string; includeInactive?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.storeCatalog(householdId, options),
+    queryFn: () => apiClient.getStoreCatalog(householdId, options),
+    enabled: !!householdId,
+  });
+}
+
+export function useStoreOffers(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.storeOffers(householdId),
+    queryFn: () => apiClient.getStoreOffers(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useStoreWallet(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.storeWallet(householdId),
+    queryFn: () => apiClient.getStoreWallet(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useStoreWalletForMember(householdId: string, memberId: string) {
+  return useQuery({
+    queryKey: queryKeys.storeWalletMember(householdId, memberId),
+    queryFn: () => apiClient.getStoreWalletForMember(householdId, memberId),
+    enabled: !!householdId && !!memberId,
+  });
+}
+
+export function useStoreEntitlements(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.storeEntitlements(householdId),
+    queryFn: () => apiClient.getStoreEntitlements(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useStorePurchases(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.storePurchases(householdId),
+    queryFn: () => apiClient.getStorePurchases(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useStoreReceipt(householdId: string, purchaseId: string) {
+  return useQuery({
+    queryKey: queryKeys.storeReceipt(householdId, purchaseId),
+    queryFn: () => apiClient.getStoreReceipt(householdId, purchaseId),
+    enabled: !!householdId && !!purchaseId,
+  });
+}
+
+export function useCreateStorePurchase(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: CreateStorePurchaseRequest) =>
+      apiClient.createStorePurchase(householdId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeWallet(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storePurchases(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeEntitlements(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeGiftCards(householdId) });
+    },
+  });
+}
+
+export function useApproveStorePurchase(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      purchaseId,
+      request,
+    }: {
+      purchaseId: string;
+      request?: ApproveStorePurchaseRequest;
+    }) => apiClient.approveStorePurchase(householdId, purchaseId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeWallet(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storePurchases(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeEntitlements(householdId) });
+    },
+  });
+}
+
+export function useDeclineStorePurchase(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (purchaseId: string) => apiClient.declineStorePurchase(householdId, purchaseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.storePurchases(householdId) });
+    },
+  });
+}
+
+export function useRequestStoreRefund(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      purchaseId,
+      request,
+    }: {
+      purchaseId: string;
+      request: RequestStoreRefundRequest;
+    }) => apiClient.requestStoreRefund(householdId, purchaseId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.storePurchases(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeRefunds(householdId) });
+    },
+  });
+}
+
+export function useStoreRefundRequests(householdId: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.storeRefunds(householdId),
+    queryFn: () => apiClient.getStoreRefundRequests(householdId),
+    enabled: !!householdId && enabled,
+  });
+}
+
+export function useResolveStoreRefund(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      refundId,
+      request,
+    }: {
+      refundId: string;
+      request: ResolveStoreRefundRequest;
+    }) => apiClient.resolveStoreRefund(householdId, refundId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeRefunds(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storePurchases(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeWallet(householdId) });
+    },
+  });
+}
+
+export function useStoreControls(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: memberId
+      ? queryKeys.storeControlsMember(householdId, memberId)
+      : queryKeys.storeControls(householdId),
+    queryFn: () => (
+      memberId
+        ? apiClient.getStorePurchaseControlsForMember(householdId, memberId)
+        : apiClient.getStorePurchaseControls(householdId)
+    ),
+    enabled: !!householdId,
+  });
+}
+
+export function useUpdateStoreControls(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      memberId,
+      request,
+    }: {
+      memberId: string;
+      request: UpdateStorePurchaseControlsRequest;
+    }) => apiClient.updateStorePurchaseControls(householdId, memberId, request),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeControls(householdId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.storeControlsMember(householdId, variables.memberId),
+      });
+    },
+  });
+}
+
+export function useStoreGiftCards(householdId: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.storeGiftCards(householdId),
+    queryFn: () => apiClient.getStoreGiftCards(householdId),
+    enabled: !!householdId && enabled,
+  });
+}
+
+export function useCreateStoreGiftCard(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: CreateStoreGiftCardRequest) =>
+      apiClient.createStoreGiftCard(householdId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeGiftCards(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storePurchases(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeWallet(householdId) });
+    },
+  });
+}
+
+export function useRedeemStoreGiftCard(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: RedeemStoreGiftCardRequest) =>
+      apiClient.redeemStoreGiftCard(householdId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.household(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionStatus(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeGiftCards(householdId) });
     },
   });
 }

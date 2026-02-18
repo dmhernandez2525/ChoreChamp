@@ -139,6 +139,21 @@ import type {
   ApiKey,
   CreateApiKeyRequest,
   CreateApiKeyResponse,
+  StoreCatalogItem,
+  StoreWallet,
+  StoreEntitlement,
+  StorePurchase,
+  StoreReceipt,
+  StoreRefundRequest,
+  StorePurchaseControls,
+  StoreGiftCard,
+  CreateStorePurchaseRequest,
+  ApproveStorePurchaseRequest,
+  RequestStoreRefundRequest,
+  ResolveStoreRefundRequest,
+  UpdateStorePurchaseControlsRequest,
+  CreateStoreGiftCardRequest,
+  RedeemStoreGiftCardRequest,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -586,6 +601,160 @@ class ApiClient {
   async revokeApiKey(householdId: string, keyId: string): Promise<ApiKey> {
     return this.request(`/households/${householdId}/api-keys/${keyId}/revoke`, {
       method: 'POST',
+    });
+  }
+
+  // ===== In-App Store =====
+  async getStoreCatalog(
+    householdId: string,
+    options?: { category?: string; type?: string; includeInactive?: boolean }
+  ): Promise<StoreCatalogItem[]> {
+    const params = new URLSearchParams();
+    if (options?.category) params.set('category', options.category);
+    if (options?.type) params.set('type', options.type);
+    if (options?.includeInactive) params.set('includeInactive', 'true');
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/households/${householdId}/store/catalog${query}`);
+  }
+
+  async getStoreOffers(householdId: string): Promise<{ offers: StoreCatalogItem[]; now: string }> {
+    return this.request(`/households/${householdId}/store/offers`);
+  }
+
+  async getStoreWallet(householdId: string): Promise<StoreWallet> {
+    return this.request(`/households/${householdId}/store/wallet`);
+  }
+
+  async getStoreWalletForMember(householdId: string, memberId: string): Promise<StoreWallet> {
+    return this.request(`/households/${householdId}/store/wallet/${memberId}`);
+  }
+
+  async getStoreEntitlements(householdId: string): Promise<StoreEntitlement[]> {
+    return this.request(`/households/${householdId}/store/entitlements`);
+  }
+
+  async createStorePurchase(
+    householdId: string,
+    request: CreateStorePurchaseRequest
+  ): Promise<{
+    pending?: boolean;
+    purchase?: StorePurchase;
+    walletAfter?: number;
+    pointsAfter?: number;
+    message?: string;
+  }> {
+    return this.request(`/households/${householdId}/store/purchases`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async approveStorePurchase(
+    householdId: string,
+    purchaseId: string,
+    request?: ApproveStorePurchaseRequest
+  ): Promise<{ purchaseId: string; walletAfter: number; pointsAfter: number }> {
+    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(request ?? {}),
+    });
+  }
+
+  async declineStorePurchase(householdId: string, purchaseId: string): Promise<StorePurchase> {
+    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/decline`, {
+      method: 'POST',
+    });
+  }
+
+  async getStorePurchases(
+    householdId: string
+  ): Promise<Array<{ purchase: StorePurchase; item: StoreCatalogItem | null }>> {
+    return this.request(`/households/${householdId}/store/purchases`);
+  }
+
+  async getStoreReceipt(householdId: string, purchaseId: string): Promise<StoreReceipt> {
+    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/receipt`);
+  }
+
+  async requestStoreRefund(
+    householdId: string,
+    purchaseId: string,
+    request: RequestStoreRefundRequest
+  ): Promise<StoreRefundRequest> {
+    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/refund-request`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getStoreRefundRequests(
+    householdId: string
+  ): Promise<Array<{ refund: StoreRefundRequest; purchase: StorePurchase; item: StoreCatalogItem | null }>> {
+    return this.request(`/households/${householdId}/store/refunds`);
+  }
+
+  async resolveStoreRefund(
+    householdId: string,
+    refundId: string,
+    request: ResolveStoreRefundRequest
+  ): Promise<{ approved: boolean }> {
+    return this.request(`/households/${householdId}/store/refunds/${refundId}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getStorePurchaseControls(householdId: string): Promise<StorePurchaseControls> {
+    return this.request(`/households/${householdId}/store/controls`);
+  }
+
+  async getStorePurchaseControlsForMember(
+    householdId: string,
+    memberId: string
+  ): Promise<StorePurchaseControls> {
+    return this.request(`/households/${householdId}/store/controls/${memberId}`);
+  }
+
+  async updateStorePurchaseControls(
+    householdId: string,
+    memberId: string,
+    request: UpdateStorePurchaseControlsRequest
+  ): Promise<StorePurchaseControls> {
+    return this.request(`/households/${householdId}/store/controls/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async createStoreGiftCard(
+    householdId: string,
+    request: CreateStoreGiftCardRequest
+  ): Promise<{ giftCard: StoreGiftCard; purchase: StorePurchase; wallet: StoreWallet }> {
+    return this.request(`/households/${householdId}/store/gift-cards`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getStoreGiftCards(householdId: string): Promise<StoreGiftCard[]> {
+    return this.request(`/households/${householdId}/store/gift-cards`);
+  }
+
+  async redeemStoreGiftCard(
+    householdId: string,
+    request: RedeemStoreGiftCardRequest
+  ): Promise<{
+    success: boolean;
+    subscription: {
+      tier: 'family' | 'premium';
+      status: 'active';
+      currentPeriodStart: string;
+      currentPeriodEnd: string;
+    };
+  }> {
+    return this.request(`/households/${householdId}/store/gift-cards/redeem`, {
+      method: 'POST',
+      body: JSON.stringify(request),
     });
   }
 

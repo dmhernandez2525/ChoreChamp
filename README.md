@@ -8,6 +8,7 @@ A gamified family chore management application that motivates children (and adul
 - **Gamification**: Earn points, badges, and maintain streaks
 - **Family Collaboration**: Family challenges and leaderboards
 - **Subscriptions**: Free, Family, and Premium tiers with Stripe + RevenueCat
+- **In-App Store**: ChoreCoins bundles, boosters, cosmetics, gift cards, and receipts
 - **ADHD-Friendly**: Visual timers, task chunking, and sensory customization
 - **Cross-Platform**: Web, iOS, Android, macOS, and Windows apps
 

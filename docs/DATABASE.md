@@ -2,7 +2,7 @@
 
 ## Overview
 
-ChoreChamp uses PostgreSQL with Drizzle ORM for type-safe database operations. The schema is defined in TypeScript and includes 22 tables organized across 6 domains.
+ChoreChamp uses PostgreSQL with Drizzle ORM for type-safe database operations. The schema is defined in TypeScript and includes 29 tables organized across 7 domains.
 
 ## Quick Commands
 
@@ -87,6 +87,18 @@ Key subscription fields stored on `households`:
 | `notification_preferences` | User notification settings |
 | `device_tokens` | Push notification tokens |
 | `notification_log` | Notification history |
+
+### In-App Store (7 tables)
+
+| Table | Description |
+|-------|-------------|
+| `store_catalog_items` | Store catalog definitions and sale windows |
+| `store_wallets` | Member ChoreCoin balances |
+| `store_purchases` | Purchase history with digital receipt references |
+| `store_member_entitlements` | Owned unlocks and boosters |
+| `store_refund_requests` | Refund request workflow |
+| `store_purchase_controls` | Parent approval, PIN, and spend limits |
+| `store_gift_cards` | Gift premium codes and redemption state |
 
 ## Seed Data
 
