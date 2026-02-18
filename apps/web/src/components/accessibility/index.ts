@@ -6,6 +6,9 @@ export {
   LINE_SPACING_OPTIONS,
   SPACING_LEVELS,
   OVERLAY_COLOR_OPTIONS,
+  FOCUS_MODE_OPTIONS,
+  PROGRESS_STYLE_OPTIONS,
+  MAX_ITEMS_PER_VIEW_OPTIONS,
 } from './AccessibilityProvider';
 
 export type {
@@ -14,4 +17,7 @@ export type {
   LineSpacingOption,
   SpacingLevel,
   OverlayColorOption,
+  FocusModeOption,
+  ProgressStyleOption,
+  MaxItemsPerViewOption,
 } from './AccessibilityProvider';

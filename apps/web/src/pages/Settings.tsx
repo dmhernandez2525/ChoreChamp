@@ -11,6 +11,7 @@ import {
   SecuritySection,
   NotificationsSection,
   AccessibilitySection,
+  CognitiveAccessibilitySection,
 } from '../components/settings';
 import { Skeleton } from '../components/common';
 
@@ -161,7 +162,12 @@ export default function Settings() {
           />
         )}
 
-        {activeTab === 'accessibility' && <AccessibilitySection />}
+        {activeTab === 'accessibility' && (
+          <div className="space-y-6">
+            <AccessibilitySection />
+            <CognitiveAccessibilitySection />
+          </div>
+        )}
       </main>
     </div>
   );

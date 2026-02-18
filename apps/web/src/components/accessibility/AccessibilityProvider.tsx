@@ -27,6 +27,26 @@ export const OVERLAY_COLOR_OPTIONS = [
 ] as const;
 export type OverlayColorOption = (typeof OVERLAY_COLOR_OPTIONS)[number];
 
+export const FOCUS_MODE_OPTIONS = ['off', 'moderate', 'strict'] as const;
+export type FocusModeOption = (typeof FOCUS_MODE_OPTIONS)[number];
+
+export const PROGRESS_STYLE_OPTIONS = ['bar', 'steps', 'checklist', 'ring'] as const;
+export type ProgressStyleOption = (typeof PROGRESS_STYLE_OPTIONS)[number];
+
+export const MAX_ITEMS_PER_VIEW_OPTIONS = [3, 5, 10, 0] as const;
+export type MaxItemsPerViewOption = (typeof MAX_ITEMS_PER_VIEW_OPTIONS)[number];
+
+interface CognitivePreferences {
+  focusMode: FocusModeOption;
+  taskChunkingEnabled: boolean;
+  maxStepsPerChunk: number;
+  progressStyle: ProgressStyleOption;
+  maxItemsPerView: MaxItemsPerViewOption;
+  confirmBeforeActions: boolean;
+  autoSaveReminders: boolean;
+  timerVisualizationEnabled: boolean;
+}
+
 interface ReadingPreferences {
   readingFont: ReadingFontOption;
   fontSizeLevel: FontSizeLevel;
@@ -40,7 +60,7 @@ interface ReadingPreferences {
   bionicReadingEnabled: boolean;
 }
 
-interface AccessibilityContextValue extends ReadingPreferences {
+interface AccessibilityContextValue extends ReadingPreferences, CognitivePreferences {
   highContrastEnabled: boolean;
   reducedMotionEnabled: boolean;
   isSpeaking: boolean;
@@ -57,6 +77,14 @@ interface AccessibilityContextValue extends ReadingPreferences {
   setIconHeavyNavigationEnabled: (next: boolean) => void;
   setReadingRulerEnabled: (next: boolean) => void;
   setBionicReadingEnabled: (next: boolean) => void;
+  setFocusMode: (next: FocusModeOption) => void;
+  setTaskChunkingEnabled: (next: boolean) => void;
+  setMaxStepsPerChunk: (next: number) => void;
+  setProgressStyle: (next: ProgressStyleOption) => void;
+  setMaxItemsPerView: (next: MaxItemsPerViewOption) => void;
+  setConfirmBeforeActions: (next: boolean) => void;
+  setAutoSaveReminders: (next: boolean) => void;
+  setTimerVisualizationEnabled: (next: boolean) => void;
   saveProfile: (name: string) => boolean;
   applyProfile: (name: string) => boolean;
   deleteProfile: (name: string) => void;
@@ -121,9 +149,20 @@ const DEFAULT_READING_PREFERENCES: ReadingPreferences = {
   bionicReadingEnabled: false,
 };
 
+const DEFAULT_COGNITIVE_PREFERENCES: CognitivePreferences = {
+  focusMode: 'off',
+  taskChunkingEnabled: false,
+  maxStepsPerChunk: 3,
+  progressStyle: 'bar',
+  maxItemsPerView: 0,
+  confirmBeforeActions: false,
+  autoSaveReminders: false,
+  timerVisualizationEnabled: false,
+};
+
 const AccessibilityContext = createContext<AccessibilityContextValue | null>(null);
 
-interface StoredAccessibilityPreferences extends Partial<ReadingPreferences> {
+interface StoredAccessibilityPreferences extends Partial<ReadingPreferences>, Partial<CognitivePreferences> {
   highContrastEnabled?: boolean;
   reducedMotionEnabled?: boolean;
   profiles?: Record<string, ReadingPreferences>;
@@ -178,6 +217,31 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
 
   const [profiles, setProfiles] = useState<Record<string, ReadingPreferences>>({});
 
+  const [focusMode, setFocusMode] = useState<FocusModeOption>(
+    DEFAULT_COGNITIVE_PREFERENCES.focusMode
+  );
+  const [taskChunkingEnabled, setTaskChunkingEnabled] = useState(
+    DEFAULT_COGNITIVE_PREFERENCES.taskChunkingEnabled
+  );
+  const [maxStepsPerChunk, setMaxStepsPerChunk] = useState(
+    DEFAULT_COGNITIVE_PREFERENCES.maxStepsPerChunk
+  );
+  const [progressStyle, setProgressStyle] = useState<ProgressStyleOption>(
+    DEFAULT_COGNITIVE_PREFERENCES.progressStyle
+  );
+  const [maxItemsPerView, setMaxItemsPerView] = useState<MaxItemsPerViewOption>(
+    DEFAULT_COGNITIVE_PREFERENCES.maxItemsPerView
+  );
+  const [confirmBeforeActions, setConfirmBeforeActions] = useState(
+    DEFAULT_COGNITIVE_PREFERENCES.confirmBeforeActions
+  );
+  const [autoSaveReminders, setAutoSaveReminders] = useState(
+    DEFAULT_COGNITIVE_PREFERENCES.autoSaveReminders
+  );
+  const [timerVisualizationEnabled, setTimerVisualizationEnabled] = useState(
+    DEFAULT_COGNITIVE_PREFERENCES.timerVisualizationEnabled
+  );
+
   const [announcement, setAnnouncement] = useState('');
   const [announcementPoliteness, setAnnouncementPoliteness] =
     useState<AnnouncementPoliteness>('polite');
@@ -229,6 +293,30 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       if (parsed.profiles && typeof parsed.profiles === 'object') {
         setProfiles(parsed.profiles);
       }
+      if (includesValue(FOCUS_MODE_OPTIONS, parsed.focusMode)) {
+        setFocusMode(parsed.focusMode);
+      }
+      if (typeof parsed.taskChunkingEnabled === 'boolean') {
+        setTaskChunkingEnabled(parsed.taskChunkingEnabled);
+      }
+      if (typeof parsed.maxStepsPerChunk === 'number' && parsed.maxStepsPerChunk >= 1) {
+        setMaxStepsPerChunk(parsed.maxStepsPerChunk);
+      }
+      if (includesValue(PROGRESS_STYLE_OPTIONS, parsed.progressStyle)) {
+        setProgressStyle(parsed.progressStyle);
+      }
+      if (includesValue(MAX_ITEMS_PER_VIEW_OPTIONS, parsed.maxItemsPerView)) {
+        setMaxItemsPerView(parsed.maxItemsPerView);
+      }
+      if (typeof parsed.confirmBeforeActions === 'boolean') {
+        setConfirmBeforeActions(parsed.confirmBeforeActions);
+      }
+      if (typeof parsed.autoSaveReminders === 'boolean') {
+        setAutoSaveReminders(parsed.autoSaveReminders);
+      }
+      if (typeof parsed.timerVisualizationEnabled === 'boolean') {
+        setTimerVisualizationEnabled(parsed.timerVisualizationEnabled);
+      }
     } catch {
       // Ignore storage parse errors.
     }
@@ -250,24 +338,40 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
         readingRulerEnabled,
         bionicReadingEnabled,
         profiles,
+        focusMode,
+        taskChunkingEnabled,
+        maxStepsPerChunk,
+        progressStyle,
+        maxItemsPerView,
+        confirmBeforeActions,
+        autoSaveReminders,
+        timerVisualizationEnabled,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
       // Ignore storage write errors.
     }
   }, [
+    autoSaveReminders,
     bionicReadingEnabled,
     colorOverlay,
+    confirmBeforeActions,
+    focusMode,
     fontSizeLevel,
     highContrastEnabled,
     iconHeavyNavigationEnabled,
     letterSpacingLevel,
     lineSpacing,
+    maxItemsPerView,
+    maxStepsPerChunk,
     profiles,
+    progressStyle,
     readingFont,
     readingRulerEnabled,
     reducedMotionEnabled,
     simplifiedLanguageEnabled,
+    taskChunkingEnabled,
+    timerVisualizationEnabled,
     wordSpacingLevel,
   ]);
 
@@ -284,6 +388,9 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     );
     root.setAttribute('data-reading-ruler', readingRulerEnabled ? 'true' : 'false');
     root.setAttribute('data-bionic-reading', bionicReadingEnabled ? 'true' : 'false');
+    root.setAttribute('data-focus-mode', focusMode);
+    root.setAttribute('data-task-chunking', taskChunkingEnabled ? 'true' : 'false');
+    root.setAttribute('data-timer-visualization', timerVisualizationEnabled ? 'true' : 'false');
 
     root.style.setProperty('--reading-font-scale', FONT_SIZE_SCALE[fontSizeLevel]);
     root.style.setProperty('--reading-line-height', String(lineSpacing));
@@ -296,6 +403,7 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   }, [
     bionicReadingEnabled,
     colorOverlay,
+    focusMode,
     fontSizeLevel,
     highContrastEnabled,
     iconHeavyNavigationEnabled,
@@ -305,6 +413,8 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     readingRulerEnabled,
     reducedMotionEnabled,
     simplifiedLanguageEnabled,
+    taskChunkingEnabled,
+    timerVisualizationEnabled,
     wordSpacingLevel,
   ]);
 
@@ -490,6 +600,14 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       iconHeavyNavigationEnabled,
       readingRulerEnabled,
       bionicReadingEnabled,
+      focusMode,
+      taskChunkingEnabled,
+      maxStepsPerChunk,
+      progressStyle,
+      maxItemsPerView,
+      confirmBeforeActions,
+      autoSaveReminders,
+      timerVisualizationEnabled,
       profiles,
       setHighContrastEnabled,
       setReducedMotionEnabled,
@@ -503,6 +621,14 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       setIconHeavyNavigationEnabled,
       setReadingRulerEnabled,
       setBionicReadingEnabled,
+      setFocusMode,
+      setTaskChunkingEnabled,
+      setMaxStepsPerChunk,
+      setProgressStyle,
+      setMaxItemsPerView,
+      setConfirmBeforeActions,
+      setAutoSaveReminders,
+      setTimerVisualizationEnabled,
       saveProfile,
       applyProfile,
       deleteProfile,
@@ -515,16 +641,22 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     [
       announce,
       applyProfile,
+      autoSaveReminders,
       bionicReadingEnabled,
       colorOverlay,
+      confirmBeforeActions,
       deleteProfile,
+      focusMode,
       fontSizeLevel,
       highContrastEnabled,
       iconHeavyNavigationEnabled,
       isSpeaking,
       letterSpacingLevel,
       lineSpacing,
+      maxItemsPerView,
+      maxStepsPerChunk,
       profiles,
+      progressStyle,
       readingFont,
       readingRulerEnabled,
       reducedMotionEnabled,
@@ -534,6 +666,8 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       speakText,
       stopSpeaking,
       t,
+      taskChunkingEnabled,
+      timerVisualizationEnabled,
       wordSpacingLevel,
     ]
   );
