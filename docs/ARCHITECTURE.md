@@ -108,8 +108,43 @@ School edition introduces district, school, classroom, and governance tables:
 - Includes school administration dashboards, classroom management, LMS controls, and compliance tools
 - Uses shared API-client hooks for typed mutations and cache invalidation
 
+## API Platform & Integrations Architecture (Phase 12.5)
+
+### Data Model
+
+API platform support introduces key management, OAuth, webhook, marketplace, and SDK metadata tables:
+
+- `api_key_settings`: Per-key scope policy and per-minute throttle settings
+- `api_key_usage_events`: Request-level usage telemetry for analytics and top-endpoint views
+- `webhook_subscriptions` and `webhook_deliveries`: Subscription registry, signed delivery attempts, and response tracking
+- `oauth_clients`, `oauth_authorization_codes`, `oauth_access_tokens`: OAuth2 client credentials + authorization code flow support
+- `integration_marketplace_apps` and `integration_app_requests`: Third-party app catalog and household approval workflow
+- `api_sdk_packages`: Language SDK publication metadata surfaced in the developer portal
+
+### API Surfaces
+
+- **Household developer routes**: `/api/households/:householdId/developer/*`
+  - Overview, API key settings, webhook CRUD + emit, marketplace approvals, OAuth client management, SDK package metadata, analytics
+- **OAuth routes**: `/api/oauth/*`
+  - Authorization code issuance and token exchange
+- **Public integration routes**: `/api/public/v1/*`
+  - OpenAPI document, household chores/members read APIs, and webhook event emit endpoint
+
+### Access Control + Security
+
+- Parent role is required for developer configuration routes.
+- Premium tier is required for developer platform access and OAuth/public token usage.
+- Webhook delivery attempts are HMAC-signed and persisted with delivery outcomes.
+- API key usage is metered and rate-limited per configured key policy.
+
+### Web Portal
+
+- New developer portal at `/households/:householdId/developer`
+- Includes API key creation/settings, webhook management, marketplace approvals, OAuth client registration, SDK registry metadata, and usage analytics
+- Uses shared `@chorechamp/api-client` hooks for typed request/response handling
+
 ## Shared Packages
 
-- `@chorechamp/types`: Shared contracts for subscriptions, in-app store, enterprise school workflows, and core product domains
-- `@chorechamp/database`: Drizzle schema, enterprise tables, and seed data
-- `@chorechamp/api-client`: Typed client + React Query hooks for subscription, store, and enterprise modules
+- `@chorechamp/types`: Shared contracts for subscriptions, in-app store, enterprise school workflows, API platform integrations, and core product domains
+- `@chorechamp/database`: Drizzle schema, enterprise tables, API platform tables, and seed data
+- `@chorechamp/api-client`: Typed client + React Query hooks for subscription, store, enterprise, and developer platform modules

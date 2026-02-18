@@ -38,6 +38,7 @@ import Analytics from './pages/Analytics';
 import Support from './pages/Support';
 import InAppStore from './pages/InAppStore';
 import EnterpriseSchoolEdition from './pages/EnterpriseSchoolEdition';
+import ApiPlatformIntegrations from './pages/ApiPlatformIntegrations';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -370,6 +371,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <EnterpriseSchoolEdition />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/developer"
+        element={
+          <ProtectedRoute>
+            <ApiPlatformIntegrations />
           </ProtectedRoute>
         }
       />

@@ -35,6 +35,14 @@ import type {
   ConfigureEnterpriseLmsRequest,
   SetEnterpriseParentVisibilityRequest,
   EnterpriseLmsProvider,
+  UpdateApiPlatformKeySettingsRequest,
+  CreateApiPlatformWebhookSubscriptionRequest,
+  UpdateApiPlatformWebhookSubscriptionRequest,
+  EmitApiPlatformWebhookEventRequest,
+  RequestApiPlatformMarketplaceAppRequest,
+  ReviewApiPlatformMarketplaceRequest,
+  CreateApiPlatformOAuthClientRequest,
+  CreateApiPlatformSdkPackageRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -65,6 +73,24 @@ export const queryKeys = {
   supportThread: (householdId: string, threadId: string) =>
     ['supportThread', householdId, threadId] as const,
   apiKeys: (householdId: string) => ['apiKeys', householdId] as const,
+  apiPlatformOverview: (householdId: string) => ['apiPlatformOverview', householdId] as const,
+  apiPlatformOpenApi: (householdId: string) => ['apiPlatformOpenApi', householdId] as const,
+  apiPlatformDeveloperApiKeys: (householdId: string) =>
+    ['apiPlatformDeveloperApiKeys', householdId] as const,
+  apiPlatformKeyUsage: (householdId: string, keyId: string) =>
+    ['apiPlatformKeyUsage', householdId, keyId] as const,
+  apiPlatformWebhooks: (householdId: string) => ['apiPlatformWebhooks', householdId] as const,
+  apiPlatformWebhookDeliveries: (householdId: string) =>
+    ['apiPlatformWebhookDeliveries', householdId] as const,
+  apiPlatformMarketplaceApps: (householdId: string) =>
+    ['apiPlatformMarketplaceApps', householdId] as const,
+  apiPlatformMarketplaceRequests: (householdId: string) =>
+    ['apiPlatformMarketplaceRequests', householdId] as const,
+  apiPlatformOAuthClients: (householdId: string) =>
+    ['apiPlatformOAuthClients', householdId] as const,
+  apiPlatformSdkPackages: (householdId: string) =>
+    ['apiPlatformSdkPackages', householdId] as const,
+  apiPlatformAnalytics: (householdId: string) => ['apiPlatformAnalytics', householdId] as const,
   storeCatalog: (householdId: string, options?: Record<string, unknown>) =>
     ['storeCatalog', householdId, options] as const,
   storeOffers: (householdId: string) => ['storeOffers', householdId] as const,
@@ -701,6 +727,223 @@ export function useRevokeApiKey(householdId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys(householdId) });
     },
+  });
+}
+
+// ===== API Platform & Integrations Hooks =====
+export function useApiPlatformOverview(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformOverview(householdId),
+    queryFn: () => apiClient.getApiPlatformOverview(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useApiPlatformOpenApi(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformOpenApi(householdId),
+    queryFn: () => apiClient.getApiPlatformOpenApi(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useApiPlatformDeveloperApiKeys(
+  householdId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformDeveloperApiKeys(householdId),
+    queryFn: () => apiClient.getApiPlatformDeveloperApiKeys(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useUpdateApiPlatformKeySettings(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: { keyId: string; data: UpdateApiPlatformKeySettingsRequest }) =>
+      apiClient.updateApiPlatformKeySettings(householdId, variables.keyId, variables.data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformDeveloperApiKeys(householdId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.apiPlatformKeyUsage(householdId, variables.keyId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOverview(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformAnalytics(householdId) });
+    },
+  });
+}
+
+export function useApiPlatformKeyUsage(
+  householdId: string,
+  keyId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformKeyUsage(householdId, keyId),
+    queryFn: () => apiClient.getApiPlatformKeyUsage(householdId, keyId),
+    enabled: options?.enabled ?? (!!householdId && !!keyId),
+  });
+}
+
+export function useApiPlatformWebhooks(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformWebhooks(householdId),
+    queryFn: () => apiClient.getApiPlatformWebhooks(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useCreateApiPlatformWebhook(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateApiPlatformWebhookSubscriptionRequest) =>
+      apiClient.createApiPlatformWebhook(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformWebhooks(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOverview(householdId) });
+    },
+  });
+}
+
+export function useUpdateApiPlatformWebhook(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: {
+      subscriptionId: string;
+      data: UpdateApiPlatformWebhookSubscriptionRequest;
+    }) => apiClient.updateApiPlatformWebhook(householdId, variables.subscriptionId, variables.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformWebhooks(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformWebhookDeliveries(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOverview(householdId) });
+    },
+  });
+}
+
+export function useEmitApiPlatformWebhook(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: EmitApiPlatformWebhookEventRequest) =>
+      apiClient.emitApiPlatformWebhook(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformWebhookDeliveries(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformWebhooks(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformAnalytics(householdId) });
+    },
+  });
+}
+
+export function useApiPlatformWebhookDeliveries(
+  householdId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformWebhookDeliveries(householdId),
+    queryFn: () => apiClient.getApiPlatformWebhookDeliveries(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useApiPlatformMarketplaceApps(
+  householdId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformMarketplaceApps(householdId),
+    queryFn: () => apiClient.getApiPlatformMarketplaceApps(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useApiPlatformMarketplaceRequests(
+  householdId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformMarketplaceRequests(householdId),
+    queryFn: () => apiClient.getApiPlatformMarketplaceRequests(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useRequestApiPlatformMarketplaceApp(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: RequestApiPlatformMarketplaceAppRequest) =>
+      apiClient.requestApiPlatformMarketplaceApp(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformMarketplaceRequests(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOverview(householdId) });
+    },
+  });
+}
+
+export function useReviewApiPlatformMarketplaceRequest(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: { requestId: string; data: ReviewApiPlatformMarketplaceRequest }) =>
+      apiClient.reviewApiPlatformMarketplaceRequest(householdId, variables.requestId, variables.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformMarketplaceRequests(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOverview(householdId) });
+    },
+  });
+}
+
+export function useApiPlatformOAuthClients(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformOAuthClients(householdId),
+    queryFn: () => apiClient.getApiPlatformOAuthClients(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useCreateApiPlatformOAuthClient(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateApiPlatformOAuthClientRequest) =>
+      apiClient.createApiPlatformOAuthClient(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOAuthClients(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOverview(householdId) });
+    },
+  });
+}
+
+export function useApiPlatformSdkPackages(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformSdkPackages(householdId),
+    queryFn: () => apiClient.getApiPlatformSdkPackages(householdId),
+    enabled: options?.enabled ?? !!householdId,
+  });
+}
+
+export function useUpsertApiPlatformSdkPackage(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateApiPlatformSdkPackageRequest) =>
+      apiClient.upsertApiPlatformSdkPackage(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformSdkPackages(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.apiPlatformOverview(householdId) });
+    },
+  });
+}
+
+export function useApiPlatformAnalytics(householdId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.apiPlatformAnalytics(householdId),
+    queryFn: () => apiClient.getApiPlatformAnalytics(householdId),
+    enabled: options?.enabled ?? !!householdId,
   });
 }
 

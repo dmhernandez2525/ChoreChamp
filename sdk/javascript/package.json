@@ -1,0 +1,14 @@
+{
+  "name": "@chorechamp/sdk-js",
+  "version": "1.0.0",
+  "description": "Official JavaScript SDK for the ChoreChamp Public API",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "src/index.ts",
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

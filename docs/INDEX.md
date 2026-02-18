@@ -36,6 +36,7 @@ ChoreChamp is a cross-platform family chore management application that gamifies
 | [SDD-006: Offline Sync](./sdd/SDD-006-offline-sync.md)                             | Planned     |
 | [SDD-007: Rewards System](./sdd/SDD-007-rewards.md)                                | Planned     |
 | [SDD-012: Enterprise & School Edition](./sdd/SDD-012-enterprise-school-edition.md) | Implemented |
+| [SDD-013: API Platform & Integrations](./sdd/SDD-013-api-platform-integrations.md) | Implemented |
 
 ---
 

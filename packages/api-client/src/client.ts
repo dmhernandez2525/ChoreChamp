@@ -187,6 +187,31 @@ import type {
   EnterpriseReportFile,
   EnterpriseBulkImport,
   EnterpriseAdminAuditEvent,
+  ApiPlatformDeveloperOverview,
+  ApiPlatformOpenApiDocument,
+  ApiPlatformKeySettings,
+  ApiPlatformUsageEvent,
+  ApiPlatformWebhookSubscription,
+  ApiPlatformWebhookDelivery,
+  ApiPlatformMarketplaceApp,
+  ApiPlatformAppRequest,
+  ApiPlatformOAuthClient,
+  ApiPlatformSdkPackage,
+  ApiPlatformWebhookEventType,
+  CreateApiPlatformWebhookSubscriptionRequest,
+  UpdateApiPlatformWebhookSubscriptionRequest,
+  EmitApiPlatformWebhookEventRequest,
+  CreateApiPlatformOAuthClientRequest,
+  CreateApiPlatformOAuthClientResponse,
+  AuthorizeApiPlatformOAuthRequest,
+  AuthorizeApiPlatformOAuthResponse,
+  ExchangeApiPlatformOAuthTokenRequest,
+  ExchangeApiPlatformOAuthTokenResponse,
+  RequestApiPlatformMarketplaceAppRequest,
+  ReviewApiPlatformMarketplaceRequest,
+  CreateApiPlatformSdkPackageRequest,
+  ApiPlatformAnalyticsResponse,
+  UpdateApiPlatformKeySettingsRequest,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -615,6 +640,209 @@ class ApiClient {
   async revokeApiKey(householdId: string, keyId: string): Promise<ApiKey> {
     return this.request(`/households/${householdId}/api-keys/${keyId}/revoke`, {
       method: 'POST',
+    });
+  }
+
+  // ===== API Platform & Integrations =====
+  async getApiPlatformOverview(householdId: string): Promise<ApiPlatformDeveloperOverview> {
+    return this.request(`/households/${householdId}/developer/overview`);
+  }
+
+  async getApiPlatformOpenApi(householdId: string): Promise<ApiPlatformOpenApiDocument> {
+    return this.request(`/households/${householdId}/developer/openapi`);
+  }
+
+  async getApiPlatformDeveloperApiKeys(
+    householdId: string
+  ): Promise<{ keys: Array<ApiKey & { settings: ApiPlatformKeySettings | null }> }> {
+    return this.request(`/households/${householdId}/developer/api-keys`);
+  }
+
+  async updateApiPlatformKeySettings(
+    householdId: string,
+    keyId: string,
+    data: UpdateApiPlatformKeySettingsRequest
+  ): Promise<ApiPlatformKeySettings> {
+    return this.request(`/households/${householdId}/developer/api-keys/${keyId}/settings`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getApiPlatformKeyUsage(
+    householdId: string,
+    keyId: string
+  ): Promise<{ usage: ApiPlatformUsageEvent[] }> {
+    return this.request(`/households/${householdId}/developer/api-keys/${keyId}/usage`);
+  }
+
+  async getApiPlatformWebhooks(
+    householdId: string
+  ): Promise<{ subscriptions: ApiPlatformWebhookSubscription[] }> {
+    return this.request(`/households/${householdId}/developer/webhooks`);
+  }
+
+  async createApiPlatformWebhook(
+    householdId: string,
+    data: CreateApiPlatformWebhookSubscriptionRequest
+  ): Promise<ApiPlatformWebhookSubscription> {
+    return this.request(`/households/${householdId}/developer/webhooks`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateApiPlatformWebhook(
+    householdId: string,
+    subscriptionId: string,
+    data: UpdateApiPlatformWebhookSubscriptionRequest
+  ): Promise<ApiPlatformWebhookSubscription> {
+    return this.request(`/households/${householdId}/developer/webhooks/${subscriptionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async emitApiPlatformWebhook(
+    householdId: string,
+    data: EmitApiPlatformWebhookEventRequest
+  ): Promise<{ dispatchedCount: number }> {
+    return this.request(`/households/${householdId}/developer/webhooks/emit`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getApiPlatformWebhookDeliveries(
+    householdId: string
+  ): Promise<{ deliveries: ApiPlatformWebhookDelivery[] }> {
+    return this.request(`/households/${householdId}/developer/webhooks/deliveries`);
+  }
+
+  async getApiPlatformMarketplaceApps(
+    householdId: string
+  ): Promise<{ apps: ApiPlatformMarketplaceApp[] }> {
+    return this.request(`/households/${householdId}/developer/marketplace/apps`);
+  }
+
+  async getApiPlatformMarketplaceRequests(
+    householdId: string
+  ): Promise<{ requests: ApiPlatformAppRequest[] }> {
+    return this.request(`/households/${householdId}/developer/marketplace/requests`);
+  }
+
+  async requestApiPlatformMarketplaceApp(
+    householdId: string,
+    data: RequestApiPlatformMarketplaceAppRequest
+  ): Promise<ApiPlatformAppRequest> {
+    return this.request(`/households/${householdId}/developer/marketplace/requests`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async reviewApiPlatformMarketplaceRequest(
+    householdId: string,
+    requestId: string,
+    data: ReviewApiPlatformMarketplaceRequest
+  ): Promise<ApiPlatformAppRequest> {
+    return this.request(`/households/${householdId}/developer/marketplace/requests/${requestId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getApiPlatformOAuthClients(
+    householdId: string
+  ): Promise<{ clients: ApiPlatformOAuthClient[] }> {
+    return this.request(`/households/${householdId}/developer/oauth/clients`);
+  }
+
+  async createApiPlatformOAuthClient(
+    householdId: string,
+    data: CreateApiPlatformOAuthClientRequest
+  ): Promise<CreateApiPlatformOAuthClientResponse> {
+    return this.request(`/households/${householdId}/developer/oauth/clients`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getApiPlatformSdkPackages(
+    householdId: string
+  ): Promise<{ sdkPackages: ApiPlatformSdkPackage[] }> {
+    return this.request(`/households/${householdId}/developer/sdk-packages`);
+  }
+
+  async upsertApiPlatformSdkPackage(
+    householdId: string,
+    data: CreateApiPlatformSdkPackageRequest
+  ): Promise<ApiPlatformSdkPackage> {
+    return this.request(`/households/${householdId}/developer/sdk-packages`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getApiPlatformAnalytics(householdId: string): Promise<ApiPlatformAnalyticsResponse> {
+    return this.request(`/households/${householdId}/developer/analytics`);
+  }
+
+  async getPublicApiPlatformOpenApi(): Promise<ApiPlatformOpenApiDocument> {
+    return this.request('/public/v1/openapi.json');
+  }
+
+  async authorizeApiPlatformOAuth(
+    data: AuthorizeApiPlatformOAuthRequest
+  ): Promise<AuthorizeApiPlatformOAuthResponse> {
+    return this.request('/oauth/authorize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async exchangeApiPlatformOAuthToken(
+    data: ExchangeApiPlatformOAuthTokenRequest
+  ): Promise<ExchangeApiPlatformOAuthTokenResponse> {
+    return this.request('/oauth/token', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPublicApiHouseholdChores(
+    householdId: string,
+    options: { apiKey?: string; accessToken?: string } = {}
+  ): Promise<{ data: Chore[]; count: number }> {
+    const headers: Record<string, string> = {};
+    if (options.apiKey) headers['X-API-Key'] = options.apiKey;
+    if (options.accessToken) headers.Authorization = `Bearer ${options.accessToken}`;
+    return this.request(`/public/v1/households/${householdId}/chores`, { headers });
+  }
+
+  async getPublicApiHouseholdMembers(
+    householdId: string,
+    options: { apiKey?: string; accessToken?: string } = {}
+  ): Promise<{ data: Array<Pick<Member, 'id' | 'householdId' | 'name' | 'role' | 'color' | 'avatarUrl' | 'createdAt'>>; count: number }> {
+    const headers: Record<string, string> = {};
+    if (options.apiKey) headers['X-API-Key'] = options.apiKey;
+    if (options.accessToken) headers.Authorization = `Bearer ${options.accessToken}`;
+    return this.request(`/public/v1/households/${householdId}/members`, { headers });
+  }
+
+  async emitPublicApiHouseholdEvent(
+    householdId: string,
+    eventType: ApiPlatformWebhookEventType,
+    payload: Record<string, unknown>,
+    options: { apiKey?: string; accessToken?: string } = {}
+  ): Promise<{ dispatchedCount: number }> {
+    const headers: Record<string, string> = {};
+    if (options.apiKey) headers['X-API-Key'] = options.apiKey;
+    if (options.accessToken) headers.Authorization = `Bearer ${options.accessToken}`;
+    return this.request(`/public/v1/households/${householdId}/events/${eventType}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
     });
   }
 

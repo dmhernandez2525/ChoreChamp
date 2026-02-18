@@ -302,6 +302,11 @@ export default function HouseholdDashboard() {
               <Link to={`/households/${householdId}/enterprise`}>Enterprise School</Link>
             </Button>
           )}
+          {isParent && (
+            <Button variant="outline" asChild>
+              <Link to={`/households/${householdId}/developer`}>Developer API</Link>
+            </Button>
+          )}
           <div className="relative">
             <Button variant="outline" asChild>
               <Link to={`/households/${householdId}/analytics`}>Analytics</Link>

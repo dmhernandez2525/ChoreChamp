@@ -8,6 +8,7 @@ export * from './gamification';
 export * from './rewards';
 export * from './support';
 export * from './api-keys';
+export * from './api-platform';
 export * from './in-app-store';
 export * from './enterprise-school';
 export * from './notifications';
