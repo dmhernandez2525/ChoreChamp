@@ -35,3 +35,4 @@ export * from './advanced-analytics';
 export * from './community-social';
 export * from './smart-automation';
 export * from './communication-calendar';
+export * from './financial-scheduling';
