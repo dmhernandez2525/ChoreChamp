@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   Building2,
   Code2,
+  Heart,
 } from 'lucide-react';
 
 interface MobileBottomNavProps {
@@ -65,6 +66,7 @@ export function MobileBottomNav({ householdId }: MobileBottomNavProps) {
     { to: `${base}/store`, label: 'Store', icon: <ShoppingBag className="h-5 w-5" /> },
     { to: `${base}/enterprise`, label: 'Enterprise', icon: <Building2 className="h-5 w-5" /> },
     { to: `${base}/developer`, label: 'Developer', icon: <Code2 className="h-5 w-5" /> },
+    { to: `${base}/wellness`, label: 'Wellness', icon: <Heart className="h-5 w-5" /> },
     { to: `${base}/settings`, label: 'Settings', icon: <Settings className="h-5 w-5" /> },
   ];
 

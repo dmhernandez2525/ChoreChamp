@@ -43,6 +43,14 @@ import type {
   ReviewApiPlatformMarketplaceRequest,
   CreateApiPlatformOAuthClientRequest,
   CreateApiPlatformSdkPackageRequest,
+  CreateActivityLogRequest,
+  UpdateActivityGoalRequest,
+  CreateCheckInRequest,
+  CreateSleepLogRequest,
+  CreateMealPlanRequest,
+  UpdateMealPlanRequest,
+  CreateMentalHealthResourceRequest,
+  CreateGratitudeRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -146,6 +154,29 @@ export const queryKeys = {
     ['reportTrend', householdId, options] as const,
   reportCategories: (householdId: string, options?: Record<string, unknown>) =>
     ['reportCategories', householdId, options] as const,
+  // Wellness
+  wellnessActivityLogs: (householdId: string, params?: Record<string, unknown>) =>
+    ['wellnessActivityLogs', householdId, params] as const,
+  wellnessActivityStats: (householdId: string, memberId?: string) =>
+    ['wellnessActivityStats', householdId, memberId] as const,
+  wellnessActivityGoals: (householdId: string) =>
+    ['wellnessActivityGoals', householdId] as const,
+  wellnessCheckIns: (householdId: string, params?: Record<string, unknown>) =>
+    ['wellnessCheckIns', householdId, params] as const,
+  wellnessTrends: (householdId: string, params?: Record<string, unknown>) =>
+    ['wellnessTrends', householdId, params] as const,
+  sleepLogs: (householdId: string, memberId?: string) =>
+    ['sleepLogs', householdId, memberId] as const,
+  sleepStats: (householdId: string, params?: Record<string, unknown>) =>
+    ['sleepStats', householdId, params] as const,
+  mealPlans: (householdId: string, params?: Record<string, unknown>) =>
+    ['mealPlans', householdId, params] as const,
+  mentalHealthResources: (householdId: string, category?: string) =>
+    ['mentalHealthResources', householdId, category] as const,
+  gratitudeEntries: (householdId: string, memberId?: string) =>
+    ['gratitudeEntries', householdId, memberId] as const,
+  moodJournal: (householdId: string, params?: Record<string, unknown>) =>
+    ['moodJournal', householdId, params] as const,
 };
 
 // ===== Auth Hooks =====
@@ -1757,6 +1788,298 @@ export function useReportCategories(
   return useQuery({
     queryKey: queryKeys.reportCategories(householdId, options),
     queryFn: () => apiClient.getReportCategories(householdId, options),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Wellness Hooks (F14.1-F14.5) =====
+
+export function useWellnessActivityLogs(
+  householdId: string,
+  params?: { memberId?: string; startDate?: string; endDate?: string }
+) {
+  return useQuery({
+    queryKey: queryKeys.wellnessActivityLogs(householdId, params),
+    queryFn: () => apiClient.getWellnessActivityLogs(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateWellnessActivityLog(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateActivityLogRequest) =>
+      apiClient.createWellnessActivityLog(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'wellnessActivityLogs' &&
+          query.queryKey[1] === householdId,
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'wellnessActivityStats' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useWellnessActivityStats(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: queryKeys.wellnessActivityStats(householdId, memberId),
+    queryFn: () => apiClient.getWellnessActivityStats(householdId, memberId),
+    enabled: !!householdId,
+  });
+}
+
+export function useWellnessActivityGoals(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.wellnessActivityGoals(householdId),
+    queryFn: () => apiClient.getWellnessActivityGoals(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateWellnessActivityGoal(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateActivityGoalRequest) =>
+      apiClient.createWellnessActivityGoal(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.wellnessActivityGoals(householdId) });
+    },
+  });
+}
+
+export function useUpdateWellnessActivityGoal(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ goalId, data }: { goalId: string; data: UpdateActivityGoalRequest }) =>
+      apiClient.updateWellnessActivityGoal(householdId, goalId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.wellnessActivityGoals(householdId) });
+    },
+  });
+}
+
+export function useWellnessCheckIns(
+  householdId: string,
+  params?: { memberId?: string; limit?: number }
+) {
+  return useQuery({
+    queryKey: queryKeys.wellnessCheckIns(householdId, params),
+    queryFn: () => apiClient.getWellnessCheckIns(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateWellnessCheckIn(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateCheckInRequest) =>
+      apiClient.createWellnessCheckIn(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'wellnessCheckIns' &&
+          query.queryKey[1] === householdId,
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'wellnessTrends' &&
+          query.queryKey[1] === householdId,
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'moodJournal' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useWellnessTrends(
+  householdId: string,
+  params?: { memberId?: string; days?: number }
+) {
+  return useQuery({
+    queryKey: queryKeys.wellnessTrends(householdId, params),
+    queryFn: () => apiClient.getWellnessTrends(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useSleepLogs(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: queryKeys.sleepLogs(householdId, memberId),
+    queryFn: () => apiClient.getSleepLogs(householdId, memberId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateSleepLog(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSleepLogRequest) =>
+      apiClient.createSleepLog(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'sleepLogs' &&
+          query.queryKey[1] === householdId,
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'sleepStats' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useSleepStats(
+  householdId: string,
+  params?: { memberId?: string; days?: number }
+) {
+  return useQuery({
+    queryKey: queryKeys.sleepStats(householdId, params),
+    queryFn: () => apiClient.getSleepStats(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useMealPlans(
+  householdId: string,
+  params?: { startDate?: string; endDate?: string }
+) {
+  return useQuery({
+    queryKey: queryKeys.mealPlans(householdId, params),
+    queryFn: () => apiClient.getMealPlans(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateMealPlan(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateMealPlanRequest) =>
+      apiClient.createMealPlan(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'mealPlans' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useUpdateMealPlan(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ planId, data }: { planId: string; data: UpdateMealPlanRequest }) =>
+      apiClient.updateMealPlan(householdId, planId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'mealPlans' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useDeleteMealPlan(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (planId: string) =>
+      apiClient.deleteMealPlan(householdId, planId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'mealPlans' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useMentalHealthResources(householdId: string, category?: string) {
+  return useQuery({
+    queryKey: queryKeys.mentalHealthResources(householdId, category),
+    queryFn: () => apiClient.getMentalHealthResources(householdId, category),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateMentalHealthResource(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateMentalHealthResourceRequest) =>
+      apiClient.createMentalHealthResource(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'mentalHealthResources' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useGratitudeEntries(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: queryKeys.gratitudeEntries(householdId, memberId),
+    queryFn: () => apiClient.getGratitudeEntries(householdId, memberId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateGratitudeEntry(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateGratitudeRequest) =>
+      apiClient.createGratitudeEntry(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'gratitudeEntries' &&
+          query.queryKey[1] === householdId,
+      });
+    },
+  });
+}
+
+export function useMoodJournal(
+  householdId: string,
+  params?: { memberId?: string; days?: number }
+) {
+  return useQuery({
+    queryKey: queryKeys.moodJournal(householdId, params),
+    queryFn: () => apiClient.getMoodJournal(householdId, params),
     enabled: !!householdId,
   });
 }
