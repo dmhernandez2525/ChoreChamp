@@ -47,6 +47,7 @@ import { inAppStoreRoutes } from './in-app-store';
 import { enterpriseSchoolRoutes } from './enterprise-school';
 import { developerApiPlatformRoutes, oauthPlatformRoutes, publicApiPlatformRoutes } from './api-platform';
 import { healthWellnessRoutes } from './health-wellness';
+import { advancedAnalyticsRoutes } from './advanced-analytics';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -103,6 +104,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         householdApi.register(enterpriseSchoolRoutes, { prefix: '/:householdId' });
         householdApi.register(developerApiPlatformRoutes, { prefix: '/:householdId' });
         householdApi.register(healthWellnessRoutes, { prefix: '/:householdId/wellness' });
+        householdApi.register(advancedAnalyticsRoutes, { prefix: '/:householdId/admin-analytics' });
       });
 
       // Chore templates (public)

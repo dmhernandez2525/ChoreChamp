@@ -51,6 +51,10 @@ import type {
   UpdateMealPlanRequest,
   CreateMentalHealthResourceRequest,
   CreateGratitudeRequest,
+  CreateAdvancedReportRequest,
+  UpdateAdvancedReportRequest,
+  DataExportRequest,
+  AuditLogQuery,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -177,6 +181,21 @@ export const queryKeys = {
     ['gratitudeEntries', householdId, memberId] as const,
   moodJournal: (householdId: string, params?: Record<string, unknown>) =>
     ['moodJournal', householdId, params] as const,
+  // Advanced Analytics & Admin
+  advancedReports: (householdId: string) => ['advancedReports', householdId] as const,
+  advancedReport: (householdId: string, reportId: string) => ['advancedReport', householdId, reportId] as const,
+  generatedReports: (householdId: string, reportId: string) => ['generatedReports', householdId, reportId] as const,
+  adminDashboard: (householdId: string) => ['adminDashboard', householdId] as const,
+  adminMembers: (householdId: string) => ['adminMembers', householdId] as const,
+  adminAlerts: (householdId: string) => ['adminAlerts', householdId] as const,
+  dataExports: (householdId: string) => ['dataExports', householdId] as const,
+  dataExport: (householdId: string, exportId: string) => ['dataExport', householdId, exportId] as const,
+  auditLogs: (householdId: string, query?: Record<string, unknown>) => ['auditLogs', householdId, query] as const,
+  auditLogSummary: (householdId: string) => ['auditLogSummary', householdId] as const,
+  performanceMetrics: (householdId: string) => ['performanceMetrics', householdId] as const,
+  performanceHistory: (householdId: string, period?: string) => ['performanceHistory', householdId, period] as const,
+  usageMetrics: (householdId: string) => ['usageMetrics', householdId] as const,
+  errorMetrics: (householdId: string) => ['errorMetrics', householdId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -2081,5 +2100,203 @@ export function useMoodJournal(
     queryKey: queryKeys.moodJournal(householdId, params),
     queryFn: () => apiClient.getMoodJournal(householdId, params),
     enabled: !!householdId,
+  });
+}
+
+// ===== Advanced Analytics & Admin Hooks (F15.1-F15.5) =====
+
+export function useAdvancedReports(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.advancedReports(householdId),
+    queryFn: () => apiClient.getAdvancedReports(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useAdvancedReport(householdId: string, reportId: string) {
+  return useQuery({
+    queryKey: queryKeys.advancedReport(householdId, reportId),
+    queryFn: () => apiClient.getAdvancedReport(householdId, reportId),
+    enabled: !!householdId && !!reportId,
+  });
+}
+
+export function useCreateAdvancedReport(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateAdvancedReportRequest) => apiClient.createAdvancedReport(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.advancedReports(householdId) });
+    },
+  });
+}
+
+export function useUpdateAdvancedReport(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ reportId, data }: { reportId: string; data: UpdateAdvancedReportRequest }) =>
+      apiClient.updateAdvancedReport(householdId, reportId, data),
+    onSuccess: (_, { reportId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.advancedReports(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.advancedReport(householdId, reportId) });
+    },
+  });
+}
+
+export function useDeleteAdvancedReport(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reportId: string) => apiClient.deleteAdvancedReport(householdId, reportId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.advancedReports(householdId) });
+    },
+  });
+}
+
+export function useGenerateReport(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reportId: string) => apiClient.generateReport(householdId, reportId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.advancedReports(householdId) });
+    },
+  });
+}
+
+export function useGeneratedReports(householdId: string, reportId: string) {
+  return useQuery({
+    queryKey: queryKeys.generatedReports(householdId, reportId),
+    queryFn: () => apiClient.getGeneratedReports(householdId, reportId),
+    enabled: !!householdId && !!reportId,
+  });
+}
+
+export function useAdminDashboard(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.adminDashboard(householdId),
+    queryFn: () => apiClient.getAdminDashboard(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useAdminMembers(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.adminMembers(householdId),
+    queryFn: () => apiClient.getAdminMembers(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useAdminAlerts(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.adminAlerts(householdId),
+    queryFn: () => apiClient.getAdminAlerts(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useMarkAlertRead(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (alertId: string) => apiClient.markAlertRead(householdId, alertId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminAlerts(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminDashboard(householdId) });
+    },
+  });
+}
+
+export function useCreateDataExport(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: DataExportRequest) => apiClient.createDataExport(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.dataExports(householdId) });
+    },
+  });
+}
+
+export function useDataExports(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.dataExports(householdId),
+    queryFn: () => apiClient.getDataExports(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useDataExport(householdId: string, exportId: string) {
+  return useQuery({
+    queryKey: queryKeys.dataExport(householdId, exportId),
+    queryFn: () => apiClient.getDataExport(householdId, exportId),
+    enabled: !!householdId && !!exportId,
+  });
+}
+
+export function useDeleteDataExport(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (exportId: string) => apiClient.deleteDataExport(householdId, exportId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.dataExports(householdId) });
+    },
+  });
+}
+
+export function useAuditLogs(householdId: string, query?: AuditLogQuery) {
+  return useQuery({
+    queryKey: queryKeys.auditLogs(householdId, query as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getAuditLogs(householdId, query),
+    enabled: !!householdId,
+  });
+}
+
+export function useAuditLogSummary(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.auditLogSummary(householdId),
+    queryFn: () => apiClient.getAuditLogSummary(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function usePerformanceMetrics(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.performanceMetrics(householdId),
+    queryFn: () => apiClient.getPerformanceMetrics(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function usePerformanceHistory(householdId: string, period?: string) {
+  return useQuery({
+    queryKey: queryKeys.performanceHistory(householdId, period),
+    queryFn: () => apiClient.getPerformanceHistory(householdId, period),
+    enabled: !!householdId,
+  });
+}
+
+export function useUsageMetrics(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.usageMetrics(householdId),
+    queryFn: () => apiClient.getUsageMetrics(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useErrorMetrics(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.errorMetrics(householdId),
+    queryFn: () => apiClient.getErrorMetrics(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useResolveError(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (errorId: string) => apiClient.resolveError(householdId, errorId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.errorMetrics(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performanceMetrics(householdId) });
+    },
   });
 }
