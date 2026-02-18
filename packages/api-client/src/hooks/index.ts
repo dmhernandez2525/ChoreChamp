@@ -62,6 +62,13 @@ import type {
   CreateSocialCommentRequest,
   CreateFriendRequestPayload,
   CreateCommunityEventRequest,
+  UpdateSmartScheduleConfigRequest,
+  SuggestionFeedback,
+  UpdateSuggestionPreferencesRequest,
+  CreateAutomationRuleRequest,
+  UpdateAutomationRuleRequest,
+  UpdatePredictiveAnalyticsConfigRequest,
+  CommandRequest,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -214,6 +221,20 @@ export const queryKeys = {
   friendSuggestions: (householdId: string) => ['friendSuggestions', householdId] as const,
   communityEvents: (householdId: string, params?: Record<string, unknown>) => ['communityEvents', householdId, params] as const,
   communityEvent: (householdId: string, eventId: string) => ['communityEvent', householdId, eventId] as const,
+
+  // Phase 17: Smart Automation & AI
+  smartScheduleConfig: (householdId: string) => ['smartScheduleConfig', householdId] as const,
+  scheduleConflicts: (householdId: string) => ['scheduleConflicts', householdId] as const,
+  aiSuggestions: (householdId: string) => ['aiSuggestions', householdId] as const,
+  suggestionPreferences: (householdId: string) => ['suggestionPreferences', householdId] as const,
+  automationRules: (householdId: string) => ['automationRules', householdId] as const,
+  automationRule: (householdId: string, ruleId: string) => ['automationRule', householdId, ruleId] as const,
+  automationRuleLogs: (householdId: string, ruleId: string) => ['automationRuleLogs', householdId, ruleId] as const,
+  predictions: (householdId: string) => ['predictions', householdId] as const,
+  predictiveInsights: (householdId: string) => ['predictiveInsights', householdId] as const,
+  predictiveAnalyticsConfig: (householdId: string) => ['predictiveAnalyticsConfig', householdId] as const,
+  commandHistory: (householdId: string, params?: Record<string, unknown>) => ['commandHistory', householdId, params] as const,
+  commandCapabilities: (householdId: string) => ['commandCapabilities', householdId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -2531,5 +2552,216 @@ export function useDeleteCommunityEvent(householdId: string) {
   return useMutation({
     mutationFn: (eventId: string) => apiClient.deleteCommunityEvent(householdId, eventId),
     onSuccess: () => { queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'communityEvents' && q.queryKey[1] === householdId }); },
+  });
+}
+
+// ===== Phase 17: Smart Automation & AI Hooks =====
+
+// F17.1 Smart Scheduling
+export function useSmartScheduleConfig(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.smartScheduleConfig(householdId),
+    queryFn: () => apiClient.getSmartScheduleConfig(householdId),
+  });
+}
+
+export function useUpdateSmartScheduleConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateSmartScheduleConfigRequest) => apiClient.updateSmartScheduleConfig(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.smartScheduleConfig(householdId) }); },
+  });
+}
+
+export function useRunScheduleOptimization(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.runScheduleOptimization(householdId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.smartScheduleConfig(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleConflicts(householdId) });
+    },
+  });
+}
+
+export function useScheduleConflicts(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.scheduleConflicts(householdId),
+    queryFn: () => apiClient.getScheduleConflicts(householdId),
+  });
+}
+
+export function useResolveScheduleConflict(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ conflictId, resolution }: { conflictId: string; resolution: string }) =>
+      apiClient.resolveScheduleConflict(householdId, conflictId, resolution),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.scheduleConflicts(householdId) }); },
+  });
+}
+
+// F17.2 AI Chore Suggestions
+export function useAISuggestions(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.aiSuggestions(householdId),
+    queryFn: () => apiClient.getAISuggestions(householdId),
+  });
+}
+
+export function useProvideSuggestionFeedback(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (feedback: SuggestionFeedback) => apiClient.provideSuggestionFeedback(householdId, feedback),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.aiSuggestions(householdId) }); },
+  });
+}
+
+export function useSuggestionPreferences(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.suggestionPreferences(householdId),
+    queryFn: () => apiClient.getSuggestionPreferences(householdId),
+  });
+}
+
+export function useUpdateSuggestionPreferences(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateSuggestionPreferencesRequest) => apiClient.updateSuggestionPreferences(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.suggestionPreferences(householdId) }); },
+  });
+}
+
+export function useGenerateSuggestions(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.generateSuggestions(householdId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.aiSuggestions(householdId) }); },
+  });
+}
+
+// F17.3 Automation Rules
+export function useAutomationRules(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.automationRules(householdId),
+    queryFn: () => apiClient.getAutomationRules(householdId),
+  });
+}
+
+export function useCreateAutomationRule(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateAutomationRuleRequest) => apiClient.createAutomationRule(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.automationRules(householdId) }); },
+  });
+}
+
+export function useAutomationRule(householdId: string, ruleId: string) {
+  return useQuery({
+    queryKey: queryKeys.automationRule(householdId, ruleId),
+    queryFn: () => apiClient.getAutomationRule(householdId, ruleId),
+    enabled: !!ruleId,
+  });
+}
+
+export function useUpdateAutomationRule(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ruleId, data }: { ruleId: string; data: UpdateAutomationRuleRequest }) =>
+      apiClient.updateAutomationRule(householdId, ruleId, data),
+    onSuccess: (_, { ruleId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.automationRules(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.automationRule(householdId, ruleId) });
+    },
+  });
+}
+
+export function useDeleteAutomationRule(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ruleId: string) => apiClient.deleteAutomationRule(householdId, ruleId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.automationRules(householdId) }); },
+  });
+}
+
+export function useAutomationRuleLogs(householdId: string, ruleId: string) {
+  return useQuery({
+    queryKey: queryKeys.automationRuleLogs(householdId, ruleId),
+    queryFn: () => apiClient.getAutomationRuleLogs(householdId, ruleId),
+    enabled: !!ruleId,
+  });
+}
+
+export function useTestAutomationRule(householdId: string) {
+  return useMutation({
+    mutationFn: (ruleId: string) => apiClient.testAutomationRule(householdId, ruleId),
+  });
+}
+
+// F17.4 Predictive Analytics
+export function usePredictions(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.predictions(householdId),
+    queryFn: () => apiClient.getPredictions(householdId),
+  });
+}
+
+export function usePredictiveInsights(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.predictiveInsights(householdId),
+    queryFn: () => apiClient.getPredictiveInsights(householdId),
+  });
+}
+
+export function useMarkInsightRead(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (insightId: string) => apiClient.markInsightRead(householdId, insightId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.predictiveInsights(householdId) }); },
+  });
+}
+
+export function usePredictiveAnalyticsConfig(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.predictiveAnalyticsConfig(householdId),
+    queryFn: () => apiClient.getPredictiveAnalyticsConfig(householdId),
+  });
+}
+
+export function useUpdatePredictiveAnalyticsConfig(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdatePredictiveAnalyticsConfigRequest) => apiClient.updatePredictiveAnalyticsConfig(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.predictiveAnalyticsConfig(householdId) }); },
+  });
+}
+
+export function useGeneratePredictions(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.generatePredictions(householdId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.predictions(householdId) }); },
+  });
+}
+
+// F17.5 Natural Language Commands
+export function useExecuteCommand(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CommandRequest) => apiClient.executeCommand(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.commandHistory(householdId) }); },
+  });
+}
+
+export function useCommandHistory(householdId: string, params?: { page?: number; pageSize?: number }) {
+  return useQuery({
+    queryKey: queryKeys.commandHistory(householdId, params as unknown as Record<string, unknown>),
+    queryFn: () => apiClient.getCommandHistory(householdId, params),
+  });
+}
+
+export function useCommandCapabilities(householdId: string) {
+  return useQuery({
+    queryKey: queryKeys.commandCapabilities(householdId),
+    queryFn: () => apiClient.getCommandCapabilities(householdId),
   });
 }
