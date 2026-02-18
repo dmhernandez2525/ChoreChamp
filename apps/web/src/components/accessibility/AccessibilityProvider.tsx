@@ -47,6 +47,23 @@ interface CognitivePreferences {
   timerVisualizationEnabled: boolean;
 }
 
+export const SENSORY_LEVEL_OPTIONS = ['default', 'low', 'minimal'] as const;
+export type SensoryLevelOption = (typeof SENSORY_LEVEL_OPTIONS)[number];
+
+export const TRANSITION_STYLE_OPTIONS = ['default', 'fade', 'none'] as const;
+export type TransitionStyleOption = (typeof TRANSITION_STYLE_OPTIONS)[number];
+
+interface SpecialNeedsPreferences {
+  adhdModeEnabled: boolean;
+  autismFriendlyEnabled: boolean;
+  sensoryLevel: SensoryLevelOption;
+  predictableLayoutEnabled: boolean;
+  transitionStyle: TransitionStyleOption;
+  visualTimerEnabled: boolean;
+  quietModeEnabled: boolean;
+  consistentNavigationEnabled: boolean;
+}
+
 interface ReadingPreferences {
   readingFont: ReadingFontOption;
   fontSizeLevel: FontSizeLevel;
@@ -60,7 +77,7 @@ interface ReadingPreferences {
   bionicReadingEnabled: boolean;
 }
 
-interface AccessibilityContextValue extends ReadingPreferences, CognitivePreferences {
+interface AccessibilityContextValue extends ReadingPreferences, CognitivePreferences, SpecialNeedsPreferences {
   highContrastEnabled: boolean;
   reducedMotionEnabled: boolean;
   isSpeaking: boolean;
@@ -85,6 +102,14 @@ interface AccessibilityContextValue extends ReadingPreferences, CognitivePrefere
   setConfirmBeforeActions: (next: boolean) => void;
   setAutoSaveReminders: (next: boolean) => void;
   setTimerVisualizationEnabled: (next: boolean) => void;
+  setAdhdModeEnabled: (next: boolean) => void;
+  setAutismFriendlyEnabled: (next: boolean) => void;
+  setSensoryLevel: (next: SensoryLevelOption) => void;
+  setPredictableLayoutEnabled: (next: boolean) => void;
+  setTransitionStyle: (next: TransitionStyleOption) => void;
+  setVisualTimerEnabled: (next: boolean) => void;
+  setQuietModeEnabled: (next: boolean) => void;
+  setConsistentNavigationEnabled: (next: boolean) => void;
   saveProfile: (name: string) => boolean;
   applyProfile: (name: string) => boolean;
   deleteProfile: (name: string) => void;
@@ -149,6 +174,17 @@ const DEFAULT_READING_PREFERENCES: ReadingPreferences = {
   bionicReadingEnabled: false,
 };
 
+const DEFAULT_SPECIAL_NEEDS_PREFERENCES: SpecialNeedsPreferences = {
+  adhdModeEnabled: false,
+  autismFriendlyEnabled: false,
+  sensoryLevel: 'default',
+  predictableLayoutEnabled: false,
+  transitionStyle: 'default',
+  visualTimerEnabled: false,
+  quietModeEnabled: false,
+  consistentNavigationEnabled: false,
+};
+
 const DEFAULT_COGNITIVE_PREFERENCES: CognitivePreferences = {
   focusMode: 'off',
   taskChunkingEnabled: false,
@@ -162,7 +198,7 @@ const DEFAULT_COGNITIVE_PREFERENCES: CognitivePreferences = {
 
 const AccessibilityContext = createContext<AccessibilityContextValue | null>(null);
 
-interface StoredAccessibilityPreferences extends Partial<ReadingPreferences>, Partial<CognitivePreferences> {
+interface StoredAccessibilityPreferences extends Partial<ReadingPreferences>, Partial<CognitivePreferences>, Partial<SpecialNeedsPreferences> {
   highContrastEnabled?: boolean;
   reducedMotionEnabled?: boolean;
   profiles?: Record<string, ReadingPreferences>;
@@ -242,6 +278,31 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     DEFAULT_COGNITIVE_PREFERENCES.timerVisualizationEnabled
   );
 
+  const [adhdModeEnabled, setAdhdModeEnabled] = useState(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.adhdModeEnabled
+  );
+  const [autismFriendlyEnabled, setAutismFriendlyEnabled] = useState(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.autismFriendlyEnabled
+  );
+  const [sensoryLevel, setSensoryLevel] = useState<SensoryLevelOption>(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.sensoryLevel
+  );
+  const [predictableLayoutEnabled, setPredictableLayoutEnabled] = useState(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.predictableLayoutEnabled
+  );
+  const [transitionStyle, setTransitionStyle] = useState<TransitionStyleOption>(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.transitionStyle
+  );
+  const [visualTimerEnabled, setVisualTimerEnabled] = useState(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.visualTimerEnabled
+  );
+  const [quietModeEnabled, setQuietModeEnabled] = useState(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.quietModeEnabled
+  );
+  const [consistentNavigationEnabled, setConsistentNavigationEnabled] = useState(
+    DEFAULT_SPECIAL_NEEDS_PREFERENCES.consistentNavigationEnabled
+  );
+
   const [announcement, setAnnouncement] = useState('');
   const [announcementPoliteness, setAnnouncementPoliteness] =
     useState<AnnouncementPoliteness>('polite');
@@ -317,6 +378,30 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       if (typeof parsed.timerVisualizationEnabled === 'boolean') {
         setTimerVisualizationEnabled(parsed.timerVisualizationEnabled);
       }
+      if (typeof parsed.adhdModeEnabled === 'boolean') {
+        setAdhdModeEnabled(parsed.adhdModeEnabled);
+      }
+      if (typeof parsed.autismFriendlyEnabled === 'boolean') {
+        setAutismFriendlyEnabled(parsed.autismFriendlyEnabled);
+      }
+      if (includesValue(SENSORY_LEVEL_OPTIONS, parsed.sensoryLevel)) {
+        setSensoryLevel(parsed.sensoryLevel);
+      }
+      if (typeof parsed.predictableLayoutEnabled === 'boolean') {
+        setPredictableLayoutEnabled(parsed.predictableLayoutEnabled);
+      }
+      if (includesValue(TRANSITION_STYLE_OPTIONS, parsed.transitionStyle)) {
+        setTransitionStyle(parsed.transitionStyle);
+      }
+      if (typeof parsed.visualTimerEnabled === 'boolean') {
+        setVisualTimerEnabled(parsed.visualTimerEnabled);
+      }
+      if (typeof parsed.quietModeEnabled === 'boolean') {
+        setQuietModeEnabled(parsed.quietModeEnabled);
+      }
+      if (typeof parsed.consistentNavigationEnabled === 'boolean') {
+        setConsistentNavigationEnabled(parsed.consistentNavigationEnabled);
+      }
     } catch {
       // Ignore storage parse errors.
     }
@@ -346,16 +431,27 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
         confirmBeforeActions,
         autoSaveReminders,
         timerVisualizationEnabled,
+        adhdModeEnabled,
+        autismFriendlyEnabled,
+        sensoryLevel,
+        predictableLayoutEnabled,
+        transitionStyle,
+        visualTimerEnabled,
+        quietModeEnabled,
+        consistentNavigationEnabled,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
       // Ignore storage write errors.
     }
   }, [
+    adhdModeEnabled,
     autoSaveReminders,
+    autismFriendlyEnabled,
     bionicReadingEnabled,
     colorOverlay,
     confirmBeforeActions,
+    consistentNavigationEnabled,
     focusMode,
     fontSizeLevel,
     highContrastEnabled,
@@ -364,14 +460,19 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     lineSpacing,
     maxItemsPerView,
     maxStepsPerChunk,
+    predictableLayoutEnabled,
     profiles,
     progressStyle,
+    quietModeEnabled,
     readingFont,
     readingRulerEnabled,
     reducedMotionEnabled,
+    sensoryLevel,
     simplifiedLanguageEnabled,
     taskChunkingEnabled,
     timerVisualizationEnabled,
+    transitionStyle,
+    visualTimerEnabled,
     wordSpacingLevel,
   ]);
 
@@ -391,6 +492,14 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     root.setAttribute('data-focus-mode', focusMode);
     root.setAttribute('data-task-chunking', taskChunkingEnabled ? 'true' : 'false');
     root.setAttribute('data-timer-visualization', timerVisualizationEnabled ? 'true' : 'false');
+    root.setAttribute('data-adhd-mode', adhdModeEnabled ? 'true' : 'false');
+    root.setAttribute('data-autism-friendly', autismFriendlyEnabled ? 'true' : 'false');
+    root.setAttribute('data-sensory-level', sensoryLevel);
+    root.setAttribute('data-predictable-layout', predictableLayoutEnabled ? 'true' : 'false');
+    root.setAttribute('data-transition-style', transitionStyle);
+    root.setAttribute('data-visual-timer', visualTimerEnabled ? 'true' : 'false');
+    root.setAttribute('data-quiet-mode', quietModeEnabled ? 'true' : 'false');
+    root.setAttribute('data-consistent-navigation', consistentNavigationEnabled ? 'true' : 'false');
 
     root.style.setProperty('--reading-font-scale', FONT_SIZE_SCALE[fontSizeLevel]);
     root.style.setProperty('--reading-line-height', String(lineSpacing));
@@ -401,20 +510,28 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     root.style.setProperty('--reading-word-spacing', WORD_SPACING_SCALE[wordSpacingLevel]);
     root.style.setProperty('--reading-overlay-color', OVERLAY_COLOR_MAP[colorOverlay]);
   }, [
+    adhdModeEnabled,
+    autismFriendlyEnabled,
     bionicReadingEnabled,
     colorOverlay,
+    consistentNavigationEnabled,
     focusMode,
     fontSizeLevel,
     highContrastEnabled,
     iconHeavyNavigationEnabled,
     letterSpacingLevel,
     lineSpacing,
+    predictableLayoutEnabled,
+    quietModeEnabled,
     readingFont,
     readingRulerEnabled,
     reducedMotionEnabled,
+    sensoryLevel,
     simplifiedLanguageEnabled,
     taskChunkingEnabled,
     timerVisualizationEnabled,
+    transitionStyle,
+    visualTimerEnabled,
     wordSpacingLevel,
   ]);
 
@@ -608,6 +725,14 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       confirmBeforeActions,
       autoSaveReminders,
       timerVisualizationEnabled,
+      adhdModeEnabled,
+      autismFriendlyEnabled,
+      sensoryLevel,
+      predictableLayoutEnabled,
+      transitionStyle,
+      visualTimerEnabled,
+      quietModeEnabled,
+      consistentNavigationEnabled,
       profiles,
       setHighContrastEnabled,
       setReducedMotionEnabled,
@@ -629,6 +754,14 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       setConfirmBeforeActions,
       setAutoSaveReminders,
       setTimerVisualizationEnabled,
+      setAdhdModeEnabled,
+      setAutismFriendlyEnabled,
+      setSensoryLevel,
+      setPredictableLayoutEnabled,
+      setTransitionStyle,
+      setVisualTimerEnabled,
+      setQuietModeEnabled,
+      setConsistentNavigationEnabled,
       saveProfile,
       applyProfile,
       deleteProfile,
@@ -639,12 +772,15 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       stopSpeaking,
     }),
     [
+      adhdModeEnabled,
       announce,
       applyProfile,
       autoSaveReminders,
+      autismFriendlyEnabled,
       bionicReadingEnabled,
       colorOverlay,
       confirmBeforeActions,
+      consistentNavigationEnabled,
       deleteProfile,
       focusMode,
       fontSizeLevel,
@@ -655,12 +791,15 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       lineSpacing,
       maxItemsPerView,
       maxStepsPerChunk,
+      predictableLayoutEnabled,
       profiles,
       progressStyle,
+      quietModeEnabled,
       readingFont,
       readingRulerEnabled,
       reducedMotionEnabled,
       saveProfile,
+      sensoryLevel,
       simplifiedLanguageEnabled,
       speakPage,
       speakText,
@@ -668,6 +807,8 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       t,
       taskChunkingEnabled,
       timerVisualizationEnabled,
+      transitionStyle,
+      visualTimerEnabled,
       wordSpacingLevel,
     ]
   );

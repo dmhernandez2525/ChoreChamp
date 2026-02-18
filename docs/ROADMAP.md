@@ -29,7 +29,7 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 - [x] F13.2 Dyslexia and reading accommodations
 - [x] F13.3 Cognitive accessibility mode
 - [x] F13.4 Multi-language support (i18n)
-- [ ] F13.5 Special needs accommodations
+- [x] F13.5 Special needs accommodations
 
 ---
 

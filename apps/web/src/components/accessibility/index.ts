@@ -9,6 +9,8 @@ export {
   FOCUS_MODE_OPTIONS,
   PROGRESS_STYLE_OPTIONS,
   MAX_ITEMS_PER_VIEW_OPTIONS,
+  SENSORY_LEVEL_OPTIONS,
+  TRANSITION_STYLE_OPTIONS,
 } from './AccessibilityProvider';
 
 export type {
@@ -20,4 +22,6 @@ export type {
   FocusModeOption,
   ProgressStyleOption,
   MaxItemsPerViewOption,
+  SensoryLevelOption,
+  TransitionStyleOption,
 } from './AccessibilityProvider';
