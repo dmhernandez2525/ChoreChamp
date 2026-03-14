@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from 'react';
 import type {
@@ -15,429 +16,28 @@ import type {
   LeaderboardEntry,
   ActivityItem,
   Badge,
+  Tag,
+  SavedFilterView,
+  BoardPreferences,
 } from '@chorechamp/types';
+import {
+  DEMO_MEMBERS,
+  DEMO_CHORES,
+  DEMO_TAGS,
+  DEMO_CHORE_TAGS,
+  DEMO_SAVED_FILTERS,
+  DEMO_BOARD_PREFERENCES,
+  DEMO_GAMIFICATION,
+  DEMO_HOUSEHOLD,
+  type DemoChore,
+  type DemoGamificationProfile,
+} from '../lib/demo-data';
+import { DEMO_MODE } from '../lib/demo-mode';
 
-// Demo household data
-const DEMO_HOUSEHOLD = {
-  id: 'demo-household',
-  name: 'The Johnson Family',
-  createdBy: 'demo-parent',
-  timezone: 'America/New_York',
-  weekStartsOn: 0,
-  pointsName: 'Stars',
-  currency: 'USD',
-  subscriptionTier: 'premium' as const,
-  subscriptionStatus: 'active' as const,
-  subscriptionExpiresAt: null,
-  subscriptionProvider: 'stripe' as const,
-  subscriptionStore: 'web' as const,
-  subscriptionBillingInterval: 'monthly' as const,
-  subscriptionCurrentPeriodStart: new Date('2026-01-01'),
-  subscriptionCurrentPeriodEnd: new Date('2026-02-01'),
-  subscriptionTrialEndsAt: null,
-  subscriptionGracePeriodEndsAt: null,
-  subscriptionCancelAtPeriodEnd: false,
-  subscriptionCanceledAt: null,
-  subscriptionIsGrandfathered: true,
-  subscriptionMemberLimit: null,
-  themeId: 'classic',
-  whiteLabelEnabled: false,
-  brandingName: null,
-  brandingLogoUrl: null,
-  totalChoresCompleted: 247,
-  currentFamilyStreak: 8,
-  longestFamilyStreak: 21,
-  createdAt: new Date('2024-01-15'),
-  updatedAt: new Date(),
-};
+// ---------------------------------------------------------------------------
+// Rewards (kept inline since they are small and tightly coupled to context)
+// ---------------------------------------------------------------------------
 
-// Demo family members
-const DEMO_MEMBERS: Member[] = [
-  {
-    id: 'demo-parent',
-    householdId: 'demo-household',
-    userId: 'demo-user',
-    name: 'Sarah (Mom)',
-    role: 'parent',
-    color: '#6366f1',
-    avatarUrl: null,
-    birthYear: 1985,
-    pointsCurrent: 0,
-    pointsLifetime: 0,
-    streakCurrent: 0,
-    streakLongest: 0,
-    streakLastCompletedDate: null,
-    streakFreezesAvailable: 0,
-    streakFreezesUsed: 0,
-    badges: [],
-    canRedeemRewards: false,
-    requiresApproval: false,
-    caregiverPermissions: null,
-    linkedMemberId: null,
-    crossHouseholdSettings: null,
-    isActive: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'demo-dad',
-    householdId: 'demo-household',
-    userId: null,
-    name: 'Mike (Dad)',
-    role: 'parent',
-    color: '#0ea5e9',
-    avatarUrl: null,
-    birthYear: 1983,
-    pointsCurrent: 0,
-    pointsLifetime: 0,
-    streakCurrent: 0,
-    streakLongest: 0,
-    streakLastCompletedDate: null,
-    streakFreezesAvailable: 0,
-    streakFreezesUsed: 0,
-    badges: [],
-    canRedeemRewards: false,
-    requiresApproval: false,
-    caregiverPermissions: null,
-    linkedMemberId: null,
-    crossHouseholdSettings: null,
-    isActive: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'demo-child-emma',
-    householdId: 'demo-household',
-    userId: null,
-    name: 'Emma',
-    role: 'child',
-    color: '#22c55e',
-    avatarUrl: null,
-    birthYear: 2015,
-    pointsCurrent: 385,
-    pointsLifetime: 2450,
-    streakCurrent: 12,
-    streakLongest: 21,
-    streakLastCompletedDate: new Date().toISOString().split('T')[0],
-    streakFreezesAvailable: 2,
-    streakFreezesUsed: 1,
-    badges: ['first-chore', 'week-streak', 'two-week-streak', 'early-bird', 'helper'],
-    canRedeemRewards: true,
-    requiresApproval: true,
-    caregiverPermissions: null,
-    linkedMemberId: null,
-    crossHouseholdSettings: null,
-    isActive: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'demo-child-lucas',
-    householdId: 'demo-household',
-    userId: null,
-    name: 'Lucas',
-    role: 'child',
-    color: '#f59e0b',
-    avatarUrl: null,
-    birthYear: 2017,
-    pointsCurrent: 210,
-    pointsLifetime: 1180,
-    streakCurrent: 5,
-    streakLongest: 14,
-    streakLastCompletedDate: new Date().toISOString().split('T')[0],
-    streakFreezesAvailable: 1,
-    streakFreezesUsed: 2,
-    badges: ['first-chore', 'week-streak', 'pet-lover'],
-    canRedeemRewards: true,
-    requiresApproval: true,
-    caregiverPermissions: null,
-    linkedMemberId: null,
-    crossHouseholdSettings: null,
-    isActive: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'demo-teen-olivia',
-    householdId: 'demo-household',
-    userId: null,
-    name: 'Olivia',
-    role: 'teen',
-    color: '#ec4899',
-    avatarUrl: null,
-    birthYear: 2010,
-    pointsCurrent: 520,
-    pointsLifetime: 3200,
-    streakCurrent: 8,
-    streakLongest: 28,
-    streakLastCompletedDate: new Date().toISOString().split('T')[0],
-    streakFreezesAvailable: 3,
-    streakFreezesUsed: 0,
-    badges: ['first-chore', 'week-streak', 'two-week-streak', 'month-streak', 'chore-master', 'kitchen-helper'],
-    canRedeemRewards: true,
-    requiresApproval: false,
-    caregiverPermissions: null,
-    linkedMemberId: null,
-    crossHouseholdSettings: null,
-    isActive: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-];
-
-// Demo chores
-const DEMO_CHORES: Chore[] = [
-  {
-    id: 'chore-make-bed',
-    householdId: 'demo-household',
-    title: 'Make Bed',
-    description: 'Make your bed neatly every morning',
-    icon: '🛏️',
-    category: 'bedroom',
-    pointValue: 10,
-    difficulty: 'easy',
-    assignedTo: ['demo-child-emma', 'demo-child-lucas', 'demo-teen-olivia'],
-    assignmentType: 'anyone',
-    rotationIndex: 0,
-    recurrenceType: 'daily',
-    recurrenceDays: [0, 1, 2, 3, 4, 5, 6],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '08:00',
-    timeWindowMinutes: null,
-    requiresApproval: false,
-    requiresPhoto: false,
-    estimatedMinutes: 5,
-    showTimer: false,
-    steps: null,
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'chore-clean-room',
-    householdId: 'demo-household',
-    title: 'Clean Room',
-    description: 'Tidy up your room, put toys away, and vacuum',
-    icon: '🧹',
-    category: 'bedroom',
-    pointValue: 30,
-    difficulty: 'medium',
-    assignedTo: ['demo-child-emma', 'demo-child-lucas'],
-    assignmentType: 'anyone',
-    rotationIndex: 0,
-    recurrenceType: 'weekly',
-    recurrenceDays: [6],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '12:00',
-    timeWindowMinutes: null,
-    requiresApproval: true,
-    requiresPhoto: true,
-    estimatedMinutes: 25,
-    showTimer: true,
-    steps: ['Pick up all toys and put them away', 'Make your bed', 'Dust your dresser and shelves', 'Vacuum the floor'],
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'chore-set-table',
-    householdId: 'demo-household',
-    title: 'Set Dinner Table',
-    description: 'Set the dinner table with plates, utensils, and napkins',
-    icon: '🍽️',
-    category: 'kitchen',
-    pointValue: 15,
-    difficulty: 'easy',
-    assignedTo: ['demo-child-emma', 'demo-child-lucas', 'demo-teen-olivia'],
-    assignmentType: 'rotation',
-    rotationIndex: 0,
-    recurrenceType: 'daily',
-    recurrenceDays: [0, 1, 2, 3, 4, 5, 6],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '18:00',
-    timeWindowMinutes: 30,
-    requiresApproval: false,
-    requiresPhoto: false,
-    estimatedMinutes: 5,
-    showTimer: false,
-    steps: null,
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'chore-feed-dog',
-    householdId: 'demo-household',
-    title: 'Feed Max (Dog)',
-    description: 'Give Max fresh food and water in the morning',
-    icon: '🐕',
-    category: 'pet_care',
-    pointValue: 20,
-    difficulty: 'easy',
-    assignedTo: ['demo-child-lucas'],
-    assignmentType: 'specific',
-    rotationIndex: 0,
-    recurrenceType: 'daily',
-    recurrenceDays: [0, 1, 2, 3, 4, 5, 6],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '07:30',
-    timeWindowMinutes: null,
-    requiresApproval: false,
-    requiresPhoto: false,
-    estimatedMinutes: 5,
-    showTimer: false,
-    steps: null,
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'chore-dishes',
-    householdId: 'demo-household',
-    title: 'Load Dishwasher',
-    description: 'Clear dirty dishes and load them into the dishwasher',
-    icon: '🍳',
-    category: 'kitchen',
-    pointValue: 25,
-    difficulty: 'medium',
-    assignedTo: ['demo-teen-olivia'],
-    assignmentType: 'specific',
-    rotationIndex: 0,
-    recurrenceType: 'daily',
-    recurrenceDays: [0, 1, 2, 3, 4, 5, 6],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '19:30',
-    timeWindowMinutes: null,
-    requiresApproval: false,
-    requiresPhoto: false,
-    estimatedMinutes: 15,
-    showTimer: false,
-    steps: ['Rinse dishes', 'Load dishes properly', 'Add detergent', 'Start the cycle'],
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'chore-homework',
-    householdId: 'demo-household',
-    title: 'Complete Homework',
-    description: 'Finish all homework assignments before screen time',
-    icon: '📚',
-    category: 'general',
-    pointValue: 35,
-    difficulty: 'hard',
-    assignedTo: ['demo-child-emma', 'demo-child-lucas', 'demo-teen-olivia'],
-    assignmentType: 'anyone',
-    rotationIndex: 0,
-    recurrenceType: 'weekly',
-    recurrenceDays: [1, 2, 3, 4, 5],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '17:00',
-    timeWindowMinutes: 60,
-    requiresApproval: true,
-    requiresPhoto: false,
-    estimatedMinutes: 45,
-    showTimer: true,
-    steps: null,
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'chore-trash',
-    householdId: 'demo-household',
-    title: 'Take Out Trash',
-    description: 'Empty all trash cans and take bags to the curb',
-    icon: '🗑️',
-    category: 'outdoor',
-    pointValue: 20,
-    difficulty: 'easy',
-    assignedTo: ['demo-teen-olivia'],
-    assignmentType: 'specific',
-    rotationIndex: 0,
-    recurrenceType: 'weekly',
-    recurrenceDays: [3],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '18:00',
-    timeWindowMinutes: null,
-    requiresApproval: false,
-    requiresPhoto: false,
-    estimatedMinutes: 10,
-    showTimer: false,
-    steps: null,
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'chore-brush-teeth',
-    householdId: 'demo-household',
-    title: 'Brush Teeth',
-    description: 'Brush teeth for 2 minutes morning and night',
-    icon: '🦷',
-    category: 'bathroom',
-    pointValue: 5,
-    difficulty: 'easy',
-    assignedTo: ['demo-child-emma', 'demo-child-lucas'],
-    assignmentType: 'anyone',
-    rotationIndex: 0,
-    recurrenceType: 'daily',
-    recurrenceDays: [0, 1, 2, 3, 4, 5, 6],
-    recurrenceInterval: null,
-    recurrenceAfterDays: null,
-    startDate: '2024-01-15',
-    endDate: null,
-    dueTime: '07:00',
-    timeWindowMinutes: null,
-    requiresApproval: false,
-    requiresPhoto: false,
-    estimatedMinutes: 2,
-    showTimer: true,
-    steps: null,
-    createdBy: 'demo-parent',
-    isActive: true,
-    templateId: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date(),
-  },
-];
-
-// Demo rewards
 const DEMO_REWARDS: Reward[] = [
   {
     id: 'reward-screen-time',
@@ -453,7 +53,7 @@ const DEMO_REWARDS: Reward[] = [
     isActive: true,
     availableFrom: null,
     availableUntil: null,
-    createdAt: new Date('2024-01-15'),
+    createdAt: new Date('2024-06-15'),
     updatedAt: new Date(),
   },
   {
@@ -470,7 +70,7 @@ const DEMO_REWARDS: Reward[] = [
     isActive: true,
     availableFrom: null,
     availableUntil: null,
-    createdAt: new Date('2024-01-15'),
+    createdAt: new Date('2024-06-15'),
     updatedAt: new Date(),
   },
   {
@@ -487,7 +87,7 @@ const DEMO_REWARDS: Reward[] = [
     isActive: true,
     availableFrom: null,
     availableUntil: null,
-    createdAt: new Date('2024-01-15'),
+    createdAt: new Date('2024-06-15'),
     updatedAt: new Date(),
   },
   {
@@ -504,7 +104,7 @@ const DEMO_REWARDS: Reward[] = [
     isActive: true,
     availableFrom: null,
     availableUntil: null,
-    createdAt: new Date('2024-01-15'),
+    createdAt: new Date('2024-06-15'),
     updatedAt: new Date(),
   },
   {
@@ -521,7 +121,7 @@ const DEMO_REWARDS: Reward[] = [
     isActive: true,
     availableFrom: null,
     availableUntil: null,
-    createdAt: new Date('2024-01-15'),
+    createdAt: new Date('2024-06-15'),
     updatedAt: new Date(),
   },
   {
@@ -538,207 +138,73 @@ const DEMO_REWARDS: Reward[] = [
     isActive: true,
     availableFrom: null,
     availableUntil: null,
-    createdAt: new Date('2024-01-15'),
+    createdAt: new Date('2024-06-15'),
     updatedAt: new Date(),
   },
 ];
 
-// Demo badges
+// ---------------------------------------------------------------------------
+// Badges
+// ---------------------------------------------------------------------------
+
 const DEMO_BADGES: Badge[] = [
-  {
-    id: 'first-chore',
-    name: 'First Steps',
-    description: 'Complete your first chore',
-    icon: '🌟',
-    category: 'special',
-    rarity: 'common',
-    criteria: { type: 'chores_completed', threshold: 1 },
-  },
-  {
-    id: 'week-streak',
-    name: 'Flame Keeper',
-    description: 'Maintain a 7-day streak',
-    icon: '🔥',
-    category: 'streak',
-    rarity: 'rare',
-    criteria: { type: 'streak', threshold: 7 },
-  },
-  {
-    id: 'two-week-streak',
-    name: 'Streak Master',
-    description: 'Maintain a 14-day streak',
-    icon: '⚡',
-    category: 'streak',
-    rarity: 'epic',
-    criteria: { type: 'streak', threshold: 14 },
-  },
-  {
-    id: 'month-streak',
-    name: 'Unstoppable',
-    description: 'Maintain a 30-day streak',
-    icon: '👑',
-    category: 'streak',
-    rarity: 'legendary',
-    criteria: { type: 'streak', threshold: 30 },
-  },
-  {
-    id: 'early-bird',
-    name: 'Early Bird',
-    description: 'Complete 10 chores before 9 AM',
-    icon: '🐦',
-    category: 'time',
-    rarity: 'rare',
-    criteria: { type: 'early_completions', threshold: 10 },
-  },
-  {
-    id: 'helper',
-    name: 'Team Player',
-    description: 'Help complete 5 chores assigned to others',
-    icon: '🤝',
-    category: 'family',
-    rarity: 'rare',
-    criteria: { type: 'helped_others', threshold: 5 },
-  },
-  {
-    id: 'pet-lover',
-    name: 'Pet Whisperer',
-    description: 'Complete 30 pet care chores',
-    icon: '🐾',
-    category: 'volume',
-    rarity: 'rare',
-    criteria: { type: 'category_chores', threshold: 30, conditions: { category: 'pet_care' } },
-  },
-  {
-    id: 'chore-master',
-    name: 'Chore Champion',
-    description: 'Complete 100 chores',
-    icon: '🏆',
-    category: 'volume',
-    rarity: 'epic',
-    criteria: { type: 'chores_completed', threshold: 100 },
-  },
-  {
-    id: 'kitchen-helper',
-    name: 'Kitchen Pro',
-    description: 'Complete 50 kitchen chores',
-    icon: '👨‍🍳',
-    category: 'volume',
-    rarity: 'rare',
-    criteria: { type: 'category_chores', threshold: 50, conditions: { category: 'kitchen' } },
-  },
+  { id: 'first-chore', name: 'First Steps', description: 'Complete your first chore', icon: '🌟', category: 'special', rarity: 'common', criteria: { type: 'chores_completed', threshold: 1 } },
+  { id: 'week-streak', name: 'Flame Keeper', description: 'Maintain a 7-day streak', icon: '🔥', category: 'streak', rarity: 'rare', criteria: { type: 'streak', threshold: 7 } },
+  { id: 'two-week-streak', name: 'Streak Master', description: 'Maintain a 14-day streak', icon: '⚡', category: 'streak', rarity: 'epic', criteria: { type: 'streak', threshold: 14 } },
+  { id: 'month-streak', name: 'Unstoppable', description: 'Maintain a 30-day streak', icon: '👑', category: 'streak', rarity: 'legendary', criteria: { type: 'streak', threshold: 30 } },
+  { id: 'early-bird', name: 'Early Bird', description: 'Complete 10 chores before 9 AM', icon: '🐦', category: 'time', rarity: 'rare', criteria: { type: 'early_completions', threshold: 10 } },
+  { id: 'helper', name: 'Team Player', description: 'Help complete 5 chores assigned to others', icon: '🤝', category: 'family', rarity: 'rare', criteria: { type: 'helped_others', threshold: 5 } },
+  { id: 'pet-lover', name: 'Pet Whisperer', description: 'Complete 30 pet care chores', icon: '🐾', category: 'volume', rarity: 'rare', criteria: { type: 'category_chores', threshold: 30, conditions: { category: 'pet_care' } } },
+  { id: 'chore-master', name: 'Chore Champion', description: 'Complete 100 chores', icon: '🏆', category: 'volume', rarity: 'epic', criteria: { type: 'chores_completed', threshold: 100 } },
+  { id: 'kitchen-helper', name: 'Kitchen Pro', description: 'Complete 50 kitchen chores', icon: '👨‍🍳', category: 'volume', rarity: 'rare', criteria: { type: 'category_chores', threshold: 50, conditions: { category: 'kitchen' } } },
 ];
 
-// Demo leaderboard
+// ---------------------------------------------------------------------------
+// Leaderboard
+// ---------------------------------------------------------------------------
+
 const DEMO_LEADERBOARD: LeaderboardEntry[] = [
-  {
-    rank: 1,
-    memberId: 'demo-teen-olivia',
-    memberName: 'Olivia',
-    memberColor: '#ec4899',
-    totalPoints: 520,
-    completedChores: 42,
-  },
-  {
-    rank: 2,
-    memberId: 'demo-child-emma',
-    memberName: 'Emma',
-    memberColor: '#22c55e',
-    totalPoints: 385,
-    completedChores: 35,
-  },
-  {
-    rank: 3,
-    memberId: 'demo-child-lucas',
-    memberName: 'Lucas',
-    memberColor: '#f59e0b',
-    totalPoints: 210,
-    completedChores: 18,
-  },
+  { rank: 1, memberId: 'demo-teen', memberName: 'Olivia', memberColor: '#ec4899', totalPoints: 520, completedChores: 42 },
+  { rank: 2, memberId: 'demo-child', memberName: 'Lucas', memberColor: '#f59e0b', totalPoints: 210, completedChores: 18 },
 ];
 
-// Demo activity items
+// ---------------------------------------------------------------------------
+// Activity feed
+// ---------------------------------------------------------------------------
+
 function generateDemoActivities(): ActivityItem[] {
   const now = new Date();
   return [
-    {
-      id: 'activity-1',
-      type: 'chore_completed',
-      memberId: 'demo-child-emma',
-      memberName: 'Emma',
-      memberColor: '#22c55e',
-      title: 'Completed "Make Bed"',
-      description: 'Earned 10 stars',
-      points: 10,
-      timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000),
-    },
-    {
-      id: 'activity-2',
-      type: 'streak_milestone',
-      memberId: 'demo-child-emma',
-      memberName: 'Emma',
-      memberColor: '#22c55e',
-      title: 'Reached 12-day streak!',
-      description: 'Bonus: +25 stars',
-      points: 25,
-      timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000),
-    },
-    {
-      id: 'activity-3',
-      type: 'chore_completed',
-      memberId: 'demo-child-lucas',
-      memberName: 'Lucas',
-      memberColor: '#f59e0b',
-      title: 'Completed "Feed Max (Dog)"',
-      description: 'Earned 20 stars',
-      points: 20,
-      timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000),
-    },
-    {
-      id: 'activity-4',
-      type: 'chore_approved',
-      memberId: 'demo-teen-olivia',
-      memberName: 'Olivia',
-      memberColor: '#ec4899',
-      title: 'Homework approved by Mom',
-      description: 'Earned 35 stars',
-      points: 35,
-      timestamp: new Date(now.getTime() - 5 * 60 * 60 * 1000),
-    },
-    {
-      id: 'activity-5',
-      type: 'badge_earned',
-      memberId: 'demo-teen-olivia',
-      memberName: 'Olivia',
-      memberColor: '#ec4899',
-      title: 'Earned "Kitchen Pro" badge!',
-      description: 'Completed 50 kitchen chores',
-      timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 'activity-6',
-      type: 'points_spent',
-      memberId: 'demo-child-emma',
-      memberName: 'Emma',
-      memberColor: '#22c55e',
-      title: 'Redeemed "Extra Screen Time"',
-      description: 'Spent 50 stars',
-      points: -50,
-      timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-    },
+    { id: 'activity-1', type: 'chore_completed', memberId: 'demo-child', memberName: 'Lucas', memberColor: '#f59e0b', title: 'Completed "Feed Max (Dog)"', description: 'Earned 20 stars', points: 20, timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000) },
+    { id: 'activity-2', type: 'chore_completed', memberId: 'demo-child', memberName: 'Lucas', memberColor: '#f59e0b', title: 'Completed "Brush Teeth"', description: 'Earned 5 stars', points: 5, timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000) },
+    { id: 'activity-3', type: 'streak_milestone', memberId: 'demo-teen', memberName: 'Olivia', memberColor: '#ec4899', title: 'Reached 8-day streak!', description: 'Bonus: +25 stars', points: 25, timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000) },
+    { id: 'activity-4', type: 'chore_approved', memberId: 'demo-teen', memberName: 'Olivia', memberColor: '#ec4899', title: 'Homework approved by Mom', description: 'Earned 35 stars', points: 35, timestamp: new Date(now.getTime() - 5 * 60 * 60 * 1000) },
+    { id: 'activity-5', type: 'badge_earned', memberId: 'demo-teen', memberName: 'Olivia', memberColor: '#ec4899', title: 'Earned "Kitchen Pro" badge!', description: 'Completed 50 kitchen chores', timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+    { id: 'activity-6', type: 'points_spent', memberId: 'demo-child', memberName: 'Lucas', memberColor: '#f59e0b', title: 'Redeemed "Extra Screen Time"', description: 'Spent 50 stars', points: -50, timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000) },
   ];
 }
 
-// Context types
+// ---------------------------------------------------------------------------
+// Context shape
+// ---------------------------------------------------------------------------
+
 interface DemoContextType {
-  // Demo state
-  isDemo: boolean;
+  // Core flag
+  isDemoMode: boolean;
+
+  // Data
   household: typeof DEMO_HOUSEHOLD;
   members: Member[];
-  chores: Chore[];
+  chores: DemoChore[];
   rewards: Reward[];
   badges: Badge[];
+  tags: Tag[];
+  choreTags: Record<string, string[]>;
+  savedFilters: SavedFilterView[];
+  boardPreferences: BoardPreferences;
   leaderboard: LeaderboardEntry[];
   activities: ActivityItem[];
+  gamification: DemoGamificationProfile[];
 
   // Current user context
   currentMember: Member;
@@ -759,33 +225,48 @@ interface DemoContextType {
   // Stats
   getGamificationStats: (memberId: string) => GamificationStats;
 
-  // Reset
+  // Lifecycle
+  exitDemo: () => void;
   resetDemo: () => void;
 }
 
 const DemoContext = createContext<DemoContextType | null>(null);
 
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
+
 export function DemoProvider({ children }: { children: ReactNode }) {
-  const [completedChoreIds, setCompletedChoreIds] = useState<Set<string>>(new Set());
+  const [completedChoreIds, setCompletedChoreIds] = useState<Set<string>>(() => {
+    // Pre-populate completed chores from demo data
+    const completed = new Set<string>();
+    const today = new Date().toISOString().split('T')[0];
+    for (const c of DEMO_CHORES) {
+      if (c._demoStatus === 'completed') {
+        completed.add(`${c.id}-${today}`);
+      }
+    }
+    return completed;
+  });
+
   const [pendingApprovalIds, setPendingApprovalIds] = useState<Set<string>>(new Set());
   const [selectedMemberId, setSelectedMemberId] = useState('demo-parent');
   const [members, setMembers] = useState<Member[]>(DEMO_MEMBERS);
+  const [active, setActive] = useState(DEMO_MODE);
 
-  // Get current member
   const currentMember = members.find((m) => m.id === selectedMemberId) || members[0];
 
-  // Generate today's chores based on day of week
+  // ------- Today chores ----------------------------------------------------
+
   const getTodayChores = useCallback(
     (memberId?: string): TodayChore[] => {
       const today = new Date().toISOString().split('T')[0];
       const dayOfWeek = new Date().getDay();
 
       return DEMO_CHORES.filter((chore) => {
-        // Filter by recurrence day
         if (chore.recurrenceDays && !chore.recurrenceDays.includes(dayOfWeek)) {
           return false;
         }
-        // Filter by member if provided
         if (memberId && !chore.assignedTo.includes(memberId)) {
           return false;
         }
@@ -826,15 +307,16 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           isCompleted: isCompleted && !isPending,
           completionId: completion?.id || null,
           createdAt: new Date(),
-          chore,
+          chore: chore as Chore,
           completion,
         };
       });
     },
-    [completedChoreIds, pendingApprovalIds]
+    [completedChoreIds, pendingApprovalIds],
   );
 
-  // Complete a chore
+  // ------- Mutations (operate on local state only) -------------------------
+
   const completeChore = useCallback(
     async (choreId: string) => {
       const today = new Date().toISOString().split('T')[0];
@@ -846,29 +328,23 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       } else {
         setCompletedChoreIds((prev) => new Set([...prev, fullChoreId]));
 
-        // Award points to the completing member
         if (chore) {
           setMembers((prev) =>
             prev.map((m) =>
               m.id === selectedMemberId
-                ? {
-                    ...m,
-                    pointsCurrent: m.pointsCurrent + chore.pointValue,
-                    pointsLifetime: m.pointsLifetime + chore.pointValue,
-                  }
-                : m
-            )
+                ? { ...m, pointsCurrent: m.pointsCurrent + chore.pointValue, pointsLifetime: m.pointsLifetime + chore.pointValue }
+                : m,
+            ),
           );
         }
       }
 
-      // Simulate async delay
+      // Brief simulated delay
       await new Promise((resolve) => setTimeout(resolve, 300));
     },
-    [selectedMemberId]
+    [selectedMemberId],
   );
 
-  // Approve a chore
   const approveChore = useCallback(async (completionId: string) => {
     const choreId = completionId.replace('completion-', '');
     setPendingApprovalIds((prev) => {
@@ -878,26 +354,20 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     });
     setCompletedChoreIds((prev) => new Set([...prev, choreId]));
 
-    // Award points
     const chore = DEMO_CHORES.find((c) => choreId.startsWith(c.id));
     if (chore) {
       setMembers((prev) =>
         prev.map((m) =>
           chore.assignedTo.includes(m.id)
-            ? {
-                ...m,
-                pointsCurrent: m.pointsCurrent + chore.pointValue,
-                pointsLifetime: m.pointsLifetime + chore.pointValue,
-              }
-            : m
-        )
+            ? { ...m, pointsCurrent: m.pointsCurrent + chore.pointValue, pointsLifetime: m.pointsLifetime + chore.pointValue }
+            : m,
+        ),
       );
     }
 
     await new Promise((resolve) => setTimeout(resolve, 300));
   }, []);
 
-  // Reject a chore
   const rejectChore = useCallback(async (completionId: string) => {
     const choreId = completionId.replace('completion-', '');
     setPendingApprovalIds((prev) => {
@@ -908,7 +378,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     await new Promise((resolve) => setTimeout(resolve, 300));
   }, []);
 
-  // Redeem a reward
   const redeemReward = useCallback(async (rewardId: string, memberId: string) => {
     const reward = DEMO_REWARDS.find((r) => r.id === rewardId);
     if (!reward) return;
@@ -916,18 +385,16 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setMembers((prev) =>
       prev.map((m) =>
         m.id === memberId
-          ? {
-              ...m,
-              pointsCurrent: Math.max(0, m.pointsCurrent - reward.pointCost),
-            }
-          : m
-      )
+          ? { ...m, pointsCurrent: Math.max(0, m.pointsCurrent - reward.pointCost) }
+          : m,
+      ),
     );
 
     await new Promise((resolve) => setTimeout(resolve, 300));
   }, []);
 
-  // Get gamification stats for a member
+  // ------- Stats -----------------------------------------------------------
+
   const getGamificationStats = useCallback(
     (memberId: string): GamificationStats => {
       const member = members.find((m) => m.id === memberId);
@@ -960,47 +427,95 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         choresCompletedTotal: Math.floor(member.pointsLifetime / 15),
       };
     },
-    [members, getTodayChores]
+    [members, getTodayChores],
   );
 
-  // Reset demo state
+  // ------- Lifecycle -------------------------------------------------------
+
+  const exitDemo = useCallback(() => {
+    setActive(false);
+  }, []);
+
   const resetDemo = useCallback(() => {
-    setCompletedChoreIds(new Set());
+    const today = new Date().toISOString().split('T')[0];
+    const initialCompleted = new Set<string>();
+    for (const c of DEMO_CHORES) {
+      if (c._demoStatus === 'completed') {
+        initialCompleted.add(`${c.id}-${today}`);
+      }
+    }
+    setCompletedChoreIds(initialCompleted);
     setPendingApprovalIds(new Set());
     setMembers(DEMO_MEMBERS);
     setSelectedMemberId('demo-parent');
+    setActive(DEMO_MODE);
   }, []);
 
-  const value: DemoContextType = {
-    isDemo: true,
-    household: DEMO_HOUSEHOLD,
-    members,
-    chores: DEMO_CHORES,
-    rewards: DEMO_REWARDS,
-    badges: DEMO_BADGES,
-    leaderboard: DEMO_LEADERBOARD,
-    activities: generateDemoActivities(),
-    currentMember,
-    selectedMemberId,
-    setSelectedMemberId,
-    completedChoreIds,
-    pendingApprovalIds,
-    getTodayChores,
-    completeChore,
-    approveChore,
-    rejectChore,
-    redeemReward,
-    getGamificationStats,
-    resetDemo,
-  };
+  // ------- Memoised value --------------------------------------------------
+
+  const value = useMemo<DemoContextType>(
+    () => ({
+      isDemoMode: active,
+      household: DEMO_HOUSEHOLD,
+      members,
+      chores: DEMO_CHORES,
+      rewards: DEMO_REWARDS,
+      badges: DEMO_BADGES,
+      tags: DEMO_TAGS,
+      choreTags: DEMO_CHORE_TAGS,
+      savedFilters: DEMO_SAVED_FILTERS,
+      boardPreferences: DEMO_BOARD_PREFERENCES,
+      gamification: DEMO_GAMIFICATION,
+      leaderboard: DEMO_LEADERBOARD,
+      activities: generateDemoActivities(),
+      currentMember,
+      selectedMemberId,
+      setSelectedMemberId,
+      completedChoreIds,
+      pendingApprovalIds,
+      getTodayChores,
+      completeChore,
+      approveChore,
+      rejectChore,
+      redeemReward,
+      getGamificationStats,
+      exitDemo,
+      resetDemo,
+    }),
+    [
+      active,
+      members,
+      currentMember,
+      selectedMemberId,
+      completedChoreIds,
+      pendingApprovalIds,
+      getTodayChores,
+      completeChore,
+      approveChore,
+      rejectChore,
+      redeemReward,
+      getGamificationStats,
+      exitDemo,
+      resetDemo,
+    ],
+  );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }
 
-export function useDemo() {
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
+export function useDemoMode() {
   const context = useContext(DemoContext);
   if (!context) {
-    throw new Error('useDemo must be used within a DemoProvider');
+    throw new Error('useDemoMode must be used within a DemoProvider');
   }
   return context;
 }
+
+/**
+ * @deprecated Use useDemoMode() instead. Kept for backward compatibility.
+ */
+export const useDemo = useDemoMode;

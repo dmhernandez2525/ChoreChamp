@@ -43,3 +43,13 @@ export {
 export { MobileBottomSheet } from './MobileBottomSheet';
 export { MobileNavBar } from './MobileNavBar';
 export { MobileChoreCard } from './MobileChoreCard';
+export { PointsBadge } from './PointsBadge';
+export { StreakIndicator } from './StreakIndicator';
+export { LevelProgressBar } from './LevelProgressBar';
+export {
+  AchievementToastProvider,
+  useAchievementToast,
+} from './AchievementToast';
+export { AutomationRuleBuilder } from './AutomationRuleBuilder';
+export { AutomationRuleList } from './AutomationRuleList';
+export { DemoBanner } from './DemoBanner';
