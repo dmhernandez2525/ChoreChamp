@@ -10,7 +10,9 @@ const mockUndoState = {
 };
 
 vi.mock('@/stores/undo-store', () => {
-  const store = vi.fn(() => mockUndoState);
+  const store = vi.fn(() => mockUndoState) as ReturnType<typeof vi.fn> & {
+    getState: ReturnType<typeof vi.fn>;
+  };
   // Attach getState for the keyboard shortcut handler
   store.getState = vi.fn(() => ({ redo: vi.fn() }));
   return { useUndoStore: store };

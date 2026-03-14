@@ -261,7 +261,7 @@ export interface UndoableAction {
 
 export interface BulkUpdateRequest {
   choreIds: string[];
-  changes: Partial<Pick<Chore, 'assignedTo' | 'category' | 'priority'>>;
+  changes: Partial<Pick<Chore, 'assignedTo' | 'category' | 'priority' | 'startDate' | 'dueTime'>>;
   status?: string;
   dueDate?: string;
 }
@@ -340,4 +340,47 @@ export interface ChoreDependency {
 export interface AddDependencyRequest {
   dependsOnChoreId: string;
   type: DependencyType;
+}
+
+// Calendar view types
+export interface CalendarChoreView {
+  date: string;
+  chores: Array<Chore & {
+    scheduledDate: string;
+    assignedMemberName?: string;
+    isCompleted: boolean;
+    completionId: string | null;
+  }>;
+}
+
+// Update saved filter request
+export interface UpdateSavedFilterRequest {
+  name?: string;
+  filters?: ChoreFilter[];
+  sort?: { field: string; direction: 'asc' | 'desc' };
+  groupBy?: string | null;
+  visibility?: FilterVisibility;
+}
+
+// Add attachment request
+export interface AddAttachmentRequest {
+  fileName: string;
+  fileUrl: string;
+  fileSize?: number;
+  mimeType?: string;
+  isPhotoProof?: boolean;
+}
+
+// Export data
+export interface ChoreExportData {
+  format: 'csv' | 'json';
+  data: string;
+  fileName: string;
+  choreCount: number;
+}
+
+// Report export
+export interface ReportExportData {
+  period: { start: string; end: string };
+  completions: ChoreCompletion[];
 }

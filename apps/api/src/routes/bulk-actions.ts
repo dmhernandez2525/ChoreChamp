@@ -13,8 +13,9 @@ const bulkUpdateSchema = z.object({
     assignedTo: z.array(z.string().uuid()).optional(),
     category: z.string().max(50).optional(),
     priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+    startDate: z.string().optional(),
+    dueTime: z.string().optional(),
   }),
-  dueDate: z.string().optional(),
 });
 
 const bulkReorderSchema = z.object({
@@ -80,6 +81,8 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
     if (body.changes.assignedTo !== undefined) updateData.assignedTo = body.changes.assignedTo;
     if (body.changes.category !== undefined) updateData.category = body.changes.category;
     if (body.changes.priority !== undefined) updateData.priority = body.changes.priority;
+    if (body.changes.startDate !== undefined) updateData.startDate = body.changes.startDate;
+    if (body.changes.dueTime !== undefined) updateData.dueTime = body.changes.dueTime;
 
     const updated = await db
       .update(chores)

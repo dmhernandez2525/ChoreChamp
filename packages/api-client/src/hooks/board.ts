@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import type {
   AddCommentRequest,
+  AddAttachmentRequest,
+  BoardPreferences,
+  BulkUpdateRequest,
   CreateSavedFilterRequest,
   DependencyType,
 } from '@chorechamp/types';
@@ -44,7 +47,7 @@ export function useBoardPreferences(householdId: string) {
 export function useUpdateBoardPreferences(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, unknown>) =>
+    mutationFn: (data: Partial<BoardPreferences>) =>
       apiClient.updateBoardPreferences(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -130,13 +133,7 @@ export function useChoreAttachments(householdId: string, choreId: string) {
 export function useAddAttachment(householdId: string, choreId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: {
-      fileName: string;
-      fileUrl: string;
-      fileSize?: number;
-      mimeType?: string;
-      isPhotoProof?: boolean;
-    }) => apiClient.addChoreAttachment(householdId, choreId, data),
+    mutationFn: (data: AddAttachmentRequest) => apiClient.addChoreAttachment(householdId, choreId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.choreAttachments(householdId, choreId),
@@ -161,7 +158,7 @@ export function useChoreActivity(householdId: string, choreId: string) {
 export function useBulkUpdateChores(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { choreIds: string[]; changes: Record<string, unknown> }) =>
+    mutationFn: (data: BulkUpdateRequest) =>
       apiClient.bulkUpdateChores(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chores', householdId] });

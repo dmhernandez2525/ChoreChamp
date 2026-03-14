@@ -115,7 +115,7 @@ describe('ChoreDetailPanel', () => {
   });
 
   it('renders nothing when chore is null', () => {
-    const { container } = render(
+    render(
       <ChoreDetailPanel {...defaultProps} chore={null} />
     );
     expect(screen.queryByTestId('chore-detail-panel')).not.toBeInTheDocument();

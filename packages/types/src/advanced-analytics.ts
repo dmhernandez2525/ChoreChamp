@@ -203,3 +203,17 @@ export interface ErrorMetric {
   lastOccurrence: string;
   isResolved: boolean;
 }
+
+// Audit log summary types
+export interface AuditLogActor {
+  actorId: string;
+  actorName: string;
+  actionCount: number;
+}
+
+export interface AuditLogSummary {
+  totalActions: number;
+  actionBreakdown: Record<string, number>;
+  topActors: AuditLogActor[];
+  recentActions: AuditLogEntry[];
+}
