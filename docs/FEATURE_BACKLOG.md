@@ -124,6 +124,46 @@
 
 ---
 
+## P1 - Advanced Task Management Views (Phase 15)
+
+> Ported from Command Center UI project management views. Adds professional-grade
+> task management UX to ChoreChamp's existing chore system.
+
+### Board Views
+
+| Feature                     | Description                                          | Research Justification                                |
+| --------------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| **Kanban Board**            | Drag-and-drop columns (To Do, In Progress, Done)     | Industry standard for visual task management          |
+| **Calendar View**           | Month/week calendar with drag-to-reschedule          | Visual scheduling reduces missed chores               |
+| **Sortable List View**      | Table with inline editing, keyboard nav              | Power users prefer spreadsheet-style views            |
+| **View Switcher**           | Toggle between Board, Calendar, List, Dashboard      | Multiple perspectives on the same data                |
+
+### Productivity Features
+
+| Feature                     | Description                                          | Research Justification                                |
+| --------------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| **Bulk Actions**            | Multi-select chores for batch assign/status/delete   | Reduces repetitive work for parents managing many chores |
+| **Advanced Filters**        | AND/OR filter builder with saved views               | Quick access to "My chores", "Overdue", "Today"       |
+| **Command Palette**         | Cmd+K search and quick navigation                    | Power user productivity (Notion, Linear, Slack)       |
+| **Undo/Redo**               | Cmd+Z to reverse accidental changes                  | Essential UX safety net                               |
+
+### Enhanced Chore Detail
+
+| Feature                     | Description                                          | Research Justification                                |
+| --------------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| **Slide-out Detail Panel**  | Rich panel with comments, attachments, activity      | Richer context without leaving the board              |
+| **Chore Comments**          | @mention family members in chore discussions          | Coordination for shared household tasks               |
+| **Chore Attachments**       | Photo/file uploads linked to chores                  | Integrates with existing photo proof system           |
+| **Activity Timeline**       | Audit trail of all chore changes                     | Accountability and transparency                      |
+
+### Automation
+
+| Feature                     | Description                                          | Research Justification                                |
+| --------------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| **Automation Rule Builder** | Visual "when X then Y" rule creation                 | Reduces manual chore management overhead              |
+
+---
+
 ## P1 - Critical for Retention
 
 ### Advanced Gamification
