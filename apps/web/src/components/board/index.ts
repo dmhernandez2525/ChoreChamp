@@ -8,3 +8,4 @@ export { ListView } from './ListView';
 export { FilterBar } from './FilterBar';
 export { FilterBuilder } from './FilterBuilder';
 export { SelectionToolbar } from './SelectionToolbar';
+export { CommandPalette } from './CommandPalette';
