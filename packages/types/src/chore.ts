@@ -236,7 +236,7 @@ export interface BulkAction {
   payload: Record<string, unknown>;
 }
 
-export interface AutomationRule {
+export interface ChoreAutomationRule {
   id: string;
   householdId: string;
   name: string;
