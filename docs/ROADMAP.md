@@ -548,6 +548,54 @@ ChoreChamp is a gamified family chore management application targeting the $542M
 
 ---
 
+## Phase 15: Advanced Task Management Views
+
+**Goal:** Port proven task management UX patterns from Command Center UI into ChoreChamp. Add Kanban board, calendar view, list view, bulk actions, advanced filters, command palette, enhanced detail panel, automation rule builder, and undo/redo.
+
+**Estimated Duration:** 3-4 weeks
+**Dependencies:** None (all existing infrastructure supports this)
+**Branch:** `feature/task-management-views`
+
+### Milestone 1: Documentation & Design (Week 1)
+
+- [ ] F15.1 - Write 9 SDDs (025-033) covering all new features
+- [ ] F15.2 - Write acceptance criteria (175 criteria in AC-TASK-MANAGEMENT.md)
+- [ ] F15.3 - Update ARCHITECTURE.md, FEATURE_BACKLOG.md, INDEX.md
+
+### Milestone 2: Foundation (Week 1-2)
+
+- [ ] F15.4 - Database schema (chore_board_preferences, chore_comments, chore_attachments, chore_activity_log, saved_chore_filters)
+- [ ] F15.5 - Type definitions in @chorechamp/types
+- [ ] F15.6 - API routes (board, bulk-actions, comments, attachments, activity, calendar, saved-filters)
+- [ ] F15.7 - API client hooks in @chorechamp/api-client
+
+### Milestone 3: Core UI (Week 2-3)
+
+- [ ] F15.8 - Kanban board with @dnd-kit drag-and-drop
+- [ ] F15.9 - Calendar view (month/week) with drag-to-reschedule
+- [ ] F15.10 - List view with @tanstack/react-table (sortable, inline editing)
+- [ ] F15.11 - View switcher + shared filter/sort state
+- [ ] F15.12 - Bulk action bar with multi-select
+- [ ] F15.13 - Advanced filter builder with saved views
+- [ ] F15.14 - Command palette (Cmd+K) with cmdk
+- [ ] F15.15 - Enhanced chore detail panel (comments, attachments, activity)
+
+### Milestone 4: Polish & Integration (Week 3-4)
+
+- [ ] F15.16 - Automation rule builder UI
+- [ ] F15.17 - Undo/redo system (Cmd+Z/Cmd+Shift+Z)
+- [ ] F15.18 - Mobile responsive layouts for all views
+- [ ] F15.19 - Accessibility (ARIA, keyboard nav, screen reader, reduced motion)
+- [ ] F15.20 - Demo mode board data
+- [ ] F15.21 - Gamification integration (board completions trigger points/streaks/badges)
+- [ ] F15.22 - Unit tests (80%+ coverage), integration tests, E2E tests
+
+### Attribution
+
+Task management view patterns ported from Command Center UI project.
+
+---
+
 ## Decision Log
 
 | Date       | Decision                           | Rationale                                                   |
