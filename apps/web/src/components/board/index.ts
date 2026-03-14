@@ -23,3 +23,7 @@ export { ColumnSettingsPanel } from './ColumnSettingsPanel';
 export { TagPicker, TagBadge } from './TagPicker';
 export { TimeTracker } from './TimeTracker';
 export { DependencyPicker } from './DependencyPicker';
+export { PresenceAvatars } from './PresenceAvatars';
+export { PrintView } from './PrintView';
+export { ExportDialog } from './ExportDialog';
+export { ImportDialog } from './ImportDialog';
