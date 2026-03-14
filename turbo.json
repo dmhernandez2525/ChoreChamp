@@ -20,6 +20,11 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "outputs": ["test-results/**"],
+      "cache": false
+    },
     "clean": {
       "cache": false
     }
