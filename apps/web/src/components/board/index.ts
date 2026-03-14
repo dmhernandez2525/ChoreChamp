@@ -13,3 +13,6 @@ export { ChoreDetailPanel } from './ChoreDetailPanel';
 export { UndoToast } from './UndoToast';
 export { SaveFilterDialog } from './SaveFilterDialog';
 export { SavedFilterList } from './SavedFilterList';
+export { BulkAssignDialog } from './BulkAssignDialog';
+export { BulkRescheduleDialog } from './BulkRescheduleDialog';
+export { BulkDeleteConfirmation } from './BulkDeleteConfirmation';
