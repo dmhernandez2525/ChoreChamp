@@ -92,6 +92,70 @@ body {
   }
 }
 
+/* ===== Gamification Animations ===== */
+
+@keyframes bounce-scale {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.25); }
+  60% { transform: scale(0.95); }
+}
+
+.animate-bounce-scale {
+  animation: bounce-scale 0.6s ease-out;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shrink-width {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-shrink-width {
+  animation: shrink-width linear forwards;
+}
+
+/* Achievement confetti particles */
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(60px) rotate(720deg) scale(0.3);
+  }
+}
+
+.achievement-particle {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: confetti-fall 1.5s ease-out forwards;
+}
+
+.achievement-particle:nth-child(even) {
+  border-radius: 1px;
+  width: 5px;
+  height: 8px;
+}
+
 /* Bottom sheet animation */
 @keyframes slide-up {
   from {
