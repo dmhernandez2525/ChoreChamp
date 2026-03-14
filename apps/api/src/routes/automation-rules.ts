@@ -1,9 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
-import { choreAutomationRules } from '@chorechamp/database/schema';
+import { choreAutomationRules, members } from '@chorechamp/database/schema';
 import { db } from '../lib/db';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 
 const triggerValues = [
   'chore_completed',
@@ -34,12 +34,25 @@ const createRuleSchema = z.object({
 
 const updateRuleSchema = createRuleSchema.partial();
 
+async function verifyMembership(userId: string, householdId: string) {
+  const [membership] = await db
+    .select()
+    .from(members)
+    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
+  return membership;
+}
+
 export async function automationRuleRoutes(app: FastifyInstance) {
   // GET /:householdId/automation/rules - List all rules for household
   app.get('/:householdId/automation/rules', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+
+    if (!await verifyMembership(user.id, householdId)) {
+      return reply.status(403).send({ error: 'You are not a member of this household' });
+    }
 
     const result = await db
       .select()
@@ -54,8 +67,18 @@ export async function automationRuleRoutes(app: FastifyInstance) {
   app.post('/:householdId/automation/rules', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
-    const body = createRuleSchema.parse(request.body);
+
+    if (!await verifyMembership(user.id, householdId)) {
+      return reply.status(403).send({ error: 'You are not a member of this household' });
+    }
+
+    const parsed = createRuleSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Validation failed', details: parsed.error.issues });
+    }
+    const body = parsed.data;
 
     const [rule] = await db
       .insert(choreAutomationRules)
@@ -78,8 +101,18 @@ export async function automationRuleRoutes(app: FastifyInstance) {
   app.put('/:householdId/automation/rules/:ruleId', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
-    const body = updateRuleSchema.parse(request.body);
+
+    if (!await verifyMembership(user.id, householdId)) {
+      return reply.status(403).send({ error: 'You are not a member of this household' });
+    }
+
+    const parsed = updateRuleSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Validation failed', details: parsed.error.issues });
+    }
+    const body = parsed.data;
 
     const [updated] = await db
       .update(choreAutomationRules)
@@ -101,7 +134,12 @@ export async function automationRuleRoutes(app: FastifyInstance) {
   app.delete('/:householdId/automation/rules/:ruleId', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
+
+    if (!await verifyMembership(user.id, householdId)) {
+      return reply.status(403).send({ error: 'You are not a member of this household' });
+    }
 
     await db
       .delete(choreAutomationRules)
@@ -114,7 +152,12 @@ export async function automationRuleRoutes(app: FastifyInstance) {
   app.post('/:householdId/automation/rules/:ruleId/toggle', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
+
+    if (!await verifyMembership(user.id, householdId)) {
+      return reply.status(403).send({ error: 'You are not a member of this household' });
+    }
 
     // Fetch current state
     const [existing] = await db

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { getSocket } from '../lib/socket';
 
 export interface PresenceMember {
   id: string;
@@ -20,7 +21,6 @@ interface UsePresenceReturn {
 }
 
 const IDLE_TIMEOUT_MS = 60_000;
-const SOCKET_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
 export function usePresence({ householdId, boardId }: UsePresenceOptions): UsePresenceReturn {
   const [onlineMembers, setOnlineMembers] = useState<PresenceMember[]>([]);
@@ -43,18 +43,7 @@ export function usePresence({ householdId, boardId }: UsePresenceOptions): UsePr
   }, [householdId, boardId]);
 
   useEffect(() => {
-    let socket: Socket;
-
-    try {
-      socket = io(SOCKET_URL, {
-        transports: ['websocket', 'polling'],
-        autoConnect: true,
-      });
-    } catch {
-      // Socket.io server not available; degrade gracefully
-      return;
-    }
-
+    const socket = getSocket();
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -74,9 +63,15 @@ export function usePresence({ householdId, boardId }: UsePresenceOptions): UsePr
       setOnlineMembers(members);
     });
 
-    // Track user activity for idle detection
+    // Track user activity for idle detection (throttled to at most once per second)
     const activityEvents = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
-    const handleActivity = () => resetIdleTimer();
+    let lastActivityEmit = 0;
+    const handleActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityEmit < 1000) return;
+      lastActivityEmit = now;
+      resetIdleTimer();
+    };
 
     for (const event of activityEvents) {
       window.addEventListener(event, handleActivity, { passive: true });
@@ -95,7 +90,6 @@ export function usePresence({ householdId, boardId }: UsePresenceOptions): UsePr
       }
 
       socket.emit('board:leave', { householdId, boardId });
-      socket.disconnect();
       socketRef.current = null;
     };
   }, [householdId, boardId, resetIdleTimer]);

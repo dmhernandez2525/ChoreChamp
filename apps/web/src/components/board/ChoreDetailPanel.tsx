@@ -438,7 +438,7 @@ export function ChoreDetailPanel({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {(comments as Array<{ id: string; content: string; createdAt: string; memberId: string }>).map((comment) => {
+                    {(comments as Array<{ id: string; comment: string; createdAt: string; memberId: string }>).map((comment) => {
                       const author = members.find(m => m.id === comment.memberId);
                       return (
                         <div key={comment.id} className="rounded-lg border border-gray-100 p-3">
@@ -467,7 +467,7 @@ export function ChoreDetailPanel({
                               <X className="h-3 w-3" />
                             </button>
                           </div>
-                          <p className="mt-1.5 text-sm text-gray-700">{comment.content}</p>
+                          <p className="mt-1.5 text-sm text-gray-700">{comment.comment}</p>
                         </div>
                       );
                     })}

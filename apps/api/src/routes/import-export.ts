@@ -36,7 +36,11 @@ const CSV_COLUMNS = [
 ] as const;
 
 function escapeCSVField(value: unknown): string {
-  const str = value == null ? '' : String(value);
+  let str = value == null ? '' : String(value);
+  // Prevent CSV formula injection by prefixing dangerous leading characters
+  if (str.length > 0 && /^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
   if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
@@ -154,6 +158,7 @@ export async function importExportRoutes(app: FastifyInstance) {
   // POST /:householdId/chores/import - Import chores from CSV/JSON
   app.post('/:householdId/chores/import', {
     preHandler: [requireAuth],
+    bodyLimit: 1024 * 1024,
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };

@@ -62,7 +62,7 @@ export function KanbanCard({ chore, members, onClick }: KanbanCardProps) {
     >
       {/* Drag handle */}
       <button
-        className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+        className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab transition-opacity md:opacity-0 md:group-hover:opacity-100 active:cursor-grabbing"
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"

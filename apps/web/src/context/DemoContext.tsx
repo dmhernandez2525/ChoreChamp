@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   useMemo,
   ReactNode,
 } from 'react';
@@ -20,18 +21,12 @@ import type {
   SavedFilterView,
   BoardPreferences,
 } from '@chorechamp/types';
-import {
-  DEMO_MEMBERS,
-  DEMO_CHORES,
-  DEMO_TAGS,
-  DEMO_CHORE_TAGS,
-  DEMO_SAVED_FILTERS,
-  DEMO_BOARD_PREFERENCES,
-  DEMO_GAMIFICATION,
-  DEMO_HOUSEHOLD,
-  type DemoChore,
-  type DemoGamificationProfile,
+import type {
+  DemoChore,
+  DemoGamificationProfile,
 } from '../lib/demo-data';
+
+type DemoHousehold = Awaited<typeof import('../lib/demo-data')>['DEMO_HOUSEHOLD'];
 import { DEMO_MODE } from '../lib/demo-mode';
 
 // ---------------------------------------------------------------------------
@@ -193,7 +188,7 @@ interface DemoContextType {
   isDemoMode: boolean;
 
   // Data
-  household: typeof DEMO_HOUSEHOLD;
+  household: DemoHousehold;
   members: Member[];
   chores: DemoChore[];
   rewards: Reward[];
@@ -237,8 +232,44 @@ const DemoContext = createContext<DemoContextType | null>(null);
 // ---------------------------------------------------------------------------
 
 export function DemoProvider({ children }: { children: ReactNode }) {
+  const [demoData, setDemoData] = useState<Awaited<typeof import('../lib/demo-data')> | null>(null);
+
+  useEffect(() => {
+    if (!DEMO_MODE) return;
+    import('../lib/demo-data').then(setDemoData);
+  }, []);
+
+  if (!DEMO_MODE) {
+    // Provide a no-op context when demo mode is off so the bundle stays small
+    return <DemoContext.Provider value={null}>{children}</DemoContext.Provider>;
+  }
+
+  if (!demoData) {
+    return null;
+  }
+
+  return <DemoProviderInner demoData={demoData}>{children}</DemoProviderInner>;
+}
+
+function DemoProviderInner({
+  children,
+  demoData,
+}: {
+  children: ReactNode;
+  demoData: Awaited<typeof import('../lib/demo-data')>;
+}) {
+  const {
+    DEMO_MEMBERS,
+    DEMO_CHORES,
+    DEMO_TAGS,
+    DEMO_CHORE_TAGS,
+    DEMO_SAVED_FILTERS,
+    DEMO_BOARD_PREFERENCES,
+    DEMO_GAMIFICATION,
+    DEMO_HOUSEHOLD,
+  } = demoData;
+
   const [completedChoreIds, setCompletedChoreIds] = useState<Set<string>>(() => {
-    // Pre-populate completed chores from demo data
     const completed = new Set<string>();
     const today = new Date().toISOString().split('T')[0];
     for (const c of DEMO_CHORES) {

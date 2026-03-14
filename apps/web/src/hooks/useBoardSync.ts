@@ -38,8 +38,9 @@ export function useBoardSync({ householdId }: UseBoardSyncOptions): UseBoardSync
       setIsConnected(false);
     };
 
-    const onConnectError = () => {
+    const onConnectError = (err: Error) => {
       setIsConnected(false);
+      if (import.meta.env.DEV) console.warn('Board sync connection error:', err);
     };
 
     const onChoreCreated = () => invalidateChores();

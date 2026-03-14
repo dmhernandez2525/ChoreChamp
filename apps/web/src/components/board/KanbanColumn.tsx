@@ -27,7 +27,7 @@ export function KanbanColumn({
   onAddChore,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
-  const isOverLimit = wipLimit ? chores.length >= wipLimit : false;
+  const isOverLimit = wipLimit ? chores.length > wipLimit : false;
 
   return (
     <div

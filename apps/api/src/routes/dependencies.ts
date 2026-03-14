@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import { choreDependencies, chores } from '@chorechamp/database/schema';
 import { db } from '../lib/db';
 import { requireAuth } from '../middleware/auth';
@@ -17,6 +17,9 @@ export async function dependencyRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { choreId } = request.params as { householdId: string; choreId: string };
 
+    // Join to the "other" chore in the relationship so the UI can display
+    // the related chore's title. When choreId is the source, join on
+    // dependsOnChoreId; when choreId is the target, join on choreId.
     const deps = await db
       .select({
         id: choreDependencies.id,
@@ -30,9 +33,7 @@ export async function dependencyRoutes(app: FastifyInstance) {
       .from(choreDependencies)
       .innerJoin(chores, eq(
         chores.id,
-        // Show the "other" chore in the dependency
-        // If this chore is the source, show the target; if target, show the source
-        choreDependencies.dependsOnChoreId
+        sql`CASE WHEN ${choreDependencies.choreId} = ${choreId} THEN ${choreDependencies.dependsOnChoreId} ELSE ${choreDependencies.choreId} END`
       ))
       .where(
         or(
@@ -56,18 +57,30 @@ export async function dependencyRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'A chore cannot depend on itself' });
     }
 
-    // Check for circular dependency (simple: A->B->A)
-    const existing = await db
-      .select()
-      .from(choreDependencies)
-      .where(and(
-        eq(choreDependencies.choreId, body.dependsOnChoreId),
-        eq(choreDependencies.dependsOnChoreId, choreId)
-      ))
-      .limit(1);
+    // BFS cycle detection: walk the dependency graph starting from
+    // dependsOnChoreId. If we can reach choreId, adding the edge
+    // choreId -> dependsOnChoreId would create a cycle.
+    const visited = new Set<string>();
+    const queue = [body.dependsOnChoreId];
 
-    if (existing.length > 0) {
-      return reply.status(400).send({ error: 'Circular dependency detected' });
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (current === choreId) {
+        return reply.status(400).send({ error: 'Circular dependency detected' });
+      }
+      if (visited.has(current)) continue;
+      visited.add(current);
+
+      const downstream = await db
+        .select({ target: choreDependencies.dependsOnChoreId })
+        .from(choreDependencies)
+        .where(eq(choreDependencies.choreId, current));
+
+      for (const row of downstream) {
+        if (!visited.has(row.target)) {
+          queue.push(row.target);
+        }
+      }
     }
 
     const [dep] = await db
@@ -87,11 +100,14 @@ export async function dependencyRoutes(app: FastifyInstance) {
   app.delete('/:householdId/chores/:choreId/dependencies/:depId', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { depId } = request.params as { householdId: string; choreId: string; depId: string };
+    const { choreId, depId } = request.params as { householdId: string; choreId: string; depId: string };
 
     await db
       .delete(choreDependencies)
-      .where(eq(choreDependencies.id, depId));
+      .where(and(
+        eq(choreDependencies.id, depId),
+        eq(choreDependencies.choreId, choreId)
+      ));
 
     return reply.status(204).send();
   });

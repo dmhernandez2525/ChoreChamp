@@ -87,19 +87,21 @@ test.describe('Board View Interactions', () => {
     }
   });
 
-  test('filter bar appears when filters are active', async ({ page }) => {
+  test('filter bar is not visible when no filters are active', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // The filter bar should not be visible by default (no active filters)
+    // With no active filters, the filter bar should not be prominently visible
     const filterBar = page.locator('[data-testid="filter-bar"]');
-    // This may or may not be present depending on app state,
-    // so we just verify the selector works without error
-    const isVisible = await filterBar.isVisible().catch(() => false);
+    const count = await filterBar.count();
 
-    // If not visible, that is expected (no filters active)
-    if (!isVisible) {
-      expect(true).toBe(true);
+    if (count === 0) {
+      // Filter bar element is not in the DOM at all, which is correct
+      expect(count).toBe(0);
+    } else {
+      // If the element exists, verify it has no active filter chips
+      const activeChips = filterBar.locator('[data-testid="active-filter-chip"]');
+      await expect(activeChips).toHaveCount(0);
     }
   });
 });

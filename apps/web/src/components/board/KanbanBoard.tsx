@@ -12,6 +12,7 @@ import {
   type DragOverEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import type { Chore, Member } from '@chorechamp/types';
 import { useBoardStore } from '@/stores/board-store';
 import { useUndoStore } from '@/stores/undo-store';
@@ -40,12 +41,6 @@ const priorityColumns: ColumnDef[] = [
   { id: 'low', title: 'Low', color: '#93c5fd', filter: (c) => c.priority === 'low' },
 ];
 
-function getColumnsByGroupBy(groupBy: string | null): ColumnDef[] {
-  if (groupBy === 'priority') return priorityColumns;
-  // Default: group by priority (most useful for kanban)
-  return priorityColumns;
-}
-
 export function KanbanBoard({
   chores,
   members,
@@ -53,7 +48,7 @@ export function KanbanBoard({
   onCardClick,
   onAddChore,
 }: KanbanBoardProps) {
-  const { groupBy, columnSettings } = useBoardStore();
+  const { columnSettings } = useBoardStore();
   const { pushAction } = useUndoStore();
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -66,7 +61,7 @@ export function KanbanBoard({
     })
   );
 
-  const columns = useMemo(() => getColumnsByGroupBy(groupBy), [groupBy]);
+  const columns = useMemo(() => priorityColumns, []);
 
   // Group chores into columns
   const columnChores = useMemo(() => {
@@ -98,16 +93,61 @@ export function KanbanBoard({
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over) return;
 
-    // Calculate new board orders
+    const activeChoreId = active.id as string;
+
+    // Determine which column the item was dropped into.
+    // over.id can be a column id (droppable) or another card id (sortable).
+    let targetColId: string | undefined;
+    let overItemId: string | undefined;
+
+    const isColumnDrop = columns.some(col => col.id === over.id);
+    if (isColumnDrop) {
+      targetColId = over.id as string;
+    } else {
+      overItemId = over.id as string;
+      targetColId = columns.find(col =>
+        (columnChores[col.id] || []).some(c => c.id === overItemId)
+      )?.id;
+    }
+
+    if (!targetColId) return;
+
+    // Build a mutable copy of each column's chore list
+    const mutableColumns: Record<string, string[]> = {};
+    for (const col of columns) {
+      mutableColumns[col.id] = (columnChores[col.id] || []).map(c => c.id);
+    }
+
+    // Find the source column and remove the active chore from it
+    const sourceColId = columns.find(col =>
+      mutableColumns[col.id].includes(activeChoreId)
+    )?.id;
+
+    if (!sourceColId) return;
+
+    if (sourceColId === targetColId) {
+      // Reorder within the same column
+      const items = mutableColumns[sourceColId];
+      const oldIndex = items.indexOf(activeChoreId);
+      const newIndex = overItemId ? items.indexOf(overItemId) : items.length;
+      if (oldIndex === newIndex) return;
+      mutableColumns[sourceColId] = arrayMove(items, oldIndex, newIndex);
+    } else {
+      // Move across columns
+      mutableColumns[sourceColId] = mutableColumns[sourceColId].filter(id => id !== activeChoreId);
+      const targetItems = mutableColumns[targetColId];
+      const insertIndex = overItemId ? targetItems.indexOf(overItemId) : targetItems.length;
+      targetItems.splice(insertIndex, 0, activeChoreId);
+    }
+
+    // Compute new board orders across all columns
     const updates: Array<{ choreId: string; boardOrder: number }> = [];
     let order = 0;
-
     for (const col of columns) {
-      const colChores = columnChores[col.id] || [];
-      for (const chore of colChores) {
-        updates.push({ choreId: chore.id, boardOrder: order++ });
+      for (const choreId of mutableColumns[col.id]) {
+        updates.push({ choreId, boardOrder: order++ });
       }
     }
 

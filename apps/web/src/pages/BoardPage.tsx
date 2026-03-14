@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { Settings2, Search } from 'lucide-react';
 import { Button } from '@chorechamp/ui';
 import {
@@ -36,6 +36,8 @@ import type { Chore, ChorePriority } from '@chorechamp/types';
 export default function BoardPage() {
   const { householdId } = useParams<{ householdId: string }>();
   const navigate = useNavigate();
+
+  if (!householdId) return <Navigate to="/" />;
 
   // Stores
   const { viewMode, loadPreferences } = useBoardStore();
