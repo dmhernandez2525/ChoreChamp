@@ -43,6 +43,21 @@ ChoreChamp is a cross-platform family chore management application that gamifies
 | [SDD-017: Multi-Language Support (i18n)](./sdd/SDD-017-multi-language-support.md) | Implemented |
 | [SDD-018: Special Needs Accommodations](./sdd/SDD-018-special-needs-accommodations.md) | Implemented |
 
+### Advanced Task Management (Phase 15)
+
+| Document                                                                          | Status  |
+| --------------------------------------------------------------------------------- | ------- |
+| [SDD-025: Kanban Board View](./sdd/SDD-025-kanban-board.md)                      | Draft   |
+| [SDD-026: Calendar View](./sdd/SDD-026-calendar-view.md)                         | Draft   |
+| [SDD-027: List View](./sdd/SDD-027-list-view.md)                                 | Draft   |
+| [SDD-028: Bulk Actions](./sdd/SDD-028-bulk-actions.md)                           | Draft   |
+| [SDD-029: Advanced Filters](./sdd/SDD-029-advanced-filters.md)                   | Draft   |
+| [SDD-030: Command Palette](./sdd/SDD-030-command-palette.md)                     | Draft   |
+| [SDD-031: Enhanced Chore Detail Panel](./sdd/SDD-031-chore-detail-panel.md)      | Draft   |
+| [SDD-032: Automation Rules](./sdd/SDD-032-automation-rules.md)                   | Draft   |
+| [SDD-033: Undo/Redo](./sdd/SDD-033-undo-redo.md)                                | Draft   |
+| [AC-TASK-MANAGEMENT.md](./AC-TASK-MANAGEMENT.md)                                 | Draft   |
+
 ---
 
 ## Research Documents
