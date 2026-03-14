@@ -1,13 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import type {
-  ChoreComment,
-  ChoreAttachment,
-  ChoreActivityEntry,
-  SavedFilterView,
-  BoardPreferences,
-  BulkUpdateRequest,
-  BulkReorderRequest,
   AddCommentRequest,
   CreateSavedFilterRequest,
 } from '@chorechamp/types';
@@ -34,10 +27,7 @@ export const boardQueryKeys = {
 export function useBoardPreferences(householdId: string) {
   return useQuery({
     queryKey: boardQueryKeys.boardPreferences(householdId),
-    queryFn: () =>
-      apiClient.get<BoardPreferences>(
-        `/api/households/${householdId}/board/preferences`
-      ),
+    queryFn: () => apiClient.getBoardPreferences(householdId),
     enabled: !!householdId,
   });
 }
@@ -45,8 +35,8 @@ export function useBoardPreferences(householdId: string) {
 export function useUpdateBoardPreferences(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<BoardPreferences>) =>
-      apiClient.put(`/api/households/${householdId}/board/preferences`, data),
+    mutationFn: (data: Record<string, unknown>) =>
+      apiClient.updateBoardPreferences(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.boardPreferences(householdId),
@@ -64,13 +54,7 @@ export function useCalendarChores(
 ) {
   return useQuery({
     queryKey: boardQueryKeys.calendar(householdId, startDate, endDate),
-    queryFn: () => {
-      const params = new URLSearchParams({ startDate, endDate });
-      if (memberId) params.set('memberId', memberId);
-      return apiClient.get(
-        `/api/households/${householdId}/calendar?${params.toString()}`
-      );
-    },
+    queryFn: () => apiClient.getCalendarChores(householdId, startDate, endDate, memberId),
     enabled: !!householdId && !!startDate && !!endDate,
   });
 }
@@ -82,10 +66,7 @@ export function useCalendarCounts(
 ) {
   return useQuery({
     queryKey: boardQueryKeys.calendarCounts(householdId, startDate, endDate),
-    queryFn: () =>
-      apiClient.get(
-        `/api/households/${householdId}/calendar/counts?startDate=${startDate}&endDate=${endDate}`
-      ),
+    queryFn: () => apiClient.getCalendarCounts(householdId, startDate, endDate),
     enabled: !!householdId && !!startDate && !!endDate,
   });
 }
@@ -94,10 +75,7 @@ export function useCalendarCounts(
 export function useChoreComments(householdId: string, choreId: string) {
   return useQuery({
     queryKey: boardQueryKeys.choreComments(householdId, choreId),
-    queryFn: () =>
-      apiClient.get<ChoreComment[]>(
-        `/api/households/${householdId}/chores/${choreId}/comments`
-      ),
+    queryFn: () => apiClient.getChoreComments(householdId, choreId),
     enabled: !!householdId && !!choreId,
   });
 }
@@ -106,10 +84,7 @@ export function useAddComment(householdId: string, choreId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: AddCommentRequest) =>
-      apiClient.post(
-        `/api/households/${householdId}/chores/${choreId}/comments`,
-        data
-      ),
+      apiClient.addChoreComment(householdId, choreId, data.comment),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.choreComments(householdId, choreId),
@@ -125,9 +100,7 @@ export function useDeleteComment(householdId: string, choreId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (commentId: string) =>
-      apiClient.delete(
-        `/api/households/${householdId}/chores/${choreId}/comments/${commentId}`
-      ),
+      apiClient.deleteChoreComment(householdId, choreId, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.choreComments(householdId, choreId),
@@ -140,10 +113,7 @@ export function useDeleteComment(householdId: string, choreId: string) {
 export function useChoreAttachments(householdId: string, choreId: string) {
   return useQuery({
     queryKey: boardQueryKeys.choreAttachments(householdId, choreId),
-    queryFn: () =>
-      apiClient.get<ChoreAttachment[]>(
-        `/api/households/${householdId}/chores/${choreId}/attachments`
-      ),
+    queryFn: () => apiClient.getChoreAttachments(householdId, choreId),
     enabled: !!householdId && !!choreId,
   });
 }
@@ -157,11 +127,7 @@ export function useAddAttachment(householdId: string, choreId: string) {
       fileSize?: number;
       mimeType?: string;
       isPhotoProof?: boolean;
-    }) =>
-      apiClient.post(
-        `/api/households/${householdId}/chores/${choreId}/attachments`,
-        data
-      ),
+    }) => apiClient.addChoreAttachment(householdId, choreId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.choreAttachments(householdId, choreId),
@@ -177,10 +143,7 @@ export function useAddAttachment(householdId: string, choreId: string) {
 export function useChoreActivity(householdId: string, choreId: string) {
   return useQuery({
     queryKey: boardQueryKeys.choreActivity(householdId, choreId),
-    queryFn: () =>
-      apiClient.get<ChoreActivityEntry[]>(
-        `/api/households/${householdId}/chores/${choreId}/activity`
-      ),
+    queryFn: () => apiClient.getChoreActivity(householdId, choreId),
     enabled: !!householdId && !!choreId,
   });
 }
@@ -189,11 +152,8 @@ export function useChoreActivity(householdId: string, choreId: string) {
 export function useBulkUpdateChores(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: BulkUpdateRequest) =>
-      apiClient.patch(
-        `/api/households/${householdId}/chores/bulk`,
-        data
-      ),
+    mutationFn: (data: { choreIds: string[]; changes: Record<string, unknown> }) =>
+      apiClient.bulkUpdateChores(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chores', householdId] });
     },
@@ -203,11 +163,8 @@ export function useBulkUpdateChores(householdId: string) {
 export function useBulkReorderChores(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: BulkReorderRequest) =>
-      apiClient.patch(
-        `/api/households/${householdId}/chores/reorder`,
-        data
-      ),
+    mutationFn: (updates: Array<{ choreId: string; boardOrder: number }>) =>
+      apiClient.bulkReorderChores(householdId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chores', householdId] });
     },
@@ -218,10 +175,7 @@ export function useBulkDeleteChores(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (choreIds: string[]) =>
-      apiClient.post(
-        `/api/households/${householdId}/chores/bulk-delete`,
-        { choreIds }
-      ),
+      apiClient.bulkDeleteChores(householdId, choreIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chores', householdId] });
     },
@@ -232,10 +186,7 @@ export function useBulkDeleteChores(householdId: string) {
 export function useSavedFilters(householdId: string) {
   return useQuery({
     queryKey: boardQueryKeys.savedFilters(householdId),
-    queryFn: () =>
-      apiClient.get<SavedFilterView[]>(
-        `/api/households/${householdId}/board/filters`
-      ),
+    queryFn: () => apiClient.getSavedFilters(householdId),
     enabled: !!householdId,
   });
 }
@@ -244,10 +195,7 @@ export function useCreateSavedFilter(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateSavedFilterRequest) =>
-      apiClient.post(
-        `/api/households/${householdId}/board/filters`,
-        data
-      ),
+      apiClient.createSavedFilter(householdId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.savedFilters(householdId),
@@ -260,9 +208,7 @@ export function useDeleteSavedFilter(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (filterId: string) =>
-      apiClient.delete(
-        `/api/households/${householdId}/board/filters/${filterId}`
-      ),
+      apiClient.deleteSavedFilter(householdId, filterId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.savedFilters(householdId),
