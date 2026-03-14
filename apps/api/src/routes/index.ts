@@ -52,6 +52,8 @@ import { communitySocialRoutes } from './community-social';
 import { smartAutomationRoutes } from './smart-automation';
 import { communicationCalendarRoutes } from './communication-calendar';
 import { financialSchedulingRoutes } from './financial-scheduling';
+import { boardRoutes } from './board';
+import { calendarRoutes } from './calendar';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -113,6 +115,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
         householdApi.register(smartAutomationRoutes, { prefix: '/:householdId/automation' });
         householdApi.register(communicationCalendarRoutes, { prefix: '/:householdId/family-hub' });
         householdApi.register(financialSchedulingRoutes, { prefix: '/:householdId/financial' });
+        householdApi.register(boardRoutes, { prefix: '/:householdId/board' });
+        householdApi.register(calendarRoutes, { prefix: '/:householdId/calendar' });
       });
 
       // Chore templates (public)
