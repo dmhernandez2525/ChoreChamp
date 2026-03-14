@@ -3,6 +3,7 @@ import { apiClient } from '../client';
 import type {
   AddCommentRequest,
   CreateSavedFilterRequest,
+  DependencyType,
 } from '@chorechamp/types';
 
 // ===== Query Keys =====
@@ -21,6 +22,14 @@ export const boardQueryKeys = {
     ['choreActivity', householdId, choreId] as const,
   savedFilters: (householdId: string) =>
     ['savedFilters', householdId] as const,
+  householdTags: (householdId: string) =>
+    ['householdTags', householdId] as const,
+  choreTags: (householdId: string, choreId: string) =>
+    ['choreTags', householdId, choreId] as const,
+  timeLogs: (householdId: string, choreId: string) =>
+    ['timeLogs', householdId, choreId] as const,
+  choreDependencies: (householdId: string, choreId: string) =>
+    ['choreDependencies', householdId, choreId] as const,
 };
 
 // ===== Board Preferences =====
@@ -212,6 +221,142 @@ export function useDeleteSavedFilter(householdId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: boardQueryKeys.savedFilters(householdId),
+      });
+    },
+  });
+}
+
+// ===== Tags =====
+export function useHouseholdTags(householdId: string) {
+  return useQuery({
+    queryKey: boardQueryKeys.householdTags(householdId),
+    queryFn: () => apiClient.getHouseholdTags(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateTag(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; color?: string }) =>
+      apiClient.createTag(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.householdTags(householdId),
+      });
+    },
+  });
+}
+
+export function useDeleteTag(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tagId: string) => apiClient.deleteTag(householdId, tagId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.householdTags(householdId),
+      });
+    },
+  });
+}
+
+export function useChoreTags(householdId: string, choreId: string) {
+  return useQuery({
+    queryKey: boardQueryKeys.choreTags(householdId, choreId),
+    queryFn: () => apiClient.getChoreTags(householdId, choreId),
+    enabled: !!householdId && !!choreId,
+  });
+}
+
+export function useAddChoreTag(householdId: string, choreId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tagId: string) =>
+      apiClient.addChoreTag(householdId, choreId, tagId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.choreTags(householdId, choreId),
+      });
+    },
+  });
+}
+
+export function useRemoveChoreTag(householdId: string, choreId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tagId: string) =>
+      apiClient.removeChoreTag(householdId, choreId, tagId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.choreTags(householdId, choreId),
+      });
+    },
+  });
+}
+
+// ===== Time Tracking =====
+export function useTimeLogs(householdId: string, choreId: string) {
+  return useQuery({
+    queryKey: boardQueryKeys.timeLogs(householdId, choreId),
+    queryFn: () => apiClient.getTimeLogs(householdId, choreId),
+    enabled: !!householdId && !!choreId,
+  });
+}
+
+export function useStartTimeTracking(householdId: string, choreId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.startTimeTracking(householdId, choreId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.timeLogs(householdId, choreId),
+      });
+    },
+  });
+}
+
+export function useStopTimeTracking(householdId: string, choreId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.stopTimeTracking(householdId, choreId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.timeLogs(householdId, choreId),
+      });
+    },
+  });
+}
+
+// ===== Dependencies =====
+export function useChoreDependencies(householdId: string, choreId: string) {
+  return useQuery({
+    queryKey: boardQueryKeys.choreDependencies(householdId, choreId),
+    queryFn: () => apiClient.getChoreDependencies(householdId, choreId),
+    enabled: !!householdId && !!choreId,
+  });
+}
+
+export function useAddChoreDependency(householdId: string, choreId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { dependsOnChoreId: string; type?: DependencyType }) =>
+      apiClient.addChoreDependency(householdId, choreId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.choreDependencies(householdId, choreId),
+      });
+    },
+  });
+}
+
+export function useRemoveChoreDependency(householdId: string, choreId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (depId: string) =>
+      apiClient.removeChoreDependency(householdId, choreId, depId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.choreDependencies(householdId, choreId),
       });
     },
   });

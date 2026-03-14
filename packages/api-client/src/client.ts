@@ -3547,6 +3547,57 @@ class ApiClient {
   async deleteSavedFilter(householdId: string, filterId: string): Promise<void> {
     return this.request(`/households/${householdId}/board/filters/${filterId}`, { method: 'DELETE' });
   }
+
+  // ===== Tags =====
+  async getHouseholdTags(householdId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/tags`);
+  }
+
+  async createTag(householdId: string, data: { name: string; color?: string }): Promise<unknown> {
+    return this.request(`/households/${householdId}/tags`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async deleteTag(householdId: string, tagId: string): Promise<void> {
+    return this.request(`/households/${householdId}/tags/${tagId}`, { method: 'DELETE' });
+  }
+
+  async getChoreTags(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/tags`);
+  }
+
+  async addChoreTag(householdId: string, choreId: string, tagId: string): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/tags`, { method: 'POST', body: JSON.stringify({ tagId }) });
+  }
+
+  async removeChoreTag(householdId: string, choreId: string, tagId: string): Promise<void> {
+    return this.request(`/households/${householdId}/chores/${choreId}/tags/${tagId}`, { method: 'DELETE' });
+  }
+
+  // ===== Time Tracking =====
+  async startTimeTracking(householdId: string, choreId: string): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/time/start`, { method: 'POST' });
+  }
+
+  async stopTimeTracking(householdId: string, choreId: string): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/time/stop`, { method: 'POST' });
+  }
+
+  async getTimeLogs(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/time`);
+  }
+
+  // ===== Dependencies =====
+  async getChoreDependencies(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/dependencies`);
+  }
+
+  async addChoreDependency(householdId: string, choreId: string, data: { dependsOnChoreId: string; type?: string }): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/dependencies`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async removeChoreDependency(householdId: string, choreId: string, depId: string): Promise<void> {
+    return this.request(`/households/${householdId}/chores/${choreId}/dependencies/${depId}`, { method: 'DELETE' });
+  }
 }
 
 export const apiClient = new ApiClient();

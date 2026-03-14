@@ -59,6 +59,9 @@ import { choreAttachmentRoutes } from './chore-attachments';
 import { choreActivityRoutes } from './chore-activity';
 import { bulkActionRoutes } from './bulk-actions';
 import { savedFilterRoutes } from './saved-filters';
+import { tagRoutes } from './tags';
+import { timeTrackingRoutes } from './time-tracking';
+import { dependencyRoutes } from './dependencies';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -127,6 +130,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
         householdApi.register(choreActivityRoutes, { prefix: '/:householdId/chores' });
         householdApi.register(bulkActionRoutes, { prefix: '/:householdId/chores' });
         householdApi.register(savedFilterRoutes, { prefix: '/:householdId/board' });
+        householdApi.register(tagRoutes);
+        householdApi.register(timeTrackingRoutes);
+        householdApi.register(dependencyRoutes);
       });
 
       // Chore templates (public)

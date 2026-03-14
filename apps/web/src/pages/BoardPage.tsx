@@ -103,7 +103,7 @@ export default function BoardPage() {
 
   // Reschedule chore (from calendar drag)
   const handleReschedule = useCallback((choreId: string, newDate: string) => {
-    bulkUpdate.mutate({ choreIds: [choreId], updates: { startDate: newDate } });
+    bulkUpdate.mutate({ choreIds: [choreId], changes: { startDate: newDate } });
   }, [bulkUpdate]);
 
   // Context menu
@@ -112,7 +112,7 @@ export default function BoardPage() {
   }, []);
 
   const handleChangePriority = useCallback((choreId: string, priority: ChorePriority) => {
-    bulkUpdate.mutate({ choreIds: [choreId], updates: { priority } });
+    bulkUpdate.mutate({ choreIds: [choreId], changes: { priority } });
   }, [bulkUpdate]);
 
   // Detail chore data
