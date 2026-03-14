@@ -11,3 +11,5 @@ export { SelectionToolbar } from './SelectionToolbar';
 export { CommandPalette } from './CommandPalette';
 export { ChoreDetailPanel } from './ChoreDetailPanel';
 export { UndoToast } from './UndoToast';
+export { SaveFilterDialog } from './SaveFilterDialog';
+export { SavedFilterList } from './SavedFilterList';
