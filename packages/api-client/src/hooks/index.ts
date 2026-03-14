@@ -90,6 +90,22 @@ import type {
   UpdateMarketplaceConfigRequest,
 } from '@chorechamp/types';
 
+// Query parameter types for React Query keys
+interface StoreCatalogParams { category?: string; memberId?: string }
+interface ActivityFeedParams { limit?: number; offset?: number; memberId?: string }
+interface ReportParams { startDate?: string; endDate?: string }
+interface WellnessListParams { memberId?: string; limit?: number; offset?: number }
+interface WellnessPeriodParams { period?: string; memberId?: string }
+interface MealPlanParams { memberId?: string; startDate?: string; endDate?: string }
+interface MoodJournalParams { memberId?: string; startDate?: string; endDate?: string }
+interface ForumListParams { category?: string; limit?: number; offset?: number }
+interface SocialFeedParams { visibility?: string; limit?: number; offset?: number }
+interface CommunityEventParams { status?: string; eventType?: string }
+interface PaginationParams { page?: number; pageSize?: number }
+interface CalendarEventParams { start?: string; end?: string }
+interface AlbumPhotoParams { page?: number; pageSize?: number }
+interface ProgressiveUnlockParams { category?: string }
+
 // ===== Query Keys =====
 export const queryKeys = {
   session: ['session'] as const,
@@ -136,7 +152,7 @@ export const queryKeys = {
   apiPlatformSdkPackages: (householdId: string) =>
     ['apiPlatformSdkPackages', householdId] as const,
   apiPlatformAnalytics: (householdId: string) => ['apiPlatformAnalytics', householdId] as const,
-  storeCatalog: (householdId: string, options?: Record<string, unknown>) =>
+  storeCatalog: (householdId: string, options?: StoreCatalogParams) =>
     ['storeCatalog', householdId, options] as const,
   storeOffers: (householdId: string) => ['storeOffers', householdId] as const,
   storeWallet: (householdId: string) => ['storeWallet', householdId] as const,
@@ -180,39 +196,39 @@ export const queryKeys = {
   bossBattle: (householdId: string, battleId: string) =>
     ['bossBattle', householdId, battleId] as const,
   // Activity
-  activityFeed: (householdId: string, options?: Record<string, unknown>) =>
+  activityFeed: (householdId: string, options?: ActivityFeedParams) =>
     ['activityFeed', householdId, options] as const,
   activityStats: (householdId: string, period?: string) =>
     ['activityStats', householdId, period] as const,
   // Reports
-  reportSummary: (householdId: string, options?: Record<string, unknown>) =>
+  reportSummary: (householdId: string, options?: ReportParams) =>
     ['reportSummary', householdId, options] as const,
-  reportTrend: (householdId: string, options?: Record<string, unknown>) =>
+  reportTrend: (householdId: string, options?: ReportParams) =>
     ['reportTrend', householdId, options] as const,
-  reportCategories: (householdId: string, options?: Record<string, unknown>) =>
+  reportCategories: (householdId: string, options?: ReportParams) =>
     ['reportCategories', householdId, options] as const,
   // Wellness
-  wellnessActivityLogs: (householdId: string, params?: Record<string, unknown>) =>
+  wellnessActivityLogs: (householdId: string, params?: WellnessListParams) =>
     ['wellnessActivityLogs', householdId, params] as const,
   wellnessActivityStats: (householdId: string, memberId?: string) =>
     ['wellnessActivityStats', householdId, memberId] as const,
   wellnessActivityGoals: (householdId: string) =>
     ['wellnessActivityGoals', householdId] as const,
-  wellnessCheckIns: (householdId: string, params?: Record<string, unknown>) =>
+  wellnessCheckIns: (householdId: string, params?: WellnessListParams) =>
     ['wellnessCheckIns', householdId, params] as const,
-  wellnessTrends: (householdId: string, params?: Record<string, unknown>) =>
+  wellnessTrends: (householdId: string, params?: WellnessPeriodParams) =>
     ['wellnessTrends', householdId, params] as const,
   sleepLogs: (householdId: string, memberId?: string) =>
     ['sleepLogs', householdId, memberId] as const,
-  sleepStats: (householdId: string, params?: Record<string, unknown>) =>
+  sleepStats: (householdId: string, params?: WellnessPeriodParams) =>
     ['sleepStats', householdId, params] as const,
-  mealPlans: (householdId: string, params?: Record<string, unknown>) =>
+  mealPlans: (householdId: string, params?: MealPlanParams) =>
     ['mealPlans', householdId, params] as const,
   mentalHealthResources: (householdId: string, category?: string) =>
     ['mentalHealthResources', householdId, category] as const,
   gratitudeEntries: (householdId: string, memberId?: string) =>
     ['gratitudeEntries', householdId, memberId] as const,
-  moodJournal: (householdId: string, params?: Record<string, unknown>) =>
+  moodJournal: (householdId: string, params?: MoodJournalParams) =>
     ['moodJournal', householdId, params] as const,
   // Advanced Analytics & Admin
   advancedReports: (householdId: string) => ['advancedReports', householdId] as const,
@@ -223,22 +239,22 @@ export const queryKeys = {
   adminAlerts: (householdId: string) => ['adminAlerts', householdId] as const,
   dataExports: (householdId: string) => ['dataExports', householdId] as const,
   dataExport: (householdId: string, exportId: string) => ['dataExport', householdId, exportId] as const,
-  auditLogs: (householdId: string, query?: Record<string, unknown>) => ['auditLogs', householdId, query] as const,
+  auditLogs: (householdId: string, query?: AuditLogQuery) => ['auditLogs', householdId, query] as const,
   auditLogSummary: (householdId: string) => ['auditLogSummary', householdId] as const,
   performanceMetrics: (householdId: string) => ['performanceMetrics', householdId] as const,
   performanceHistory: (householdId: string, period?: string) => ['performanceHistory', householdId, period] as const,
   usageMetrics: (householdId: string) => ['usageMetrics', householdId] as const,
   errorMetrics: (householdId: string) => ['errorMetrics', householdId] as const,
   // Community & Social
-  forumPosts: (householdId: string, params?: Record<string, unknown>) => ['forumPosts', householdId, params] as const,
+  forumPosts: (householdId: string, params?: ForumListParams) => ['forumPosts', householdId, params] as const,
   forumPost: (householdId: string, postId: string) => ['forumPost', householdId, postId] as const,
   socialChallenges: (householdId: string, status?: string) => ['socialChallenges', householdId, status] as const,
   socialChallenge: (householdId: string, challengeId: string) => ['socialChallenge', householdId, challengeId] as const,
-  socialFeed: (householdId: string, params?: Record<string, unknown>) => ['socialFeed', householdId, params] as const,
+  socialFeed: (householdId: string, params?: SocialFeedParams) => ['socialFeed', householdId, params] as const,
   socialPost: (householdId: string, postId: string) => ['socialPost', householdId, postId] as const,
   friends: (householdId: string) => ['friends', householdId] as const,
   friendSuggestions: (householdId: string) => ['friendSuggestions', householdId] as const,
-  communityEvents: (householdId: string, params?: Record<string, unknown>) => ['communityEvents', householdId, params] as const,
+  communityEvents: (householdId: string, params?: CommunityEventParams) => ['communityEvents', householdId, params] as const,
   communityEvent: (householdId: string, eventId: string) => ['communityEvent', householdId, eventId] as const,
 
   // Phase 17: Smart Automation & AI
@@ -252,21 +268,21 @@ export const queryKeys = {
   predictions: (householdId: string) => ['predictions', householdId] as const,
   predictiveInsights: (householdId: string) => ['predictiveInsights', householdId] as const,
   predictiveAnalyticsConfig: (householdId: string) => ['predictiveAnalyticsConfig', householdId] as const,
-  commandHistory: (householdId: string, params?: Record<string, unknown>) => ['commandHistory', householdId, params] as const,
+  commandHistory: (householdId: string, params?: PaginationParams) => ['commandHistory', householdId, params] as const,
   commandCapabilities: (householdId: string) => ['commandCapabilities', householdId] as const,
 
   // Phase 18: Communication & Calendar Integration
   calendarConnections: (householdId: string) => ['calendarConnections', householdId] as const,
-  calendarEvents: (householdId: string, params?: Record<string, unknown>) => ['calendarEvents', householdId, params] as const,
+  calendarEvents: (householdId: string, params?: CalendarEventParams) => ['calendarEvents', householdId, params] as const,
   calendarSyncConfig: (householdId: string) => ['calendarSyncConfig', householdId] as const,
   chatChannels: (householdId: string) => ['chatChannels', householdId] as const,
-  chatMessages: (householdId: string, channelId: string, params?: Record<string, unknown>) => ['chatMessages', householdId, channelId, params] as const,
+  chatMessages: (householdId: string, channelId: string, params?: PaginationParams) => ['chatMessages', householdId, channelId, params] as const,
   chatUnread: (householdId: string) => ['chatUnread', householdId] as const,
   photoAlbums: (householdId: string) => ['photoAlbums', householdId] as const,
-  albumPhotos: (householdId: string, albumId: string, params?: Record<string, unknown>) => ['albumPhotos', householdId, albumId, params] as const,
+  albumPhotos: (householdId: string, albumId: string, params?: AlbumPhotoParams) => ['albumPhotos', householdId, albumId, params] as const,
   shareableAchievements: (householdId: string) => ['shareableAchievements', householdId] as const,
   shareSettings: (householdId: string) => ['shareSettings', householdId] as const,
-  progressiveUnlocks: (householdId: string, params?: Record<string, unknown>) => ['progressiveUnlocks', householdId, params] as const,
+  progressiveUnlocks: (householdId: string, params?: ProgressiveUnlockParams) => ['progressiveUnlocks', householdId, params] as const,
   memberUnlockProgress: (householdId: string, memberId: string) => ['memberUnlockProgress', householdId, memberId] as const,
   unlockProgressSummary: (householdId: string, memberId: string) => ['unlockProgressSummary', householdId, memberId] as const,
 
@@ -2335,7 +2351,7 @@ export function useDeleteDataExport(householdId: string) {
 
 export function useAuditLogs(householdId: string, query?: AuditLogQuery) {
   return useQuery({
-    queryKey: queryKeys.auditLogs(householdId, query as unknown as Record<string, unknown>),
+    queryKey: queryKeys.auditLogs(householdId, query),
     queryFn: () => apiClient.getAuditLogs(householdId, query),
     enabled: !!householdId,
   });
@@ -2396,7 +2412,7 @@ export function useResolveError(householdId: string) {
 
 export function useForumPosts(householdId: string, params?: { category?: string; limit?: number; offset?: number }) {
   return useQuery({
-    queryKey: queryKeys.forumPosts(householdId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.forumPosts(householdId, params),
     queryFn: () => apiClient.getForumPosts(householdId, params),
     enabled: !!householdId,
   });
@@ -2476,7 +2492,7 @@ export function useJoinSocialChallenge(householdId: string) {
 
 export function useSocialFeed(householdId: string, params?: { visibility?: string; limit?: number; offset?: number }) {
   return useQuery({
-    queryKey: queryKeys.socialFeed(householdId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.socialFeed(householdId, params),
     queryFn: () => apiClient.getSocialFeed(householdId, params),
     enabled: !!householdId,
   });
@@ -2557,7 +2573,7 @@ export function useFriendSuggestions(householdId: string) {
 
 export function useCommunityEvents(householdId: string, params?: { status?: string; eventType?: string }) {
   return useQuery({
-    queryKey: queryKeys.communityEvents(householdId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.communityEvents(householdId, params),
     queryFn: () => apiClient.getCommunityEvents(householdId, params),
     enabled: !!householdId,
   });
@@ -2806,7 +2822,7 @@ export function useExecuteCommand(householdId: string) {
 
 export function useCommandHistory(householdId: string, params?: { page?: number; pageSize?: number }) {
   return useQuery({
-    queryKey: queryKeys.commandHistory(householdId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.commandHistory(householdId, params),
     queryFn: () => apiClient.getCommandHistory(householdId, params),
   });
 }
@@ -2857,7 +2873,7 @@ export function useSyncCalendarConnection(householdId: string) {
 
 export function useCalendarEvents(householdId: string, params?: { start?: string; end?: string }) {
   return useQuery({
-    queryKey: queryKeys.calendarEvents(householdId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.calendarEvents(householdId, params),
     queryFn: () => apiClient.getCalendarEvents(householdId, params),
   });
 }
@@ -2895,7 +2911,7 @@ export function useCreateChatChannel(householdId: string) {
 
 export function useChatMessages(householdId: string, channelId: string, params?: { page?: number; pageSize?: number }) {
   return useQuery({
-    queryKey: queryKeys.chatMessages(householdId, channelId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.chatMessages(householdId, channelId, params),
     queryFn: () => apiClient.getChatMessages(householdId, channelId, params),
     enabled: !!channelId,
   });
@@ -2937,7 +2953,7 @@ export function useCreatePhotoAlbum(householdId: string) {
 
 export function useAlbumPhotos(householdId: string, albumId: string, params?: { page?: number; pageSize?: number }) {
   return useQuery({
-    queryKey: queryKeys.albumPhotos(householdId, albumId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.albumPhotos(householdId, albumId, params),
     queryFn: () => apiClient.getAlbumPhotos(householdId, albumId, params),
     enabled: !!albumId,
   });
@@ -3001,7 +3017,7 @@ export function useUpdateShareSettings(householdId: string) {
 // F18.5 Progressive Unlocks
 export function useProgressiveUnlocks(householdId: string, params?: { category?: string }) {
   return useQuery({
-    queryKey: queryKeys.progressiveUnlocks(householdId, params as unknown as Record<string, unknown>),
+    queryKey: queryKeys.progressiveUnlocks(householdId, params),
     queryFn: () => apiClient.getProgressiveUnlocks(householdId, params),
   });
 }

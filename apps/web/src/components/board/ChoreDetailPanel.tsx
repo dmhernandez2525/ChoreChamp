@@ -438,7 +438,7 @@ export function ChoreDetailPanel({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {(comments as Array<{ id: string; comment: string; createdAt: string; memberId: string }>).map((comment) => {
+                    {comments.map((comment) => {
                       const author = members.find(m => m.id === comment.memberId);
                       return (
                         <div key={comment.id} className="rounded-lg border border-gray-100 p-3">
@@ -491,8 +491,8 @@ export function ChoreDetailPanel({
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    {(activityEntries as Array<{ id: string; action: string; changedBy: string; createdAt: string; previousValue?: string; newValue?: string }>).map((entry) => {
-                      const actor = members.find(m => m.id === entry.changedBy);
+                    {activityEntries.map((entry) => {
+                      const actor = members.find(m => m.id === entry.memberId);
                       return (
                         <div key={entry.id} className="flex items-start gap-2.5 py-2">
                           <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs">
@@ -509,11 +509,11 @@ export function ChoreDetailPanel({
                               <span className="font-medium">{actor?.name ?? 'Unknown'}</span>
                               {' '}
                               {entry.action.replace(/_/g, ' ')}
-                              {entry.previousValue && entry.newValue && (
+                              {entry.oldValue != null && entry.newValue != null ? (
                                 <span className="text-gray-500">
-                                  {' '}from {entry.previousValue} to {entry.newValue}
+                                  {' '}from {String(entry.oldValue)} to {String(entry.newValue)}
                                 </span>
-                              )}
+                              ) : null}
                             </p>
                             <p className="text-xs text-gray-400">{formatRelativeTime(entry.createdAt)}</p>
                           </div>
