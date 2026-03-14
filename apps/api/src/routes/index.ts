@@ -63,6 +63,7 @@ import { tagRoutes } from './tags';
 import { timeTrackingRoutes } from './time-tracking';
 import { dependencyRoutes } from './dependencies';
 import { importExportRoutes } from './import-export';
+import { automationRuleRoutes } from './automation-rules';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -135,6 +136,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         householdApi.register(timeTrackingRoutes);
         householdApi.register(dependencyRoutes);
         householdApi.register(importExportRoutes);
+        householdApi.register(automationRuleRoutes);
       });
 
       // Chore templates (public)

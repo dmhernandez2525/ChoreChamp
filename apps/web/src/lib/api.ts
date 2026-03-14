@@ -117,6 +117,53 @@ export const scheduleApi = {
   },
 };
 
+// Automation Rules API
+export interface AutomationRule {
+  id: string;
+  householdId: string;
+  name: string;
+  description: string | null;
+  trigger: string;
+  triggerConfig: Record<string, unknown>;
+  action: string;
+  actionConfig: Record<string, unknown>;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const automationRulesApi = {
+  async list(householdId: string) {
+    return fetchApi<AutomationRule[]>(`/api/${householdId}/automation/rules`);
+  },
+
+  async create(householdId: string, data: Omit<AutomationRule, 'id' | 'householdId' | 'createdAt' | 'updatedAt'>) {
+    return fetchApi<AutomationRule>(`/api/${householdId}/automation/rules`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(householdId: string, ruleId: string, data: Partial<Omit<AutomationRule, 'id' | 'householdId' | 'createdAt' | 'updatedAt'>>) {
+    return fetchApi<AutomationRule>(`/api/${householdId}/automation/rules/${ruleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async remove(householdId: string, ruleId: string) {
+    return fetchApi(`/api/${householdId}/automation/rules/${ruleId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async toggle(householdId: string, ruleId: string) {
+    return fetchApi<AutomationRule>(`/api/${householdId}/automation/rules/${ruleId}/toggle`, {
+      method: 'POST',
+    });
+  },
+};
+
 // Templates API
 export const templatesApi = {
   async list(params?: { category?: string; minAge?: number }) {
