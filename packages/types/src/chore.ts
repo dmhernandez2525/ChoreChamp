@@ -285,3 +285,59 @@ export interface CreateSavedFilterRequest {
   groupBy?: string;
   visibility?: FilterVisibility;
 }
+
+// Tags
+export interface Tag {
+  id: string;
+  householdId: string;
+  name: string;
+  color: string;
+  createdAt: Date;
+}
+
+export interface ChoreTag {
+  id: string;
+  choreId: string;
+  tagId: string;
+  createdAt: Date;
+}
+
+export interface CreateTagRequest {
+  name: string;
+  color: string;
+}
+
+export interface AddChoreTagRequest {
+  tagId: string;
+}
+
+// Time tracking
+export interface TimeLog {
+  id: string;
+  choreId: string;
+  memberId: string;
+  startedAt: Date;
+  stoppedAt: Date | null;
+  durationSeconds: number | null;
+  createdAt: Date;
+}
+
+export interface StartTimeTrackingRequest {
+  choreId: string;
+}
+
+// Dependencies
+export type DependencyType = 'blocks' | 'blocked_by' | 'relates_to';
+
+export interface ChoreDependency {
+  id: string;
+  choreId: string;
+  dependsOnChoreId: string;
+  type: DependencyType;
+  createdAt: Date;
+}
+
+export interface AddDependencyRequest {
+  dependsOnChoreId: string;
+  type: DependencyType;
+}

@@ -20,3 +20,4 @@ export { InlineEditCell, InlineSelectCell } from './InlineEditCell';
 export { CardContextMenu } from './CardContextMenu';
 export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 export { ColumnSettingsPanel } from './ColumnSettingsPanel';
+export { TagPicker, TagBadge } from './TagPicker';
