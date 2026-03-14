@@ -166,6 +166,70 @@ API platform support introduces key management, OAuth, webhook, marketplace, and
 - Chore list rows expose accessibility actions (`activate`, `complete`) for assistive technology custom actions.
 - Filter/search controls include explicit labels, selected state, and hints to improve Voice Access discoverability.
 
+## Task Management Views Architecture (Phase 15)
+
+### Overview
+
+Advanced task management views ported from Command Center UI, adapted for the chore management domain. Adds Kanban board, calendar, sortable list, bulk actions, filters, command palette, enhanced detail panel, automation rules, and undo/redo to the existing chore management system.
+
+### View System
+
+Four interchangeable views share a common filter/sort/grouping state:
+
+- **Kanban Board**: Drag-and-drop columns (To Do, In Progress, Done, Verified) with optional swimlane grouping by member, category, or priority. Uses @dnd-kit.
+- **Calendar View**: Month/week grid with chore chips. Drag to reschedule. Unscheduled sidebar.
+- **List View**: Sortable table with inline editing via @tanstack/react-table. Keyboard-navigable.
+- **Dashboard** (existing): Summary cards, stats, and today's chores.
+
+### State Management
+
+New Zustand stores (persisted to localStorage):
+
+- `view-store`: active view mode, filters, sort, group-by, selected chore IDs, saved views
+- `filter-store`: quick filter values, advanced filter conditions, URL search param sync
+- `bulk-action-store`: selected IDs, selection mode, last action reference
+- `undo-store`: action stack (max 20), redo stack, push/pop/clear
+
+### Data Model Extensions
+
+New database tables (Drizzle ORM):
+
+- `chore_board_preferences`: Per-member view mode, column settings, saved filters, grouping/sort defaults
+- `chore_comments`: Chore-level comments with @mention support and soft delete
+- `chore_attachments`: File metadata linked to chores (integrates with photo proof)
+- `chore_activity_log`: Audit trail of all chore changes (status, assignment, edits)
+- `saved_chore_filters`: Named filter/sort/group configurations with private/household visibility
+
+Extended columns on `chores`: `priority`, `board_order`
+
+### API Extensions
+
+New route files: `board.ts`, `bulk-actions.ts`, `chore-comments.ts`, `chore-attachments.ts`, `chore-activity.ts`, `calendar.ts`, `saved-filters.ts`
+
+Extended: `chores.ts` with sort/filter/search query params
+
+### Key Libraries Added
+
+- `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (drag-and-drop)
+- `@tanstack/react-table` (sortable table)
+- `cmdk` (command palette)
+
+### SDDs
+
+- SDD-025: Kanban Board View
+- SDD-026: Calendar View
+- SDD-027: List View
+- SDD-028: Bulk Actions
+- SDD-029: Advanced Filters
+- SDD-030: Command Palette
+- SDD-031: Enhanced Chore Detail Panel
+- SDD-032: Automation Rules
+- SDD-033: Undo/Redo
+
+### Acceptance Criteria
+
+175 testable criteria in `docs/AC-TASK-MANAGEMENT.md`
+
 ## Shared Packages
 
 - `@chorechamp/types`: Shared contracts for subscriptions, in-app store, enterprise school workflows, API platform integrations, and core product domains
