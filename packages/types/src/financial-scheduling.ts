@@ -151,7 +151,7 @@ export interface RotationFairnessReport {
 // F19.3 Chore Chains (Task Dependencies)
 export type ChainStatus = 'pending' | 'in_progress' | 'completed' | 'blocked';
 
-export type DependencyType = 'must_complete_before' | 'should_complete_before' | 'can_start_after';
+export type ChainDependencyType = 'must_complete_before' | 'should_complete_before' | 'can_start_after';
 
 export interface ChoreChain {
   id: string;
@@ -173,7 +173,7 @@ export interface ChoreChainStep {
   choreId: string;
   choreName: string;
   stepOrder: number;
-  dependencyType: DependencyType;
+  dependencyType: ChainDependencyType;
   dependsOnStepId: string | null;
   assigneeId: string | null;
   assigneeName: string | null;
@@ -189,7 +189,7 @@ export interface CreateChoreChainRequest {
   steps: Array<{
     choreId: string;
     stepOrder: number;
-    dependencyType: DependencyType;
+    dependencyType: ChainDependencyType;
     dependsOnStepId?: string;
     assigneeId?: string;
   }>;

@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { Printer } from 'lucide-react';
-import { Button, cn } from '@chorechamp/ui';
+import { Button } from '@chorechamp/ui';
 import type { Chore, ChorePriority, Member } from '@chorechamp/types';
 
 interface PrintViewProps {

@@ -31,17 +31,17 @@ export function BulkAssignDialog({ householdId, members, open, onOpenChange }: B
 
     const choreIds = Array.from(selectedIds);
     bulkUpdate.mutate(
-      { choreIds, updates: { assignedTo: selectedMemberIds } },
+      { choreIds, changes: { assignedTo: selectedMemberIds } },
       {
         onSuccess: () => {
           pushAction({
             type: 'bulk_assign',
             description: `Assigned ${choreIds.length} chore${choreIds.length !== 1 ? 's' : ''} to ${selectedMemberIds.length} member${selectedMemberIds.length !== 1 ? 's' : ''}`,
             undoFn: async () => {
-              await bulkUpdate.mutateAsync({ choreIds, updates: { assignedTo: [] } });
+              await bulkUpdate.mutateAsync({ choreIds, changes: { assignedTo: [] } });
             },
             redoFn: async () => {
-              await bulkUpdate.mutateAsync({ choreIds, updates: { assignedTo: selectedMemberIds } });
+              await bulkUpdate.mutateAsync({ choreIds, changes: { assignedTo: selectedMemberIds } });
             },
           });
           setSelectedMemberIds([]);

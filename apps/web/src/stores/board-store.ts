@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ChoreViewMode, ChorePriority } from '@chorechamp/types';
+import type { ChoreViewMode } from '@chorechamp/types';
 
 interface ColumnSettings {
   color?: string;

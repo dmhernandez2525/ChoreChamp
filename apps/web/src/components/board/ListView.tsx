@@ -38,7 +38,7 @@ const priorityBadge: Record<string, string> = {
 const columnHelper = createColumnHelper<Chore>();
 
 export function ListView({ chores, members, onChoreClick }: ListViewProps) {
-  const { selectedIds, isBulkMode, toggle, selectAll, deselectAll } = useSelectionStore();
+  const { selectedIds, toggle, selectAll, deselectAll } = useSelectionStore();
   const { groupBy } = useBoardStore();
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -56,7 +56,7 @@ export function ListView({ chores, members, onChoreClick }: ListViewProps) {
     // Selection checkbox
     columnHelper.display({
       id: 'select',
-      header: ({ table }) => (
+      header: () => (
         <input
           type="checkbox"
           checked={selectedIds.size === chores.length && chores.length > 0}
@@ -159,12 +159,12 @@ export function ListView({ chores, members, onChoreClick }: ListViewProps) {
           <div className="flex items-center gap-1">
             {ids.slice(0, 3).map(id => {
               const member = memberMap.get(id);
-              const initial = (member?.name || member?.nickname || '?')[0].toUpperCase();
+              const initial = (member?.name || '?')[0].toUpperCase();
               return (
                 <span
                   key={id}
                   className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700"
-                  title={member?.name || member?.nickname || id}
+                  title={member?.name || id}
                 >
                   {initial}
                 </span>

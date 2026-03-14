@@ -4,12 +4,6 @@ import { useFilterStore } from '../filter-store';
 import { useSelectionStore } from '../selection-store';
 import { useUndoStore } from '../undo-store';
 
-// Helper to reset Zustand stores between tests
-function resetStore<T>(useStore: { setState: (state: Partial<T>) => void; getState: () => T }) {
-  const initial = useStore.getState();
-  useStore.setState(initial);
-}
-
 describe('useBoardStore', () => {
   beforeEach(() => {
     // Reset to defaults

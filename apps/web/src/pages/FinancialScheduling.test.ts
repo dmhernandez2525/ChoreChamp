@@ -18,7 +18,7 @@ import type {
   RotationHistory,
   RotationFairnessReport,
   ChainStatus,
-  DependencyType,
+  ChainDependencyType,
   ChoreChain,
   ChoreChainStep,
   CreateChoreChainRequest,
@@ -167,7 +167,7 @@ const mockFairnessReport: RotationFairnessReport = {
 // F19.3 Chore Chains
 
 const validChainStatuses: ChainStatus[] = ['pending', 'in_progress', 'completed', 'blocked'];
-const validDependencyTypes: DependencyType[] = ['must_complete_before', 'should_complete_before', 'can_start_after'];
+const validChainDependencyTypes: ChainDependencyType[] = ['must_complete_before', 'should_complete_before', 'can_start_after'];
 
 const mockChoreChain: ChoreChain = {
   id: 'chain-001',
@@ -723,11 +723,11 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
       expect(validChainStatuses).toContain('blocked');
     });
 
-    it('defines valid DependencyType values', () => {
-      expect(validDependencyTypes).toHaveLength(3);
-      expect(validDependencyTypes).toContain('must_complete_before');
-      expect(validDependencyTypes).toContain('should_complete_before');
-      expect(validDependencyTypes).toContain('can_start_after');
+    it('defines valid ChainDependencyType values', () => {
+      expect(validChainDependencyTypes).toHaveLength(3);
+      expect(validChainDependencyTypes).toContain('must_complete_before');
+      expect(validChainDependencyTypes).toContain('should_complete_before');
+      expect(validChainDependencyTypes).toContain('can_start_after');
     });
 
     it('validates ChoreChain has all required fields', () => {
@@ -744,7 +744,7 @@ describe('Phase 19: Financial Integration & Advanced Scheduling', () => {
       expect(mockChoreChainStep.id).toBe('step-001');
       expect(mockChoreChainStep.chainId).toBe('chain-001');
       expect(mockChoreChainStep.stepOrder).toBe(1);
-      expect(validDependencyTypes).toContain(mockChoreChainStep.dependencyType);
+      expect(validChainDependencyTypes).toContain(mockChoreChainStep.dependencyType);
       expect(mockChoreChainStep.dependsOnStepId).toBeNull();
       expect(mockChoreChainStep.isCompleted).toBe(true);
       expect(mockChoreChainStep.assigneeName).toBe('Alice');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Zap, Settings } from 'lucide-react';
 import { Button, cn } from '@chorechamp/ui';
 
@@ -48,7 +48,7 @@ function TriggerConfigFields({
   config: Record<string, unknown>;
   onChange: (config: Record<string, unknown>) => void;
 }) {
-  const handlers: Record<TriggerType, () => JSX.Element> = {
+  const handlers: Record<TriggerType, () => React.JSX.Element> = {
     chore_completed: () => (
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
@@ -144,7 +144,7 @@ function ActionConfigFields({
   config: Record<string, unknown>;
   onChange: (config: Record<string, unknown>) => void;
 }) {
-  const handlers: Record<ActionType, () => JSX.Element> = {
+  const handlers: Record<ActionType, () => React.JSX.Element> = {
     assign: () => (
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">

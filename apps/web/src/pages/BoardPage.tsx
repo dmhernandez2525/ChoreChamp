@@ -7,14 +7,10 @@ import {
   useMembers,
   useChores,
   useBoardPreferences,
-  useUpdateBoardPreferences,
   useBulkUpdateChores,
-  useBulkReorderChores,
 } from '@chorechamp/api-client';
-import { useAuth } from '../context/AuthContext';
 import { useBoardStore } from '../stores/board-store';
 import { useFilterStore } from '../stores/filter-store';
-import { useSelectionStore } from '../stores/selection-store';
 import {
   ViewSwitcher,
   KanbanBoard,
@@ -35,17 +31,15 @@ import {
   KeyboardShortcutsHelp,
   ColumnSettingsPanel,
 } from '../components/board';
-import type { Chore, ChoreViewMode, ChorePriority } from '@chorechamp/types';
+import type { Chore, ChorePriority } from '@chorechamp/types';
 
 export default function BoardPage() {
   const { householdId } = useParams<{ householdId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   // Stores
-  const { viewMode, setViewMode, loadPreferences } = useBoardStore();
+  const { viewMode, loadPreferences } = useBoardStore();
   const { activeFilters, searchQuery, setSearchQuery } = useFilterStore();
-  const { selectedIds } = useSelectionStore();
 
   // UI state
   const [showFilterBuilder, setShowFilterBuilder] = useState(false);
@@ -71,12 +65,10 @@ export default function BoardPage() {
     }
   }
 
-  const { data: chores = [], isLoading: loadingChores } = useChores(householdId!, queryParams);
+  const { data: chores = [], isLoading: loadingChores } = useChores(householdId!);
 
   // Mutations
-  const updatePrefs = useUpdateBoardPreferences(householdId!);
   const bulkUpdate = useBulkUpdateChores(householdId!);
-  const bulkReorder = useBulkReorderChores(householdId!);
 
   // Load board preferences on mount
   useEffect(() => {
@@ -84,12 +76,6 @@ export default function BoardPage() {
       loadPreferences(boardPrefs);
     }
   }, [boardPrefs, loadPreferences]);
-
-  // Save view mode preference when changed
-  const handleViewChange = useCallback((mode: ChoreViewMode) => {
-    setViewMode(mode);
-    updatePrefs.mutate({ viewMode: mode });
-  }, [setViewMode, updatePrefs]);
 
   // Open chore detail
   const handleChoreClick = useCallback((choreId: string) => {
@@ -105,11 +91,6 @@ export default function BoardPage() {
   const handleReschedule = useCallback((choreId: string, newDate: string) => {
     bulkUpdate.mutate({ choreIds: [choreId], changes: { startDate: newDate } });
   }, [bulkUpdate]);
-
-  // Context menu
-  const handleContextMenu = useCallback((choreId: string, choreTitle: string, x: number, y: number) => {
-    setContextMenu({ choreId, choreTitle, x, y });
-  }, []);
 
   const handleChangePriority = useCallback((choreId: string, priority: ChorePriority) => {
     bulkUpdate.mutate({ choreIds: [choreId], changes: { priority } });
@@ -221,7 +202,7 @@ export default function BoardPage() {
               {viewMode === 'kanban' && (
                 <KanbanBoard
                   chores={chores}
-                  onChoreClick={handleChoreClick}
+                  onCardClick={handleChoreClick}
                 />
               )}
               {viewMode === 'calendar' && (
@@ -240,7 +221,7 @@ export default function BoardPage() {
               {viewMode === 'dashboard' && (
                 <KanbanBoard
                   chores={chores}
-                  onChoreClick={handleChoreClick}
+                  onCardClick={handleChoreClick}
                 />
               )}
             </>

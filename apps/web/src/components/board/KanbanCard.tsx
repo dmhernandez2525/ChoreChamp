@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@chorechamp/ui';
-import { Clock, Star, User, GripVertical } from 'lucide-react';
+import { Clock, Star, GripVertical } from 'lucide-react';
 import type { Chore, Member } from '@chorechamp/types';
 import { useSelectionStore } from '@/stores/selection-store';
 
@@ -119,9 +119,9 @@ export function KanbanCard({ chore, members, onClick }: KanbanCardProps) {
               <span
                 key={member.id}
                 className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700"
-                title={member.name || member.nickname || 'Member'}
+                title={member.name || 'Member'}
               >
-                {(member.name || member.nickname || '?')[0].toUpperCase()}
+                {(member.name || '?')[0].toUpperCase()}
               </span>
             ))}
             {assignees.length > 3 && (

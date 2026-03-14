@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ChoreFilter, SavedFilterView, FilterOperator } from '@chorechamp/types';
+import type { ChoreFilter, SavedFilterView } from '@chorechamp/types';
 
 interface FilterStoreState {
   // Active filters

@@ -220,9 +220,9 @@ export function MobileChoreCard({
                 <span
                   key={member.id}
                   className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-violet-100 text-xs font-medium text-violet-700"
-                  title={member.name || member.nickname || 'Member'}
+                  title={member.name || 'Member'}
                 >
-                  {(member.name || member.nickname || '?')[0].toUpperCase()}
+                  {(member.name || '?')[0].toUpperCase()}
                 </span>
               ))}
               {assignees.length > 2 && (

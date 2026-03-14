@@ -1,5 +1,5 @@
 import { X, Filter, Save } from 'lucide-react';
-import { Button, cn } from '@chorechamp/ui';
+import { Button } from '@chorechamp/ui';
 import { useFilterStore } from '@/stores/filter-store';
 import type { ChoreFilter } from '@chorechamp/types';
 

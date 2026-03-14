@@ -98,12 +98,8 @@ export function ChoreDetailPanel({
 
   const choreId = chore?.id ?? '';
 
-  const { data: comments = [], isLoading: commentsLoading } = useChoreComments(householdId, choreId, {
-    enabled: open && activeTab === 'comments' && !!choreId,
-  });
-  const { data: activityEntries = [], isLoading: activityLoading } = useChoreActivity(householdId, choreId, {
-    enabled: open && activeTab === 'activity' && !!choreId,
-  });
+  const { data: comments = [], isLoading: commentsLoading } = useChoreComments(householdId, choreId);
+  const { data: activityEntries = [], isLoading: activityLoading } = useChoreActivity(householdId, choreId);
   const addComment = useAddComment(householdId, choreId);
   const deleteComment = useDeleteComment(householdId, choreId);
 
@@ -125,7 +121,7 @@ export function ChoreDetailPanel({
   const handleAddComment = () => {
     const text = newComment.trim();
     if (!text) return;
-    addComment.mutate({ content: text });
+    addComment.mutate({ comment: text });
     setNewComment('');
   };
 
@@ -442,7 +438,7 @@ export function ChoreDetailPanel({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {comments.map((comment: { id: string; content: string; createdAt: string; memberId: string }) => {
+                    {(comments as Array<{ id: string; content: string; createdAt: string; memberId: string }>).map((comment) => {
                       const author = members.find(m => m.id === comment.memberId);
                       return (
                         <div key={comment.id} className="rounded-lg border border-gray-100 p-3">
@@ -495,7 +491,7 @@ export function ChoreDetailPanel({
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    {activityEntries.map((entry: { id: string; action: string; changedBy: string; createdAt: string; previousValue?: string; newValue?: string }) => {
+                    {(activityEntries as Array<{ id: string; action: string; changedBy: string; createdAt: string; previousValue?: string; newValue?: string }>).map((entry) => {
                       const actor = members.find(m => m.id === entry.changedBy);
                       return (
                         <div key={entry.id} className="flex items-start gap-2.5 py-2">

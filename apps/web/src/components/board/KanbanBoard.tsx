@@ -12,7 +12,7 @@ import {
   type DragOverEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import type { Chore, ChorePriority, Member } from '@chorechamp/types';
+import type { Chore, Member } from '@chorechamp/types';
 import { useBoardStore } from '@/stores/board-store';
 import { useUndoStore } from '@/stores/undo-store';
 import { KanbanColumn } from './KanbanColumn';
@@ -32,12 +32,6 @@ interface ColumnDef {
   color: string;
   filter: (chore: Chore) => boolean;
 }
-
-const statusColumns: ColumnDef[] = [
-  { id: 'todo', title: 'To Do', color: '#6b7280', filter: (c) => !c.steps || c.steps.length === 0 || c.category === 'general' },
-  { id: 'in-progress', title: 'In Progress', color: '#3b82f6', filter: () => false },
-  { id: 'done', title: 'Done', color: '#22c55e', filter: () => false },
-];
 
 const priorityColumns: ColumnDef[] = [
   { id: 'urgent', title: 'Urgent', color: '#ef4444', filter: (c) => c.priority === 'urgent' },

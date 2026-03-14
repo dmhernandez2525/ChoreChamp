@@ -10,7 +10,8 @@ interface SavedFilterListProps {
 }
 
 export function SavedFilterList({ householdId, className }: SavedFilterListProps) {
-  const { data: savedFilters = [], isLoading } = useSavedFilters(householdId);
+  const { data: rawFilters = [], isLoading } = useSavedFilters(householdId);
+  const savedFilters = rawFilters as SavedFilterView[];
   const deleteFilter = useDeleteSavedFilter(householdId);
   const { activeFilterId, applyFilter, clearActiveFilter, setSavedFilters } = useFilterStore();
 

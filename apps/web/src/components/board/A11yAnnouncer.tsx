@@ -44,8 +44,8 @@ export function A11yAnnouncerProvider({
   const [assertiveMessage, setAssertiveMessage] = useState('');
 
   // Timers so we can clear previous announcements before setting new ones
-  const politeTimer = useRef<ReturnType<typeof setTimeout>>();
-  const assertiveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const politeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const assertiveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const announce = useCallback(
     (message: string, options: AnnounceOptions = {}) => {

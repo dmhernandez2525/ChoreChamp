@@ -17,7 +17,7 @@ export function BulkDeleteConfirmation({ householdId, open, onOpenChange }: Bulk
   const handleDelete = () => {
     const choreIds = Array.from(selectedIds);
     bulkDelete.mutate(
-      { choreIds },
+      choreIds,
       {
         onSuccess: () => {
           deselectAll();

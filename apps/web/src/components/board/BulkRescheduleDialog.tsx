@@ -29,7 +29,7 @@ export function BulkRescheduleDialog({ householdId, open, onOpenChange }: BulkRe
     }
 
     bulkUpdate.mutate(
-      { choreIds, updates },
+      { choreIds, changes: updates },
       {
         onSuccess: () => {
           pushAction({
@@ -37,10 +37,10 @@ export function BulkRescheduleDialog({ householdId, open, onOpenChange }: BulkRe
             description: `Rescheduled ${choreIds.length} chore${choreIds.length !== 1 ? 's' : ''} to ${new Date(date).toLocaleDateString()}`,
             undoFn: async () => {
               // Undo sets date back to empty (clearing the reschedule)
-              await bulkUpdate.mutateAsync({ choreIds, updates: { startDate: '' } });
+              await bulkUpdate.mutateAsync({ choreIds, changes: { startDate: '' } });
             },
             redoFn: async () => {
-              await bulkUpdate.mutateAsync({ choreIds, updates });
+              await bulkUpdate.mutateAsync({ choreIds, changes: updates });
             },
           });
           setDate('');

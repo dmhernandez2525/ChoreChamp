@@ -1,5 +1,5 @@
 import { UserPlus, Calendar, Trash2, Tag, Flag, X } from 'lucide-react';
-import { Button, cn } from '@chorechamp/ui';
+import { Button } from '@chorechamp/ui';
 import { useSelectionStore } from '@/stores/selection-store';
 
 interface SelectionToolbarProps {
