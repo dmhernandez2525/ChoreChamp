@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and, gte, lte, sql, asc, desc, ilike, inArray, arrayContains } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, asc, desc, ilike, arrayContains } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { chores, choreCompletions, members, households } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';

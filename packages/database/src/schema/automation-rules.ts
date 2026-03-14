@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 import { households } from './households';
 
 // Automation rules belonging to a household
-export const automationRules = pgTable(
+export const choreAutomationRules = pgTable(
   'automation_rules',
   {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -26,9 +26,9 @@ export const automationRules = pgTable(
 );
 
 // Relations
-export const automationRulesRelations = relations(automationRules, ({ one }) => ({
+export const choreAutomationRulesRelations = relations(choreAutomationRules, ({ one }) => ({
   household: one(households, {
-    fields: [automationRules.householdId],
+    fields: [choreAutomationRules.householdId],
     references: [households.id],
   }),
 }));

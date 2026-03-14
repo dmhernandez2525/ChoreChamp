@@ -2,8 +2,8 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { tags, choreTags } from '@chorechamp/database/schema';
+import { db } from '../lib/db';
 import { requireAuth } from '../middleware/auth';
-import type { AuthenticatedRequest } from '../middleware/auth';
 
 const createTagSchema = z.object({
   name: z.string().min(1).max(50),
@@ -18,9 +18,8 @@ export async function tagRoutes(app: FastifyInstance) {
   // GET /:householdId/tags - List all tags for household
   app.get('/:householdId/tags', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest) => {
+  }, async (request, reply) => {
     const { householdId } = request.params as { householdId: string };
-    const db = request.server.db;
 
     const result = await db
       .select()
@@ -28,16 +27,15 @@ export async function tagRoutes(app: FastifyInstance) {
       .where(eq(tags.householdId, householdId))
       .orderBy(tags.name);
 
-    return result;
+    return reply.send(result);
   });
 
   // POST /:householdId/tags - Create a new tag
   app.post('/:householdId/tags', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { householdId } = request.params as { householdId: string };
     const body = createTagSchema.parse(request.body);
-    const db = request.server.db;
 
     const [tag] = await db
       .insert(tags)
@@ -54,9 +52,8 @@ export async function tagRoutes(app: FastifyInstance) {
   // DELETE /:householdId/tags/:tagId - Delete a tag
   app.delete('/:householdId/tags/:tagId', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { householdId, tagId } = request.params as { householdId: string; tagId: string };
-    const db = request.server.db;
 
     await db
       .delete(tags)
@@ -68,9 +65,8 @@ export async function tagRoutes(app: FastifyInstance) {
   // GET /:householdId/chores/:choreId/tags - Get tags for a chore
   app.get('/:householdId/chores/:choreId/tags', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest) => {
+  }, async (request, reply) => {
     const { choreId } = request.params as { householdId: string; choreId: string };
-    const db = request.server.db;
 
     const result = await db
       .select({
@@ -83,16 +79,15 @@ export async function tagRoutes(app: FastifyInstance) {
       .innerJoin(tags, eq(choreTags.tagId, tags.id))
       .where(eq(choreTags.choreId, choreId));
 
-    return result;
+    return reply.send(result);
   });
 
   // POST /:householdId/chores/:choreId/tags - Add tag to chore
   app.post('/:householdId/chores/:choreId/tags', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { choreId } = request.params as { householdId: string; choreId: string };
     const body = addChoreTagSchema.parse(request.body);
-    const db = request.server.db;
 
     const [choreTag] = await db
       .insert(choreTags)
@@ -109,9 +104,8 @@ export async function tagRoutes(app: FastifyInstance) {
   // DELETE /:householdId/chores/:choreId/tags/:tagId - Remove tag from chore
   app.delete('/:householdId/chores/:choreId/tags/:tagId', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { choreId, tagId } = request.params as { householdId: string; choreId: string; tagId: string };
-    const db = request.server.db;
 
     await db
       .delete(choreTags)

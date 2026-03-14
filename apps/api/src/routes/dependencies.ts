@@ -1,10 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, or } from 'drizzle-orm';
-import { choreDependencies } from '@chorechamp/database/schema';
-import { chores } from '@chorechamp/database/schema';
+import { choreDependencies, chores } from '@chorechamp/database/schema';
+import { db } from '../lib/db';
 import { requireAuth } from '../middleware/auth';
-import type { AuthenticatedRequest } from '../middleware/auth';
 
 const addDependencySchema = z.object({
   dependsOnChoreId: z.string().uuid(),
@@ -15,9 +14,8 @@ export async function dependencyRoutes(app: FastifyInstance) {
   // GET /:householdId/chores/:choreId/dependencies
   app.get('/:householdId/chores/:choreId/dependencies', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest) => {
+  }, async (request, reply) => {
     const { choreId } = request.params as { householdId: string; choreId: string };
-    const db = request.server.db;
 
     const deps = await db
       .select({
@@ -43,16 +41,15 @@ export async function dependencyRoutes(app: FastifyInstance) {
         )
       );
 
-    return deps;
+    return reply.send(deps);
   });
 
   // POST /:householdId/chores/:choreId/dependencies
   app.post('/:householdId/chores/:choreId/dependencies', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { choreId } = request.params as { householdId: string; choreId: string };
     const body = addDependencySchema.parse(request.body);
-    const db = request.server.db;
 
     // Prevent self-dependency
     if (choreId === body.dependsOnChoreId) {
@@ -89,9 +86,8 @@ export async function dependencyRoutes(app: FastifyInstance) {
   // DELETE /:householdId/chores/:choreId/dependencies/:depId
   app.delete('/:householdId/chores/:choreId/dependencies/:depId', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { depId } = request.params as { householdId: string; choreId: string; depId: string };
-    const db = request.server.db;
 
     await db
       .delete(choreDependencies)

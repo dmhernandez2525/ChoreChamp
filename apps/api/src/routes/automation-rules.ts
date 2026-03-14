@@ -1,9 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
-import { automationRules } from '@chorechamp/database/schema';
+import { choreAutomationRules } from '@chorechamp/database/schema';
+import { db } from '../lib/db';
 import { requireAuth } from '../middleware/auth';
-import type { AuthenticatedRequest } from '../middleware/auth';
 
 const triggerValues = [
   'chore_completed',
@@ -38,29 +38,27 @@ export async function automationRuleRoutes(app: FastifyInstance) {
   // GET /:householdId/automation/rules - List all rules for household
   app.get('/:householdId/automation/rules', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest) => {
+  }, async (request, reply) => {
     const { householdId } = request.params as { householdId: string };
-    const db = request.server.db;
 
     const result = await db
       .select()
-      .from(automationRules)
-      .where(eq(automationRules.householdId, householdId))
-      .orderBy(automationRules.name);
+      .from(choreAutomationRules)
+      .where(eq(choreAutomationRules.householdId, householdId))
+      .orderBy(choreAutomationRules.name);
 
-    return result;
+    return reply.send(result);
   });
 
   // POST /:householdId/automation/rules - Create a new rule
   app.post('/:householdId/automation/rules', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { householdId } = request.params as { householdId: string };
     const body = createRuleSchema.parse(request.body);
-    const db = request.server.db;
 
     const [rule] = await db
-      .insert(automationRules)
+      .insert(choreAutomationRules)
       .values({
         householdId,
         name: body.name,
@@ -79,37 +77,35 @@ export async function automationRuleRoutes(app: FastifyInstance) {
   // PUT /:householdId/automation/rules/:ruleId - Update a rule
   app.put('/:householdId/automation/rules/:ruleId', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
     const body = updateRuleSchema.parse(request.body);
-    const db = request.server.db;
 
     const [updated] = await db
-      .update(automationRules)
+      .update(choreAutomationRules)
       .set({
         ...body,
         updatedAt: new Date(),
       })
-      .where(and(eq(automationRules.id, ruleId), eq(automationRules.householdId, householdId)))
+      .where(and(eq(choreAutomationRules.id, ruleId), eq(choreAutomationRules.householdId, householdId)))
       .returning();
 
     if (!updated) {
       return reply.status(404).send({ error: 'Rule not found' });
     }
 
-    return updated;
+    return reply.send(updated);
   });
 
   // DELETE /:householdId/automation/rules/:ruleId - Delete a rule
   app.delete('/:householdId/automation/rules/:ruleId', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
-    const db = request.server.db;
 
     await db
-      .delete(automationRules)
-      .where(and(eq(automationRules.id, ruleId), eq(automationRules.householdId, householdId)));
+      .delete(choreAutomationRules)
+      .where(and(eq(choreAutomationRules.id, ruleId), eq(choreAutomationRules.householdId, householdId)));
 
     return reply.status(204).send();
   });
@@ -117,29 +113,28 @@ export async function automationRuleRoutes(app: FastifyInstance) {
   // POST /:householdId/automation/rules/:ruleId/toggle - Toggle enabled
   app.post('/:householdId/automation/rules/:ruleId/toggle', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
-    const db = request.server.db;
 
     // Fetch current state
     const [existing] = await db
-      .select({ enabled: automationRules.enabled })
-      .from(automationRules)
-      .where(and(eq(automationRules.id, ruleId), eq(automationRules.householdId, householdId)));
+      .select({ enabled: choreAutomationRules.enabled })
+      .from(choreAutomationRules)
+      .where(and(eq(choreAutomationRules.id, ruleId), eq(choreAutomationRules.householdId, householdId)));
 
     if (!existing) {
       return reply.status(404).send({ error: 'Rule not found' });
     }
 
     const [updated] = await db
-      .update(automationRules)
+      .update(choreAutomationRules)
       .set({
         enabled: !existing.enabled,
         updatedAt: new Date(),
       })
-      .where(and(eq(automationRules.id, ruleId), eq(automationRules.householdId, householdId)))
+      .where(and(eq(choreAutomationRules.id, ruleId), eq(choreAutomationRules.householdId, householdId)))
       .returning();
 
-    return updated;
+    return reply.send(updated);
   });
 }

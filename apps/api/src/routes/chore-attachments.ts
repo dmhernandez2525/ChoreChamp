@@ -5,6 +5,7 @@ import { db } from '../lib/db';
 import { choreAttachments, choreActivityLog, chores, members } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { emitToHousehold } from '../lib/socket';
+import { Server } from 'socket.io';
 
 const addAttachmentSchema = z.object({
   fileName: z.string().min(1).max(500),
@@ -103,10 +104,13 @@ export async function choreAttachmentRoutes(fastify: FastifyInstance) {
       newValue: { attachmentId: attachment.id, fileName: body.fileName },
     });
 
-    emitToHousehold(fastify, householdId, 'chore:attachment:added', {
-      choreId,
-      attachment,
-    });
+    const io = fastify.io as Server;
+    if (io) {
+      emitToHousehold(io, householdId, 'chore:attachment:added', {
+        choreId,
+        attachment,
+      });
+    }
 
     return reply.status(201).send(attachment);
   });

@@ -1,17 +1,34 @@
 import { FastifyInstance } from 'fastify';
 import { eq, and, isNull, desc } from 'drizzle-orm';
-import { timeLogs } from '@chorechamp/database/schema';
-import { requireAuth } from '../middleware/auth';
-import type { AuthenticatedRequest } from '../middleware/auth';
+import { timeLogs, members } from '@chorechamp/database/schema';
+import { db } from '../lib/db';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 
 export async function timeTrackingRoutes(app: FastifyInstance) {
   // POST /:householdId/chores/:choreId/time/start - Start timer
   app.post('/:householdId/chores/:choreId/time/start', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
-    const { choreId } = request.params as { householdId: string; choreId: string };
-    const memberId = request.user.memberId;
-    const db = request.server.db;
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+
+    // Look up member for this user in this household
+    const [membership] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.householdId, householdId),
+        eq(members.userId, user.id)
+      ));
+
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    const memberId = membership.id;
 
     // Check if there's already an active timer for this member
     const active = await db
@@ -39,10 +56,27 @@ export async function timeTrackingRoutes(app: FastifyInstance) {
   // POST /:householdId/chores/:choreId/time/stop - Stop timer
   app.post('/:householdId/chores/:choreId/time/stop', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
-    const { choreId } = request.params as { householdId: string; choreId: string };
-    const memberId = request.user.memberId;
-    const db = request.server.db;
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+
+    // Look up member for this user in this household
+    const [membership] = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.householdId, householdId),
+        eq(members.userId, user.id)
+      ));
+
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    const memberId = membership.id;
 
     const [active] = await db
       .select()
@@ -67,15 +101,14 @@ export async function timeTrackingRoutes(app: FastifyInstance) {
       .where(eq(timeLogs.id, active.id))
       .returning();
 
-    return updated;
+    return reply.send(updated);
   });
 
   // GET /:householdId/chores/:choreId/time - Get time logs
   app.get('/:householdId/chores/:choreId/time', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest) => {
+  }, async (request, reply) => {
     const { choreId } = request.params as { householdId: string; choreId: string };
-    const db = request.server.db;
 
     const logs = await db
       .select()
@@ -83,6 +116,6 @@ export async function timeTrackingRoutes(app: FastifyInstance) {
       .where(eq(timeLogs.choreId, choreId))
       .orderBy(desc(timeLogs.startedAt));
 
-    return logs;
+    return reply.send(logs);
   });
 }

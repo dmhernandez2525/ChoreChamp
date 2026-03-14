@@ -5,6 +5,7 @@ import { db } from '../lib/db';
 import { chores, choreActivityLog, members } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { emitToHousehold } from '../lib/socket';
+import { Server } from 'socket.io';
 
 const bulkUpdateSchema = z.object({
   choreIds: z.array(z.string().uuid()).min(1).max(50),
@@ -102,10 +103,13 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
       await db.insert(choreActivityLog).values(activityEntries);
     }
 
-    emitToHousehold(fastify, householdId, 'chores:bulk:updated', {
-      choreIds: body.choreIds,
-      changes: body.changes,
-    });
+    const io = fastify.io as Server;
+    if (io) {
+      emitToHousehold(io, householdId, 'chores:bulk:updated', {
+        choreIds: body.choreIds,
+        changes: body.changes,
+      });
+    }
 
     return reply.send({ updated: updated.length, chores: updated });
   });
@@ -140,9 +144,12 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
       )
     );
 
-    emitToHousehold(fastify, householdId, 'chores:reordered', {
-      updates: body.updates,
-    });
+    const io = fastify.io as Server;
+    if (io) {
+      emitToHousehold(io, householdId, 'chores:reordered', {
+        updates: body.updates,
+      });
+    }
 
     return reply.send({ updated: results.flat().length });
   });
@@ -172,9 +179,12 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
       ))
       .returning({ id: chores.id });
 
-    emitToHousehold(fastify, householdId, 'chores:bulk:deleted', {
-      choreIds: updated.map(c => c.id),
-    });
+    const io = fastify.io as Server;
+    if (io) {
+      emitToHousehold(io, householdId, 'chores:bulk:deleted', {
+        choreIds: updated.map(c => c.id),
+      });
+    }
 
     return reply.send({ deleted: updated.length });
   });

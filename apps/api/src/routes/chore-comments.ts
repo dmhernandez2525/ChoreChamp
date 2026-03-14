@@ -5,6 +5,7 @@ import { db } from '../lib/db';
 import { choreComments, choreActivityLog, chores, members } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { emitToHousehold } from '../lib/socket';
+import { Server } from 'socket.io';
 
 const addCommentSchema = z.object({
   comment: z.string().min(1).max(5000),
@@ -98,10 +99,13 @@ export async function choreCommentRoutes(fastify: FastifyInstance) {
       newValue: { commentId: comment.id },
     });
 
-    emitToHousehold(fastify, householdId, 'chore:comment:added', {
-      choreId,
-      comment,
-    });
+    const io = fastify.io as Server;
+    if (io) {
+      emitToHousehold(io, householdId, 'chore:comment:added', {
+        choreId,
+        comment,
+      });
+    }
 
     return reply.status(201).send(comment);
   });

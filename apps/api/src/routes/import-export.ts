@@ -2,8 +2,8 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { chores } from '@chorechamp/database/schema';
-import { requireAuth } from '../middleware/auth';
-import type { AuthenticatedRequest } from '../middleware/auth';
+import { db } from '../lib/db';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 
 const exportFormatSchema = z.enum(['csv', 'json']).default('json');
 
@@ -112,11 +112,10 @@ export async function importExportRoutes(app: FastifyInstance) {
   // GET /:householdId/chores/export - Export all chores
   app.get('/:householdId/chores/export', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest, reply) => {
+  }, async (request, reply) => {
     const { householdId } = request.params as { householdId: string };
     const query = request.query as { format?: string };
     const format = exportFormatSchema.parse(query.format);
-    const db = request.server.db;
 
     const allChores = await db
       .select()
@@ -155,12 +154,11 @@ export async function importExportRoutes(app: FastifyInstance) {
   // POST /:householdId/chores/import - Import chores from CSV/JSON
   app.post('/:householdId/chores/import', {
     preHandler: [requireAuth],
-  }, async (request: AuthenticatedRequest) => {
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const { content, format: explicitFormat } = request.body as { content: string; format?: string };
-    const db = request.server.db;
 
-    const userId = request.user!.id;
     const format = explicitFormat ?? detectFormat(content);
 
     let rawRows: Record<string, unknown>[];
@@ -195,16 +193,16 @@ export async function importExportRoutes(app: FastifyInstance) {
         estimatedMinutes: result.data.estimatedMinutes ?? null,
         requiresApproval: result.data.requiresApproval,
         requiresPhoto: result.data.requiresPhoto,
-        createdBy: userId,
+        createdBy: user.id,
       });
 
       imported++;
     }
 
-    return {
+    return reply.send({
       imported,
       skipped: rawRows.length - imported,
       errors,
-    };
+    });
   });
 }
