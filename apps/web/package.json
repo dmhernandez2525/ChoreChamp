@@ -10,12 +10,16 @@
     "test": "vitest --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:fast": "PLAYWRIGHT_FAST_MODE=1 playwright test --project=chromium"
   },
   "dependencies": {
     "@chorechamp/api-client": "workspace:*",
-    "@chorechamp/types": "workspace:*",
     "@chorechamp/gamification": "workspace:*",
+    "@chorechamp/types": "workspace:*",
     "@chorechamp/ui": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-dropdown-menu": "^2.1.0",
@@ -36,6 +40,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.1.0",
