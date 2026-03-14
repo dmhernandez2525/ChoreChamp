@@ -35,6 +35,9 @@ apps/**/vite.config.d.ts.map
 
 # Testing
 coverage/
+test-results/
+playwright-report/
+blob-report/
 
 # Logs
 *.log
@@ -66,3 +69,6 @@ apps/desktop-windows/src-tauri/target/
 # Secrets
 *.pem
 credentials.json
+
+# Session files
+.jarvis-resume

@@ -47,6 +47,7 @@ import CommunityHub from './pages/CommunityHub';
 import SmartAutomation from './pages/SmartAutomation';
 import FamilyHub from './pages/FamilyHub';
 import FinancialScheduling from './pages/FinancialScheduling';
+import BoardPage from './pages/BoardPage';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -435,6 +436,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <FinancialScheduling />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/board"
+        element={
+          <ProtectedRoute>
+            <BoardPage />
           </ProtectedRoute>
         }
       />

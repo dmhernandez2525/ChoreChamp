@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, asc, desc, ilike, arrayContains } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { chores, choreCompletions, members, households } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
@@ -35,6 +35,19 @@ const createChoreSchema = z.object({
 
 const updateChoreSchema = createChoreSchema.partial().extend({
   isActive: z.boolean().optional(),
+});
+
+// Query params for listing chores with sort/filter/search
+const listChoresQuerySchema = z.object({
+  search: z.string().optional(),
+  category: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  assignedTo: z.string().uuid().optional(),
+  difficulty: z.enum(['trivial', 'easy', 'medium', 'hard', 'epic']).optional(),
+  sortBy: z.enum(['title', 'priority', 'boardOrder', 'createdAt', 'dueTime', 'pointValue']).default('boardOrder'),
+  sortDir: z.enum(['asc', 'desc']).default('asc'),
+  limit: z.coerce.number().min(1).max(200).default(100),
+  offset: z.coerce.number().min(0).default(0),
 });
 
 const completeChoreSchema = z.object({
@@ -101,13 +114,49 @@ export async function choreRoutes(fastify: FastifyInstance) {
       });
     }
 
+    const query = listChoresQuerySchema.parse(request.query);
+
+    // Build where conditions
+    const conditions = [
+      eq(chores.householdId, householdId),
+      eq(chores.isActive, true),
+    ];
+
+    if (query.search) {
+      conditions.push(ilike(chores.title, `%${query.search}%`));
+    }
+    if (query.category) {
+      conditions.push(eq(chores.category, query.category));
+    }
+    if (query.priority) {
+      conditions.push(eq(chores.priority, query.priority));
+    }
+    if (query.assignedTo) {
+      conditions.push(arrayContains(chores.assignedTo, [query.assignedTo]));
+    }
+    if (query.difficulty) {
+      conditions.push(eq(chores.difficulty, query.difficulty));
+    }
+
+    // Build sort
+    const sortColumn = {
+      title: chores.title,
+      priority: chores.priority,
+      boardOrder: chores.boardOrder,
+      createdAt: chores.createdAt,
+      dueTime: chores.dueTime,
+      pointValue: chores.pointValue,
+    }[query.sortBy];
+
+    const sortFn = query.sortDir === 'desc' ? desc : asc;
+
     const householdChores = await db
       .select()
       .from(chores)
-      .where(and(
-        eq(chores.householdId, householdId),
-        eq(chores.isActive, true)
-      ));
+      .where(and(...conditions))
+      .orderBy(sortFn(sortColumn))
+      .limit(query.limit)
+      .offset(query.offset);
 
     return reply.send(householdChores);
   });

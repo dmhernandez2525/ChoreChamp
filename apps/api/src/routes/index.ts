@@ -52,6 +52,18 @@ import { communitySocialRoutes } from './community-social';
 import { smartAutomationRoutes } from './smart-automation';
 import { communicationCalendarRoutes } from './communication-calendar';
 import { financialSchedulingRoutes } from './financial-scheduling';
+import { boardRoutes } from './board';
+import { calendarRoutes } from './calendar';
+import { choreCommentRoutes } from './chore-comments';
+import { choreAttachmentRoutes } from './chore-attachments';
+import { choreActivityRoutes } from './chore-activity';
+import { bulkActionRoutes } from './bulk-actions';
+import { savedFilterRoutes } from './saved-filters';
+import { tagRoutes } from './tags';
+import { timeTrackingRoutes } from './time-tracking';
+import { dependencyRoutes } from './dependencies';
+import { importExportRoutes } from './import-export';
+import { automationRuleRoutes } from './automation-rules';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Auth routes (handled by better-auth)
@@ -113,6 +125,18 @@ export async function registerRoutes(fastify: FastifyInstance) {
         householdApi.register(smartAutomationRoutes, { prefix: '/:householdId/automation' });
         householdApi.register(communicationCalendarRoutes, { prefix: '/:householdId/family-hub' });
         householdApi.register(financialSchedulingRoutes, { prefix: '/:householdId/financial' });
+        householdApi.register(boardRoutes, { prefix: '/:householdId/board' });
+        householdApi.register(calendarRoutes, { prefix: '/:householdId/calendar' });
+        householdApi.register(choreCommentRoutes, { prefix: '/:householdId/chores' });
+        householdApi.register(choreAttachmentRoutes, { prefix: '/:householdId/chores' });
+        householdApi.register(choreActivityRoutes, { prefix: '/:householdId/chores' });
+        householdApi.register(bulkActionRoutes, { prefix: '/:householdId/chores' });
+        householdApi.register(savedFilterRoutes, { prefix: '/:householdId/board' });
+        householdApi.register(tagRoutes);
+        householdApi.register(timeTrackingRoutes);
+        householdApi.register(dependencyRoutes);
+        householdApi.register(importExportRoutes);
+        householdApi.register(automationRuleRoutes);
       });
 
       // Chore templates (public)

@@ -36,3 +36,8 @@ export * from './community-social';
 export * from './smart-automation';
 export * from './communication-calendar';
 export * from './financial-scheduling';
+export * from './chore-board';
+export * from './tags';
+export * from './time-tracking';
+export * from './dependencies';
+export * from './automation-rules';

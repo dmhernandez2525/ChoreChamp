@@ -3,6 +3,7 @@ import { relations } from 'drizzle-orm';
 import { households } from './households';
 import { members } from './members';
 import { choreCompletions, choreSchedules } from './completions';
+import { choreComments, choreAttachments, choreActivityLog } from './chore-board';
 
 // Chores table
 export const chores = pgTable(
@@ -41,6 +42,10 @@ export const chores = pgTable(
     requiresApproval: boolean('requires_approval').default(false),
     requiresPhoto: boolean('requires_photo').default(false),
     estimatedMinutes: integer('estimated_minutes'),
+
+    // Board view
+    priority: varchar('priority', { length: 20 }).default('medium'), // low, medium, high, urgent
+    boardOrder: integer('board_order').default(0), // Position within Kanban column
 
     // ADHD settings
     showTimer: boolean('show_timer').default(false),
@@ -103,4 +108,7 @@ export const choresRelations = relations(chores, ({ one, many }) => ({
   }),
   completions: many(choreCompletions),
   schedules: many(choreSchedules),
+  comments: many(choreComments),
+  attachments: many(choreAttachments),
+  activityLog: many(choreActivityLog),
 }));

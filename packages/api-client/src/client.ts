@@ -3466,6 +3466,146 @@ class ApiClient {
   async updateMarketplaceConfig(householdId: string, data: UpdateMarketplaceConfigRequest): Promise<MarketplaceConfig> {
     return this.request(`/households/${householdId}/financial/marketplace/config`, { method: 'PUT', body: JSON.stringify(data) });
   }
+
+  // ===== Board Preferences =====
+  async getBoardPreferences(householdId: string): Promise<Record<string, unknown>> {
+    return this.request(`/households/${householdId}/board/preferences`);
+  }
+
+  async updateBoardPreferences(householdId: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.request(`/households/${householdId}/board/preferences`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  // ===== Calendar =====
+  async getCalendarChores(householdId: string, startDate: string, endDate: string, memberId?: string): Promise<Record<string, unknown>> {
+    const params = new URLSearchParams({ startDate, endDate });
+    if (memberId) params.set('memberId', memberId);
+    return this.request(`/households/${householdId}/calendar?${params.toString()}`);
+  }
+
+  async getCalendarCounts(householdId: string, startDate: string, endDate: string): Promise<Record<string, { total: number; completed: number }>> {
+    return this.request(`/households/${householdId}/calendar/counts?startDate=${startDate}&endDate=${endDate}`);
+  }
+
+  // ===== Chore Comments =====
+  async getChoreComments(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/comments`);
+  }
+
+  async addChoreComment(householdId: string, choreId: string, comment: string): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/comments`, { method: 'POST', body: JSON.stringify({ comment }) });
+  }
+
+  async deleteChoreComment(householdId: string, choreId: string, commentId: string): Promise<void> {
+    return this.request(`/households/${householdId}/chores/${choreId}/comments/${commentId}`, { method: 'DELETE' });
+  }
+
+  // ===== Chore Attachments =====
+  async getChoreAttachments(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/attachments`);
+  }
+
+  async addChoreAttachment(householdId: string, choreId: string, data: { fileName: string; fileUrl: string; fileSize?: number; mimeType?: string; isPhotoProof?: boolean }): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/attachments`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async deleteChoreAttachment(householdId: string, choreId: string, attachmentId: string): Promise<void> {
+    return this.request(`/households/${householdId}/chores/${choreId}/attachments/${attachmentId}`, { method: 'DELETE' });
+  }
+
+  // ===== Chore Activity =====
+  async getChoreActivity(householdId: string, choreId: string, limit = 50, offset = 0): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/activity?limit=${limit}&offset=${offset}`);
+  }
+
+  // ===== Bulk Actions =====
+  async bulkUpdateChores(householdId: string, data: { choreIds: string[]; changes: Record<string, unknown> }): Promise<{ updated: number }> {
+    return this.request(`/households/${householdId}/chores/bulk`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  async bulkReorderChores(householdId: string, updates: Array<{ choreId: string; boardOrder: number }>): Promise<{ updated: number }> {
+    return this.request(`/households/${householdId}/chores/reorder`, { method: 'PATCH', body: JSON.stringify({ updates }) });
+  }
+
+  async bulkDeleteChores(householdId: string, choreIds: string[]): Promise<{ deleted: number }> {
+    return this.request(`/households/${householdId}/chores/bulk-delete`, { method: 'POST', body: JSON.stringify({ choreIds }) });
+  }
+
+  // ===== Saved Filters =====
+  async getSavedFilters(householdId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/board/filters`);
+  }
+
+  async createSavedFilter(householdId: string, data: { name: string; filters: unknown[]; sort?: Record<string, unknown>; groupBy?: string; visibility?: string }): Promise<unknown> {
+    return this.request(`/households/${householdId}/board/filters`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateSavedFilter(householdId: string, filterId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/households/${householdId}/board/filters/${filterId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteSavedFilter(householdId: string, filterId: string): Promise<void> {
+    return this.request(`/households/${householdId}/board/filters/${filterId}`, { method: 'DELETE' });
+  }
+
+  // ===== Tags =====
+  async getHouseholdTags(householdId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/tags`);
+  }
+
+  async createTag(householdId: string, data: { name: string; color?: string }): Promise<unknown> {
+    return this.request(`/households/${householdId}/tags`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async deleteTag(householdId: string, tagId: string): Promise<void> {
+    return this.request(`/households/${householdId}/tags/${tagId}`, { method: 'DELETE' });
+  }
+
+  async getChoreTags(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/tags`);
+  }
+
+  async addChoreTag(householdId: string, choreId: string, tagId: string): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/tags`, { method: 'POST', body: JSON.stringify({ tagId }) });
+  }
+
+  async removeChoreTag(householdId: string, choreId: string, tagId: string): Promise<void> {
+    return this.request(`/households/${householdId}/chores/${choreId}/tags/${tagId}`, { method: 'DELETE' });
+  }
+
+  // ===== Time Tracking =====
+  async startTimeTracking(householdId: string, choreId: string): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/time/start`, { method: 'POST' });
+  }
+
+  async stopTimeTracking(householdId: string, choreId: string): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/time/stop`, { method: 'POST' });
+  }
+
+  async getTimeLogs(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/time`);
+  }
+
+  // ===== Dependencies =====
+  async getChoreDependencies(householdId: string, choreId: string): Promise<unknown[]> {
+    return this.request(`/households/${householdId}/chores/${choreId}/dependencies`);
+  }
+
+  async addChoreDependency(householdId: string, choreId: string, data: { dependsOnChoreId: string; type?: string }): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/${choreId}/dependencies`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async removeChoreDependency(householdId: string, choreId: string, depId: string): Promise<void> {
+    return this.request(`/households/${householdId}/chores/${choreId}/dependencies/${depId}`, { method: 'DELETE' });
+  }
+  // ===== Import / Export =====
+  async exportChores(householdId: string, format: 'csv' | 'json' = 'json'): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/export?format=${format}`);
+  }
+
+  async importChores(householdId: string, data: { content: string; format?: string }): Promise<{ imported: number; skipped: number; errors: string[] }> {
+    return this.request(`/households/${householdId}/chores/import`, { method: 'POST', body: JSON.stringify(data) });
+  }
 }
 
 export const apiClient = new ApiClient();
