@@ -5,3 +5,5 @@ export { ViewSwitcher } from './ViewSwitcher';
 export { CalendarView } from './CalendarView';
 export { CalendarDay } from './CalendarDay';
 export { ListView } from './ListView';
+export { FilterBar } from './FilterBar';
+export { FilterBuilder } from './FilterBuilder';
