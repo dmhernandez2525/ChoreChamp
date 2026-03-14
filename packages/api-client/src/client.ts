@@ -3598,6 +3598,14 @@ class ApiClient {
   async removeChoreDependency(householdId: string, choreId: string, depId: string): Promise<void> {
     return this.request(`/households/${householdId}/chores/${choreId}/dependencies/${depId}`, { method: 'DELETE' });
   }
+  // ===== Import / Export =====
+  async exportChores(householdId: string, format: 'csv' | 'json' = 'json'): Promise<unknown> {
+    return this.request(`/households/${householdId}/chores/export?format=${format}`);
+  }
+
+  async importChores(householdId: string, data: { content: string; format?: string }): Promise<{ imported: number; skipped: number; errors: string[] }> {
+    return this.request(`/households/${householdId}/chores/import`, { method: 'POST', body: JSON.stringify(data) });
+  }
 }
 
 export const apiClient = new ApiClient();

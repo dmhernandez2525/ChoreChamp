@@ -361,3 +361,22 @@ export function useRemoveChoreDependency(householdId: string, choreId: string) {
     },
   });
 }
+
+// ===== Import / Export =====
+export function useExportChores(householdId: string) {
+  return useMutation({
+    mutationFn: (format: 'csv' | 'json') =>
+      apiClient.exportChores(householdId, format),
+  });
+}
+
+export function useImportChores(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { content: string; format?: string }) =>
+      apiClient.importChores(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chores', householdId] });
+    },
+  });
+}
