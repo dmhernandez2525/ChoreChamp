@@ -3,3 +3,4 @@
 
 export * from './client';
 export * from './hooks';
+export * from './hooks/board';
