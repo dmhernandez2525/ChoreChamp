@@ -17,3 +17,4 @@ export { BulkAssignDialog } from './BulkAssignDialog';
 export { BulkRescheduleDialog } from './BulkRescheduleDialog';
 export { BulkDeleteConfirmation } from './BulkDeleteConfirmation';
 export { InlineEditCell, InlineSelectCell } from './InlineEditCell';
+export { CardContextMenu } from './CardContextMenu';
