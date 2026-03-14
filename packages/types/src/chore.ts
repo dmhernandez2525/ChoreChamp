@@ -4,6 +4,11 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export type RecurrenceType = 'once' | 'daily' | 'weekly' | 'monthly' | 'after_completion' | 'custom';
 export type AssignmentType = 'specific' | 'anyone' | 'rotation';
 export type CompletionStatus = 'pending' | 'approved' | 'rejected';
+export type ChorePriority = 'low' | 'medium' | 'high' | 'urgent';
+export type ChoreViewMode = 'kanban' | 'calendar' | 'list' | 'dashboard';
+export type ChoreActivityAction = 'created' | 'status_changed' | 'assigned' | 'unassigned' | 'edited' | 'commented' | 'attachment_added';
+export type FilterOperator = 'equals' | 'not_equals' | 'contains' | 'starts_with' | 'in' | 'not_in' | 'gt' | 'lt' | 'gte' | 'lte' | 'between' | 'is_true' | 'is_false' | 'before' | 'after' | 'is_overdue' | 'is_today' | 'is_this_week';
+export type FilterVisibility = 'private' | 'household';
 
 export type ChoreCategory =
   | 'kitchen'
@@ -47,6 +52,10 @@ export interface Chore {
   requiresApproval: boolean;
   requiresPhoto: boolean;
   estimatedMinutes: number | null;
+
+  // Board view
+  priority: ChorePriority;
+  boardOrder: number;
 
   // ADHD settings
   showTimer: boolean;
@@ -137,6 +146,7 @@ export interface CreateChoreRequest {
   estimatedMinutes?: number;
   showTimer?: boolean;
   steps?: string[];
+  priority?: ChorePriority;
 }
 
 export interface CompleteChoreRequest {
@@ -153,4 +163,125 @@ export interface TodayChore extends ChoreSchedule {
 
 export interface ChoreWithCompletions extends Chore {
   completions: ChoreCompletion[];
+}
+
+// Task Management View types (Phase 15)
+
+export interface ChoreComment {
+  id: string;
+  choreId: string;
+  memberId: string;
+  comment: string;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ChoreAttachment {
+  id: string;
+  choreId: string;
+  memberId: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string | null;
+  isPhotoProof: boolean;
+  createdAt: Date;
+}
+
+export interface ChoreActivityEntry {
+  id: string;
+  choreId: string;
+  memberId: string;
+  action: ChoreActivityAction;
+  oldValue: unknown;
+  newValue: unknown;
+  createdAt: Date;
+}
+
+export interface ChoreFilter {
+  field: string;
+  operator: FilterOperator;
+  value: unknown;
+}
+
+export interface SavedFilterView {
+  id: string;
+  householdId: string;
+  memberId: string;
+  name: string;
+  filters: ChoreFilter[];
+  sort: { field: string; direction: 'asc' | 'desc' };
+  groupBy: string | null;
+  visibility: FilterVisibility;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BoardPreferences {
+  id: string;
+  householdId: string;
+  memberId: string;
+  viewMode: ChoreViewMode;
+  columnSettings: Record<string, { color?: string; wipLimit?: number; hidden?: boolean; order?: number }>;
+  defaultGroupBy: string | null;
+  defaultSort: { field: string; direction: 'asc' | 'desc' };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BulkAction {
+  action: 'assign' | 'change_status' | 'change_category' | 'change_priority' | 'reschedule' | 'delete';
+  choreIds: string[];
+  payload: Record<string, unknown>;
+}
+
+export interface AutomationRule {
+  id: string;
+  householdId: string;
+  name: string;
+  triggerType: 'chore_completed' | 'chore_overdue' | 'status_changed' | 'time_based' | 'member_joined';
+  triggerConfig: Record<string, unknown>;
+  conditions: Array<{ field: string; operator: string; value: unknown }>;
+  actions: Array<{ type: string; config: Record<string, unknown> }>;
+  enabled: boolean;
+  lastTriggeredAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UndoableAction {
+  type: string;
+  description: string;
+  undoFn: () => Promise<void>;
+  redoFn: () => Promise<void>;
+}
+
+// API request types for task management
+
+export interface BulkUpdateRequest {
+  choreIds: string[];
+  changes: Partial<Pick<Chore, 'assignedTo' | 'category' | 'priority'>>;
+  status?: string;
+  dueDate?: string;
+}
+
+export interface BulkReorderRequest {
+  updates: Array<{ choreId: string; boardOrder: number; status?: string }>;
+}
+
+export interface AddCommentRequest {
+  comment: string;
+}
+
+export interface RescheduleRequest {
+  newDate: string;
+}
+
+export interface CreateSavedFilterRequest {
+  name: string;
+  filters: ChoreFilter[];
+  sort?: { field: string; direction: 'asc' | 'desc' };
+  groupBy?: string;
+  visibility?: FilterVisibility;
 }
