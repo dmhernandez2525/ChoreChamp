@@ -10,3 +10,4 @@ export { FilterBuilder } from './FilterBuilder';
 export { SelectionToolbar } from './SelectionToolbar';
 export { CommandPalette } from './CommandPalette';
 export { ChoreDetailPanel } from './ChoreDetailPanel';
+export { UndoToast } from './UndoToast';
