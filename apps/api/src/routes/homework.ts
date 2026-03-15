@@ -209,6 +209,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
       memberId: z.string().uuid(),
     }).parse(request.body);
 
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
+
     const [subject] = await db
       .insert(subjects)
       .values({
@@ -399,6 +406,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
     }
     const data = createAssignmentSchema.parse(request.body);
 
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
+
     const [assignment] = await db
       .insert(assignments)
       .values({
@@ -571,6 +585,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
     }
     const data = startSessionSchema.parse(request.body);
 
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
+
     const [session] = await db
       .insert(studySessions)
       .values({
@@ -739,6 +760,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
     }
     const data = createGoalSchema.parse(request.body);
 
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
+
     const [goal] = await db
       .insert(studyGoals)
       .values({
@@ -878,6 +906,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const data = createPlanSchema.parse(request.body);
+
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
     const totalPlannedMinutes = data.plannedItems.reduce(
       (sum, item) => sum + item.plannedMinutes, 0

@@ -200,54 +200,59 @@ export async function bossBattleRoutes(fastify: FastifyInstance) {
     const newHealth = Math.max(0, battle.healthCurrent - body.damage);
     const isDefeated = newHealth === 0;
 
-    // Update battle
-    const [updatedBattle] = await db
-      .update(bossBattles)
-      .set({
-        healthCurrent: newHealth,
-        defeatedAt: isDefeated ? new Date() : null,
-      })
-      .where(eq(bossBattles.id, battleId))
-      .returning();
+    // Update battle and award points atomically
+    const { updatedBattle, pointsPerMember: awardedPoints } = await db.transaction(async (tx) => {
+      const [updatedBattle] = await tx
+        .update(bossBattles)
+        .set({
+          healthCurrent: newHealth,
+          defeatedAt: isDefeated ? new Date() : null,
+        })
+        .where(and(eq(bossBattles.id, battleId), isNull(bossBattles.defeatedAt)))
+        .returning();
 
-    // If defeated, award points to all active members
+      if (!updatedBattle) {
+        throw new Error('Battle already defeated');
+      }
+
+      let pointsPerMember = 0;
+
+      if (isDefeated) {
+        const activeMembers = await tx
+          .select()
+          .from(members)
+          .where(and(
+            eq(members.householdId, householdId),
+            eq(members.isActive, true)
+          ));
+
+        if (activeMembers.length > 0) {
+          pointsPerMember = Math.floor(battle.pointReward / activeMembers.length);
+
+          for (const member of activeMembers) {
+            await tx
+              .update(members)
+              .set({
+                pointsCurrent: sql`${members.pointsCurrent} + ${pointsPerMember}`,
+                pointsLifetime: sql`${members.pointsLifetime} + ${pointsPerMember}`,
+              })
+              .where(eq(members.id, member.id));
+          }
+        }
+      }
+
+      return { updatedBattle, pointsPerMember };
+    });
+
+    // Emit victory event (outside transaction)
     if (isDefeated) {
-      const activeMembers = await db
-        .select()
-        .from(members)
-        .where(and(
-          eq(members.householdId, householdId),
-          eq(members.isActive, true)
-        ));
-
-      // Award points to each member (guard against empty list)
-      if (activeMembers.length === 0) {
-        return reply.send({
-          battle: updatedBattle,
-          damageDealt: body.damage,
-          isDefeated,
-        });
-      }
-      const pointsPerMember = Math.floor(battle.pointReward / activeMembers.length);
-
-      for (const member of activeMembers) {
-        await db
-          .update(members)
-          .set({
-            pointsCurrent: (member.pointsCurrent || 0) + pointsPerMember,
-            pointsLifetime: (member.pointsLifetime || 0) + pointsPerMember,
-          })
-          .where(eq(members.id, member.id));
-      }
-
-      // Emit victory event
       const io = fastify.io;
       if (io) {
         io.to(`household:${householdId}`).emit('boss:defeated', {
           battleId,
           bossName: battle.name,
           pointReward: battle.pointReward,
-          pointsPerMember,
+          pointsPerMember: awardedPoints,
           defeatedAt: updatedBattle.defeatedAt,
         });
       }

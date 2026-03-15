@@ -333,6 +333,13 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
     }
     const data = startSessionSchema.parse(request.body);
 
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
+
     // Get questions for this session
     const questions = await db.query.educationalQuestions.findMany({
       where: and(

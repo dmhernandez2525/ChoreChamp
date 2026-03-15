@@ -501,6 +501,13 @@ export async function reminderRoutes(fastify: FastifyInstance) {
       });
     }
 
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, body.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
+
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
 
