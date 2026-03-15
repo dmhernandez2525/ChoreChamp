@@ -369,6 +369,7 @@ interface ApiError {
 
 class ApiClient {
   private baseUrl: string;
+  private tokenGetter: (() => string | null) | null = null;
 
   constructor(baseUrl: string = '/api') {
     this.baseUrl = baseUrl;
@@ -378,12 +379,21 @@ class ApiClient {
     this.baseUrl = url;
   }
 
+  setTokenGetter(getter: () => string | null) {
+    this.tokenGetter = getter;
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
+
+    const token = this.tokenGetter?.();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
     const response = await fetch(url, {
       ...options,
