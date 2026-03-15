@@ -62,15 +62,17 @@ test.describe('Household Dashboard Deep Interactions', () => {
   });
 
   test('navigation to other sections works', async ({ page }) => {
-    // Find navigation links to key sections
+    // HouseholdDashboard has quick action links at the bottom:
+    // "Add Chore", "Manage Family" (parent only), "Enterprise School" (parent only),
+    // "Developer API" (parent only), "Analytics", "Settings"
     const navLinks = {
-      board: page.getByRole('link', { name: /board/i }).first(),
-      rewards: page.getByRole('link', { name: /reward/i }).first(),
-      leaderboard: page.getByRole('link', { name: /leaderboard|ranking/i }).first(),
-      members: page.getByRole('link', { name: /member|family/i }).first(),
+      addChore: page.getByRole('link', { name: /add chore/i }).first(),
+      manageFamily: page.getByRole('link', { name: /manage family/i }).first(),
+      analytics: page.getByRole('link', { name: /analytics/i }).first(),
+      settings: page.getByRole('link', { name: /settings/i }).first(),
     };
 
-    // At least 2 navigation links should be visible
+    // At least 2 quick action links should be visible
     let visibleNavCount = 0;
     for (const [, link] of Object.entries(navLinks)) {
       const isVisible = await link.isVisible().catch(() => false);
@@ -81,14 +83,14 @@ test.describe('Household Dashboard Deep Interactions', () => {
     expect(visibleNavCount).toBeGreaterThanOrEqual(2);
 
     // Click one of the nav links and verify navigation occurs
-    for (const [section, link] of Object.entries(navLinks)) {
+    for (const [, link] of Object.entries(navLinks)) {
       const isVisible = await link.isVisible().catch(() => false);
       if (isVisible) {
         await link.click();
         await page.waitForLoadState('load');
         await page.waitForTimeout(1000);
 
-        // URL should have changed to include the section name
+        // URL should have changed after clicking
         const currentUrl = page.url();
         expect(currentUrl).not.toBe(`/households/${HID}`);
         break;

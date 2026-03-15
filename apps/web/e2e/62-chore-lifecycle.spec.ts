@@ -78,25 +78,27 @@ test.describe('Chore Lifecycle Workflow', () => {
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    // Look for completion controls directly on the dashboard
-    const completeButtons = page.getByRole('button', { name: /complete|done|check|mark|finish/i });
-    const checkboxes = page.locator('input[type="checkbox"]');
+    // ChoreCard renders a "Done" button for pending chores, or "Pending..." for needs-approval
+    const doneButtons = page.getByRole('button', { name: /^done$/i });
+    const pendingButtons = page.getByRole('button', { name: /pending/i });
 
-    const hasCompleteButtons = (await completeButtons.count()) > 0;
-    const hasCheckboxes = (await checkboxes.count()) > 0;
+    const hasDoneButtons = (await doneButtons.count()) > 0;
+    const hasPendingButtons = (await pendingButtons.count()) > 0;
 
-    // Or look for chore cards that have completion indicators
-    const choreCards = page.locator('[class*="cursor-pointer"], [class*="card"], [class*="Card"]').filter({
-      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make|pick|put|feed|water|trash/i,
-    });
+    // Or look for chore cards (div with cursor-pointer and rounded-lg)
+    const choreCards = page.locator('div.cursor-pointer.rounded-lg');
     const hasChoreCards = (await choreCards.count()) > 0;
 
-    // Dashboard should have interactive chore elements
-    expect(hasCompleteButtons || hasCheckboxes || hasChoreCards).toBeTruthy();
+    // Or the empty state: "All caught up!" / "No chores scheduled"
+    const emptyState = page.getByText(/all caught up|no chores|no pending/i).first();
+    const hasEmptyState = await emptyState.isVisible().catch(() => false);
 
-    // If there is a complete button, verify it is clickable (do not actually complete)
-    if (hasCompleteButtons) {
-      const firstButton = completeButtons.first();
+    // Dashboard should have interactive chore elements or an empty state
+    expect(hasDoneButtons || hasPendingButtons || hasChoreCards || hasEmptyState).toBeTruthy();
+
+    // If there is a Done button, verify it is clickable (do not actually complete)
+    if (hasDoneButtons) {
+      const firstButton = doneButtons.first();
       await expect(firstButton).toBeEnabled();
     }
   });

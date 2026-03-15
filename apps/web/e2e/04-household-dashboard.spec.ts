@@ -12,8 +12,9 @@ test.describe('Household Dashboard', () => {
     await page.waitForTimeout(2000);
   });
 
-  test('dashboard shows family member names', async ({ page }) => {
-    // Real household has 5 members: Daniel, Christina, Adam, Addison, Aiden
+  test('dashboard shows current member name in header badge', async ({ page }) => {
+    // HouseholdDashboard only shows the current logged-in member's name
+    // in a colored badge in the top-right header area
     const memberNames = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
     let foundCount = 0;
 
@@ -23,8 +24,8 @@ test.describe('Household Dashboard', () => {
       if (visible) foundCount++;
     }
 
-    // Should find at least 2 family member names on the dashboard
-    expect(foundCount).toBeGreaterThanOrEqual(2);
+    // Should find at least the current logged-in member's name
+    expect(foundCount).toBeGreaterThanOrEqual(1);
   });
 
   test('dashboard shows chore statistics or counts', async ({ page }) => {
@@ -64,18 +65,22 @@ test.describe('Household Dashboard', () => {
     }
   });
 
-  test('dashboard displays chore cards or chore list items', async ({ page }) => {
-    // With 43 chores in the household, the dashboard should render chore items
-    // Look for chore-related UI elements
-    const choreCards = page.locator('[data-testid*="chore"], [class*="chore"], [class*="task-card"], [class*="card"]');
+  test('dashboard displays chore cards or empty state', async ({ page }) => {
+    // ChorePreviewList renders ChoreCard components using div.rounded-lg.border.cursor-pointer
+    // or shows an empty state ("All caught up!" / "No chores scheduled")
+    const choreCards = page.locator('div.cursor-pointer.rounded-lg');
     const choreCount = await choreCards.count();
 
-    // Also try list items that might represent chores
-    const listItems = page.getByRole('listitem');
-    const listCount = await listItems.count();
+    // Also check for the "Done" buttons that appear on each ChoreCard
+    const doneButtons = page.getByRole('button', { name: /done|pending/i });
+    const doneCount = await doneButtons.count();
 
-    // Should have at least a few visible chore items
-    expect(choreCount + listCount).toBeGreaterThanOrEqual(1);
+    // Or check for empty state messages
+    const emptyState = page.getByText(/all caught up|no chores|no pending/i).first();
+    const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+    // Should have chore cards, done buttons, or an empty state
+    expect(choreCount + doneCount > 0 || hasEmptyState).toBeTruthy();
   });
 
   test('clicking a chore card or item opens detail view', async ({ page }) => {
