@@ -10,6 +10,18 @@ vi.mock('@chorechamp/api-client', () => ({
   useAddComment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteComment: vi.fn(() => ({ mutate: vi.fn() })),
   useChoreActivity: vi.fn(() => ({ data: [], isLoading: false })),
+  useHouseholdTags: vi.fn(() => ({ data: [], isLoading: false })),
+  useChoreTags: vi.fn(() => ({ data: [], isLoading: false })),
+  useAddChoreTag: vi.fn(() => ({ mutate: vi.fn() })),
+  useRemoveChoreTag: vi.fn(() => ({ mutate: vi.fn() })),
+  useCreateTag: vi.fn(() => ({ mutate: vi.fn() })),
+  useTimeLogs: vi.fn(() => ({ data: [], isLoading: false })),
+  useStartTimeTracking: vi.fn(() => ({ mutate: vi.fn() })),
+  useStopTimeTracking: vi.fn(() => ({ mutate: vi.fn() })),
+  useChoreDependencies: vi.fn(() => ({ data: [], isLoading: false })),
+  useAddChoreDependency: vi.fn(() => ({ mutate: vi.fn() })),
+  useRemoveChoreDependency: vi.fn(() => ({ mutate: vi.fn() })),
+  useChores: vi.fn(() => ({ data: [], isLoading: false })),
 }));
 
 // Mock the UI package
