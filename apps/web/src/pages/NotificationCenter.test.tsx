@@ -26,21 +26,10 @@ vi.mock('@chorechamp/ui', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
-const mockNotifications = [
-  { id: '1', notificationType: 'chore_assigned', title: 'New chore assigned', body: 'Dishes', status: 'unread', createdAt: new Date() },
-  { id: '2', notificationType: 'chore_completed', title: 'Chore completed', body: 'Laundry', status: 'unread', createdAt: new Date() },
-  { id: '3', notificationType: 'reward_earned', title: 'Reward earned', body: 'Ice cream', status: 'unread', createdAt: new Date() },
-  { id: '4', notificationType: 'reminder', title: 'Reminder', body: 'Bed time', status: 'read', createdAt: new Date() },
-  { id: '5', notificationType: 'chore_assigned', title: 'Take out trash', body: 'Description', status: 'read', createdAt: new Date() },
-  { id: '6', notificationType: 'streak', title: 'Streak bonus', body: '7 days', status: 'read', createdAt: new Date() },
-  { id: '7', notificationType: 'badge', title: 'New badge', body: 'Cleaner', status: 'read', createdAt: new Date() },
-  { id: '8', notificationType: 'system', title: 'System update', body: 'New features', status: 'read', createdAt: new Date() },
-];
-
 // Mock api-client hooks
 vi.mock('@chorechamp/api-client', () => ({
   apiClient: {
-    getNotifications: vi.fn().mockResolvedValue(mockNotifications),
+    getNotifications: vi.fn().mockResolvedValue([]),
     getNotificationPreferences: vi.fn().mockResolvedValue({}),
     markNotificationRead: vi.fn().mockResolvedValue({}),
     markAllNotificationsRead: vi.fn().mockResolvedValue({}),
