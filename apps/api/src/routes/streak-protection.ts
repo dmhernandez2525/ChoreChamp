@@ -18,24 +18,11 @@ import type {
 } from '@chorechamp/types';
 import { getRiskLevelFromScore, getNextMilestone } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // In-memory storage (in production, use database)
 const protectionSettings = new Map<string, StreakProtectionSettings>();
 const streakAlerts = new Map<string, StreakAlert[]>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(
-      and(eq(members.householdId, householdId), eq(members.userId, userId))
-    );
-  return membership || null;
-}
 
 // Get default settings
 function getDefaultSettings(): StreakProtectionSettings {

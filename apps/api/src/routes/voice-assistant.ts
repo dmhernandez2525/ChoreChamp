@@ -11,25 +11,12 @@ import type {
 } from '@chorechamp/types';
 import { parseVoiceCommand } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 import { randomUUID } from 'crypto';
 
 // In-memory storage (in production, use database/redis)
 const voiceSessions = new Map<string, VoiceSession>();
 const voiceSettings = new Map<string, VoiceSettings>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(
-      and(eq(members.householdId, householdId), eq(members.userId, userId))
-    );
-  return membership || null;
-}
 
 // Helper to get default settings
 function getDefaultSettings(): VoiceSettings {

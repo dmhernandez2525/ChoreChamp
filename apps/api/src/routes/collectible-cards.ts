@@ -27,6 +27,7 @@ import {
   getCardCategoryInfo,
 } from '@chorechamp/gamification';
 import type { CardRarity, RarityWeights, TradeCard } from '@chorechamp/types';
+import { verifyMembership } from '../lib/membership';
 
 // Validation schemas
 const openPackSchema = z.object({
@@ -64,20 +65,6 @@ const wishlistSchema = z.object({
 });
 
 // Helper functions
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 async function getMemberOwnedCards(memberId: string): Promise<Map<string, number>> {
   const owned = await db
     .select()

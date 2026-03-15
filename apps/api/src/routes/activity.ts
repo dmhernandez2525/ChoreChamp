@@ -8,6 +8,7 @@ import {
   chores,
 } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 interface ActivityItem {
   id: string;
@@ -20,20 +21,6 @@ interface ActivityItem {
   points?: number;
   timestamp: Date;
   metadata?: Record<string, unknown>;
-}
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
 }
 
 export async function activityRoutes(fastify: FastifyInstance) {

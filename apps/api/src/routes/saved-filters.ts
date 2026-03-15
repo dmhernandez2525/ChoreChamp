@@ -2,8 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, or } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { savedChoreFilters, members } from '@chorechamp/database';
+import { savedChoreFilters } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 const choreFilterSchema = z.object({
   field: z.string(),
@@ -28,20 +29,6 @@ const createSavedFilterSchema = z.object({
 });
 
 const updateSavedFilterSchema = createSavedFilterSchema.partial();
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
 
 export async function savedFilterRoutes(fastify: FastifyInstance) {
   // Get all saved filters (own + household-visible)

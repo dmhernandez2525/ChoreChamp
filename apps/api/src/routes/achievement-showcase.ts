@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { db } from '@chorechamp/database';
-import { members } from '@chorechamp/database/schema';
-import { eq, and } from 'drizzle-orm';
+import { db } from '../lib/db';
+import { members } from '@chorechamp/database';
+import { eq } from 'drizzle-orm';
 import type {
   Achievement,
   AchievementShowcase,
@@ -21,6 +21,7 @@ import {
   ReactToShareRequestSchema,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 import { randomUUID } from 'crypto';
 
 // In-memory storage
@@ -30,18 +31,6 @@ const achievementShares = new Map<string, AchievementShare[]>();
 
 // Note: _earnedAchievements reserved for future persistent storage
 void _earnedAchievements;
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 // Generate mock achievements for a member
 function generateMockAchievements(_memberId: string): Achievement[] {

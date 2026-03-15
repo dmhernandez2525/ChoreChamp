@@ -28,6 +28,7 @@ import {
   getEvolutionDisplay,
 } from '@chorechamp/gamification';
 import type { PetAction, PetStats } from '@chorechamp/types';
+import { verifyMembership } from '../lib/membership';
 
 // Constants for pagination
 const MAX_LIMIT = 100;
@@ -66,20 +67,6 @@ const createPlaydateSchema = z.object({
 });
 
 // Helper functions
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 async function getMemberById(
   memberId: string,
   householdId: string

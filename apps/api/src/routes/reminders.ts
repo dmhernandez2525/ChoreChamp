@@ -14,6 +14,7 @@ import type {
   ReminderTiming,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // In-memory storage for reminders (in production, use database tables)
 const memberPreferences = new Map<string, ReminderPreferences>();
@@ -32,20 +33,6 @@ const reminderConfigs = new Map<string, {
   createdAt: string;
   updatedAt: string;
 }>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(
-      and(eq(members.householdId, householdId), eq(members.userId, userId))
-    );
-  return membership || null;
-}
 
 // Helper to get default preferences
 function getDefaultPreferences(memberId: string): ReminderPreferences {

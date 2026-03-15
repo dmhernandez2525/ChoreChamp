@@ -12,21 +12,7 @@ import type {
   PayoutFrequency,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
-
-// Helper to verify membership and get member
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
+import { verifyMembership } from '../lib/membership';
 
 // Helper to convert database row to AllowanceSettings type
 function toAllowanceSettings(row: typeof allowanceSettings.$inferSelect): AllowanceSettings {

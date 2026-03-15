@@ -26,6 +26,7 @@ import {
   getCategoryInfo,
 } from '@chorechamp/gamification';
 import type { GameDifficulty, UnlockType } from '@chorechamp/types';
+import { verifyMembership } from '../lib/membership';
 
 // Constants for pagination
 const MAX_LIMIT = 100;
@@ -53,20 +54,6 @@ const createFamilyNightSchema = z.object({
 });
 
 // Helper functions
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 async function getMemberStats(memberId: string): Promise<{
   choreCount: number;
   points: number;

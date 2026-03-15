@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { db } from '@chorechamp/database';
-import { members } from '@chorechamp/database/schema';
-import { eq, and } from 'drizzle-orm';
+import { db } from '../lib/db';
+import { members } from '@chorechamp/database';
+import { eq } from 'drizzle-orm';
 import type {
   FamilyChallenge,
   ChallengeParticipant,
@@ -20,22 +20,11 @@ import {
   UpdateProgressRequestSchema,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 import { randomUUID } from 'crypto';
 
 // In-memory storage
 const challenges = new Map<string, FamilyChallenge[]>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 // Default settings
 function getDefaultSettings(): ChallengeSettings {

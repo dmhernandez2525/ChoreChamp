@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { db } from '@chorechamp/database';
-import { members } from '@chorechamp/database/schema';
-import { eq, and } from 'drizzle-orm';
+import { db } from '../lib/db';
+import { members } from '@chorechamp/database';
+import { eq } from 'drizzle-orm';
 import type {
   SeasonalEvent,
   EventCalendar,
@@ -16,22 +16,11 @@ import {
   UpdateChallengeProgressRequestSchema,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // In-memory storage
 const eventParticipations = new Map<string, EventParticipation[]>();
 const claimedRewards = new Map<string, Set<string>>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 // Generate mock event data
 function generateActiveEvents(): SeasonalEvent[] {

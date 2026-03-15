@@ -9,22 +9,8 @@ import {
 } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveTierForHousehold } from '../lib/subscription';
+import { verifyParentMembership } from '../lib/membership';
 import type { SubscriptionTier } from '@chorechamp/types';
-
-async function verifyParentMembership(
-  userId: string,
-  householdId: string
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId),
-      eq(members.role, 'parent')
-    ));
-  return !!membership;
-}
 
 function resolveReportWindowDays(tier: SubscriptionTier): number {
   if (tier === 'premium') return 365 * 2;

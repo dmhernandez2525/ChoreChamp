@@ -2,8 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { choreBoardPreferences, members } from '@chorechamp/database';
+import { choreBoardPreferences } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 const updateBoardPreferencesSchema = z.object({
   viewMode: z.enum(['kanban', 'calendar', 'list', 'dashboard']).optional(),
@@ -19,20 +20,6 @@ const updateBoardPreferencesSchema = z.object({
     direction: z.enum(['asc', 'desc']),
   }).optional(),
 });
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
 
 export async function boardRoutes(fastify: FastifyInstance) {
   // Get board preferences for current member

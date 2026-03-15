@@ -24,6 +24,7 @@ import {
   CHARACTER_CONFIG,
 } from '@chorechamp/gamification';
 import type { CharacterClass, CharacterStat, AvatarCustomization } from '@chorechamp/types';
+import { verifyMembership } from '../lib/membership';
 
 // Constants for validation
 const MAX_LIMIT = 100;
@@ -75,20 +76,6 @@ const setTitleSchema = z.object({
 });
 
 // Helper functions
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 async function getMemberById(
   memberId: string,
   householdId: string

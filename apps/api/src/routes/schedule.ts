@@ -3,20 +3,7 @@ import { eq, and, gte, lte } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { choreSchedules, chores, members, choreCompletions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
+import { verifyMembership } from '../lib/membership';
 
 export async function scheduleRoutes(fastify: FastifyInstance) {
   // Get schedule for a date range
