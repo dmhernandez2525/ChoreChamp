@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DemoAuthProvider, useDemoAuth } from './context/DemoAuthContext';
 import { CelebrationProvider } from './components/celebrations';
@@ -48,6 +48,16 @@ import SmartAutomation from './pages/SmartAutomation';
 import FamilyHub from './pages/FamilyHub';
 import FinancialScheduling from './pages/FinancialScheduling';
 import BoardPage from './pages/BoardPage';
+import { ChoreDetection } from './pages/ChoreDetection';
+import { EducationalChores } from './pages/EducationalChores';
+import { Geofencing } from './pages/Geofencing';
+import { Homework } from './pages/Homework';
+import { QRVerification } from './pages/QRVerification';
+import ReportCards from './pages/ReportCards';
+import { ScreenTime } from './pages/ScreenTime';
+import SkillBuilding from './pages/SkillBuilding';
+import { SmartHome } from './pages/SmartHome';
+import { StoryMode } from './pages/StoryMode';
 
 // Protected route wrapper - allows demo mode OR real auth
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -97,6 +107,16 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+function SmartHomeWrapper() {
+  const { householdId } = useParams<{ householdId: string }>();
+  return <SmartHome householdId={householdId!} />;
+}
+
+function StoryModeWrapper() {
+  const { householdId } = useParams<{ householdId: string }>();
+  return <StoryMode memberId="" householdId={householdId!} />;
 }
 
 function NotFound() {
@@ -444,6 +464,87 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <BoardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/households/:householdId/chore-detection"
+        element={
+          <ProtectedRoute>
+            <ChoreDetection />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/geofencing"
+        element={
+          <ProtectedRoute>
+            <Geofencing />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/homework"
+        element={
+          <ProtectedRoute>
+            <Homework />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/qr-verification"
+        element={
+          <ProtectedRoute>
+            <QRVerification />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/report-cards"
+        element={
+          <ProtectedRoute>
+            <ReportCards />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/screen-time"
+        element={
+          <ProtectedRoute>
+            <ScreenTime />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/skill-building"
+        element={
+          <ProtectedRoute>
+            <SkillBuilding />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/smart-home"
+        element={
+          <ProtectedRoute>
+            <SmartHomeWrapper />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/story-mode"
+        element={
+          <ProtectedRoute>
+            <StoryModeWrapper />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/households/:householdId/educational-chores"
+        element={
+          <ProtectedRoute>
+            <EducationalChores />
           </ProtectedRoute>
         }
       />
