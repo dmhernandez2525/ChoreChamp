@@ -18,6 +18,11 @@ import {
   CollegePrepCard,
   WeeklyCalendar,
   BalanceCard,
+  AddSchoolDialog,
+  AddActivityDialog,
+  AddEventDialog,
+  AddVolunteerDialog,
+  AddCollegePrepDialog,
 } from '../components/school-extracurricular';
 
 type TabType = 'calendar' | 'school' | 'activities' | 'events' | 'volunteer' | 'college' | 'balance';
@@ -65,12 +70,12 @@ export default function SchoolExtracurricular() {
     return monday;
   });
 
-  // Form states - TODO: implement form modals
-  const [, setShowSchoolForm] = useState(false);
-  const [, setShowActivityForm] = useState(false);
-  const [, setShowEventForm] = useState(false);
-  const [, setShowVolunteerForm] = useState(false);
-  const [, setShowCollegePrepForm] = useState(false);
+  // Form states
+  const [showSchoolForm, setShowSchoolForm] = useState(false);
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [showVolunteerForm, setShowVolunteerForm] = useState(false);
+  const [showCollegePrepForm, setShowCollegePrepForm] = useState(false);
 
   // Volunteer stats
   const [volunteerStats, setVolunteerStats] = useState<{
@@ -684,6 +689,38 @@ export default function SchoolExtracurricular() {
         {activeTab === 'college' && renderCollegeTab()}
         {activeTab === 'balance' && renderBalanceTab()}
       </div>
+
+      {/* Form Modals */}
+      <AddSchoolDialog
+        open={showSchoolForm}
+        onOpenChange={setShowSchoolForm}
+        householdId={householdId!}
+        onSubmit={(data) => setSchoolSchedules((prev) => [...prev, data])}
+      />
+      <AddActivityDialog
+        open={showActivityForm}
+        onOpenChange={setShowActivityForm}
+        householdId={householdId!}
+        onSubmit={(data) => setActivities((prev) => [...prev, data])}
+      />
+      <AddEventDialog
+        open={showEventForm}
+        onOpenChange={setShowEventForm}
+        householdId={householdId!}
+        onSubmit={(data) => setEvents((prev) => [...prev, data])}
+      />
+      <AddVolunteerDialog
+        open={showVolunteerForm}
+        onOpenChange={setShowVolunteerForm}
+        householdId={householdId!}
+        onSubmit={(data) => setVolunteerLogs((prev) => [...prev, data])}
+      />
+      <AddCollegePrepDialog
+        open={showCollegePrepForm}
+        onOpenChange={setShowCollegePrepForm}
+        householdId={householdId!}
+        onSubmit={(data) => setCollegePrepActivities((prev) => [...prev, data])}
+      />
     </div>
   );
 }
