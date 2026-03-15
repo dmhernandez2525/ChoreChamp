@@ -531,6 +531,7 @@ export async function reminderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const query = request.query as { memberId?: string };
 
     const membership = await verifyMembership(user.id, householdId);
@@ -559,6 +560,8 @@ export async function reminderRoutes(fastify: FastifyInstance) {
       householdId: string;
       configId: string;
     };
+    validateUUID(householdId, 'householdId');
+    validateUUID(configId, 'configId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -590,6 +593,7 @@ export async function reminderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = request.body as { memberId: string; channel: ReminderChannel };
 
     const membership = await verifyMembership(user.id, householdId);

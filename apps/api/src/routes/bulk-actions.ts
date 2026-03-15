@@ -7,6 +7,7 @@ import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { emitToHousehold } from '../lib/socket';
 import { Server } from 'socket.io';
 import { verifyMembership, verifyParentMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 const bulkUpdateSchema = z.object({
   choreIds: z.array(z.string().uuid()).min(1).max(50),
@@ -37,6 +38,7 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = bulkUpdateSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -109,6 +111,7 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = bulkReorderSchema.parse(request.body);
 
     const membership = await verifyParentMembership(user.id, householdId);
@@ -149,6 +152,7 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = bulkDeleteSchema.parse(request.body);
 
     const membership = await verifyParentMembership(user.id, householdId);
