@@ -202,19 +202,31 @@ async function main() {
   ];
 
   for (const account of FAMILY_ACCOUNTS) {
+    // Check if this member is already linked (skip sign-in to save rate limit)
+    const member = existingMembers.find(m => m.name === account.name);
+    if (member?.userId) {
+      console.log(`   ${account.name}: Already linked to user ${member.userId} (skipping)`);
+      credentials.push({
+        name: account.name,
+        email: account.email,
+        password: account.password,
+        userId: member.userId,
+      });
+      continue;
+    }
+
+    // Rate limit delay between sign-ups (better-auth defaults to strict limits)
+    console.log(`   Waiting 12s before creating ${account.name}'s account...`);
+    await new Promise(resolve => setTimeout(resolve, 12000));
     console.log(`   Creating account for ${account.name}...`);
     const { userId, token } = await signupUser(account.email, account.password, account.name);
     console.log(`     User ID: ${userId}`);
 
-    // Find matching existing member
-    const member = existingMembers.find(m => m.name === account.name);
     if (member && !member.userId) {
       console.log(`     Linking to member ${member.id}...`);
       await adminLinkMember(member.id, userId, HOUSEHOLD_ID);
       console.log(`     Linked successfully.`);
-    } else if (member?.userId) {
-      console.log(`     Already linked to user ${member.userId}`);
-    } else {
+    } else if (!member) {
       console.log(`     WARNING: No matching member found for ${account.name}`);
     }
 
