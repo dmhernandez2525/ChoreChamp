@@ -162,6 +162,8 @@ function cachedChoreToChore(cached: typeof schema.cachedChores.$inferSelect): Ch
     showTimer: cached.showTimer ?? false,
     steps: cached.steps ? JSON.parse(cached.steps) : null,
     createdBy: '',
+    priority: 'medium',
+    boardOrder: 0,
     isActive: cached.isActive ?? true,
     templateId: null,
     createdAt: new Date(),
