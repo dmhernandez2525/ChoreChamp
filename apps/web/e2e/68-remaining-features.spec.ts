@@ -21,10 +21,10 @@ test.describe('Chore Detection Page', () => {
       page.getByRole('button', { name: /add rule/i })
     ).toBeVisible();
 
-    // Tab bar with Overview, Rules, Events, Zones, Analytics tabs
+    // Tab bar with Overview, Rules, Events, Zones, Analytics tabs (tabs may have emoji prefixes)
     const tabNames = ['Overview', 'Rules', 'Events', 'Zones', 'Analytics'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
 
     // Overview tab content: should have sections like "Recent Detections" or "This Month"
@@ -58,10 +58,10 @@ test.describe('Geofencing Page', () => {
       page.getByRole('button', { name: /add geofence/i })
     ).toBeVisible();
 
-    // Tab bar: Overview, Geofences, Family, Automations, Settings
+    // Tab bar: Overview, Geofences, Family, Automations, Settings (tabs have emoji prefixes)
     const tabNames = ['Overview', 'Geofences', 'Family', 'Automations', 'Settings'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
 
     // Overview content: Family Status section or member locations or loading
@@ -93,10 +93,10 @@ test.describe('Homework Page', () => {
     await expect(page.getByText('Student:')).toBeVisible();
     await expect(page.locator('select')).toBeVisible();
 
-    // Tab buttons: Overview, Assignments, Subjects, Study Sessions, Goals, Statistics
+    // Tab buttons: Overview, Assignments, Subjects, Study Sessions, Goals, Statistics (tabs may have emoji prefixes)
     const tabNames = ['Overview', 'Assignments', 'Subjects', 'Study Sessions', 'Goals', 'Statistics'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
 
     // Overview content: stat cards or loading or error
@@ -130,10 +130,10 @@ test.describe('QR Verification Page', () => {
       page.getByRole('button', { name: /create qr code/i })
     ).toBeVisible();
 
-    // Tab bar: Overview, QR Codes, Scan History, Checkpoints, Equipment
+    // Tab bar: Overview, QR Codes, Scan History, Checkpoints, Equipment (tabs have emoji prefixes)
     const tabNames = ['Overview', 'QR Codes', 'Scan History', 'Checkpoints', 'Equipment'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
 
     // Overview content: Quick Actions section or scan stats or loading
@@ -179,10 +179,10 @@ test.describe('Report Cards Page', () => {
       hasReportCardsCount || hasAverageGPA || hasAchievements || hasBonusPoints
     ).toBeTruthy();
 
-    // Tabs: Report Cards, Achievements, Goals, Attendance, Trends, Settings
+    // Tabs: Report Cards, Achievements, Goals, Attendance, Trends, Settings (tabs may have emoji prefixes)
     const tabNames = ['Report Cards', 'Achievements', 'Goals', 'Attendance', 'Trends', 'Settings'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
   });
 });
@@ -203,10 +203,10 @@ test.describe('Screen Time Page', () => {
     await expect(page.getByText('Member:')).toBeVisible();
     await expect(page.locator('select')).toBeVisible();
 
-    // Tab buttons: Overview, Devices, Limits, Rewards, Requests, Chore Rewards
+    // Tab buttons: Overview, Devices, Limits, Rewards, Requests, Chore Rewards (tabs have emoji prefixes)
     const tabNames = ['Overview', 'Devices', 'Limits', 'Rewards', 'Requests', 'Chore Rewards'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
 
     // Overview content: usage stats or loading or error
@@ -247,10 +247,10 @@ test.describe('Skill Building Page', () => {
       hasTotalXP || hasSkillsStarted || hasCompleted || hasCertifications || hasLoading || hasError
     ).toBeTruthy();
 
-    // Tab buttons: Skill Trees, My Skills, Certifications, Mentorship, Challenges, Badges
+    // Tab buttons: Skill Trees, My Skills, Certifications, Mentorship, Challenges, Badges (tabs have emoji prefixes)
     const tabNames = ['Skill Trees', 'My Skills', 'Certifications', 'Mentorship', 'Challenges', 'Badges'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
   });
 });
@@ -282,7 +282,7 @@ test.describe('Smart Home Page', () => {
     if (!hasLoadingText) {
       const tabNames = ['Overview', 'Devices', 'Automations', 'Hubs'];
       for (const tab of tabNames) {
-        const tabVisible = await page.getByRole('button', { name: tab }).isVisible().catch(() => false);
+        const tabVisible = await page.getByRole('button', { name: tab }).first().isVisible().catch(() => false);
         if (!tabVisible) break;
         expect(tabVisible).toBeTruthy();
       }
@@ -322,7 +322,7 @@ test.describe('Story Mode Page', () => {
     if (!hasLoadingText) {
       const tabNames = ['Chapters', 'Characters', 'Progress'];
       for (const tab of tabNames) {
-        await expect(page.getByRole('button', { name: tab })).toBeVisible();
+        await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
       }
 
       // Embark message or level indicator or stats
@@ -335,7 +335,7 @@ test.describe('Story Mode Page', () => {
 
 test.describe('API Platform Integrations Page', () => {
   test('API integrations page loads with real UI elements', async ({ page }) => {
-    await page.goto(`/households/${HID}/api-integrations`);
+    await page.goto(`/households/${HID}/developer`);
     await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
@@ -349,7 +349,7 @@ test.describe('API Platform Integrations Page', () => {
     const tabNames = ['Overview', 'API Keys', 'Webhooks', 'Marketplace', 'OAuth', 'SDK', 'Analytics', 'OpenAPI'];
     let tabsFound = 0;
     for (const tab of tabNames) {
-      const visible = await page.getByRole('button', { name: tab }).isVisible().catch(() => false);
+      const visible = await page.getByRole('button', { name: tab }).first().isVisible().catch(() => false);
       if (visible) tabsFound++;
     }
     // Should have most tabs visible (parent role needed for all)
@@ -380,10 +380,10 @@ test.describe('Educational Chores Page', () => {
       page.getByRole('heading', { name: /educational chore tasks/i })
     ).toBeVisible();
 
-    // Tab buttons: Overview, Practice, Templates, Progress, Learning Paths
+    // Tab buttons: Overview, Practice, Templates, Progress, Learning Paths (tabs have emoji prefixes)
     const tabNames = ['Overview', 'Practice', 'Templates', 'Progress', 'Learning Paths'];
     for (const tab of tabNames) {
-      await expect(page.getByRole('button', { name: tab })).toBeVisible();
+      await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
 
     // Overview stat cards
