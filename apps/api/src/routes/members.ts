@@ -270,20 +270,24 @@ export async function memberRoutes(fastify: FastifyInstance) {
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
     validateUUID(householdId, 'householdId');
     validateUUID(memberId, 'memberId');
-    const { amount, reason } = request.body as { amount: number; reason?: string };
+    const bonusSchema = z.object({
+      amount: z.number().int().min(-1000).max(10000),
+      reason: z.string().max(500).optional(),
+    });
+    const parseResult = bonusSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: parseResult.error.issues.map(i => i.message).join(', '),
+      });
+    }
+    const { amount, reason } = parseResult.data;
 
     const isParent = await verifyParentMembership(user.id, householdId);
     if (!isParent) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Only parents can award bonus points',
-      });
-    }
-
-    if (!amount || typeof amount !== 'number') {
-      return reply.status(400).send({
-        error: 'Bad Request',
-        message: 'Amount is required and must be a number',
       });
     }
 

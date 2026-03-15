@@ -601,60 +601,62 @@ export async function tradeRoutes(fastify: FastifyInstance) {
       return updated;
     }
 
-    // Approve and execute the trade
-    // 1. Swap chore assignments
-    await db.update(choreSchedules)
-      .set({ assignedTo: trade.recipientMemberId })
-      .where(eq(choreSchedules.id, trade.offeredChoreScheduleId));
+    // Approve and execute the trade atomically
+    await db.transaction(async (tx) => {
+      // 1. Swap chore assignments
+      await tx.update(choreSchedules)
+        .set({ assignedTo: trade.recipientMemberId })
+        .where(eq(choreSchedules.id, trade.offeredChoreScheduleId));
 
-    if (trade.requestedChoreScheduleId) {
-      await db.update(choreSchedules)
-        .set({ assignedTo: trade.initiatorMemberId })
-        .where(eq(choreSchedules.id, trade.requestedChoreScheduleId));
-    }
+      if (trade.requestedChoreScheduleId) {
+        await tx.update(choreSchedules)
+          .set({ assignedTo: trade.initiatorMemberId })
+          .where(eq(choreSchedules.id, trade.requestedChoreScheduleId));
+      }
 
-    // 2. Transfer points if applicable
-    if (trade.pointsOffered > 0) {
-      // Deduct from initiator
-      await db.update(members)
+      // 2. Transfer points if applicable
+      if (trade.pointsOffered > 0) {
+        // Deduct from initiator
+        await tx.update(members)
+          .set({
+            pointsCurrent: sql`${members.pointsCurrent} - ${trade.pointsOffered}`,
+          })
+          .where(eq(members.id, trade.initiatorMemberId));
+
+        // Add to recipient
+        await tx.update(members)
+          .set({
+            pointsCurrent: sql`${members.pointsCurrent} + ${trade.pointsOffered}`,
+          })
+          .where(eq(members.id, trade.recipientMemberId));
+      }
+
+      if (trade.pointsRequested > 0) {
+        // Deduct from recipient
+        await tx.update(members)
+          .set({
+            pointsCurrent: sql`${members.pointsCurrent} - ${trade.pointsRequested}`,
+          })
+          .where(eq(members.id, trade.recipientMemberId));
+
+        // Add to initiator
+        await tx.update(members)
+          .set({
+            pointsCurrent: sql`${members.pointsCurrent} + ${trade.pointsRequested}`,
+          })
+          .where(eq(members.id, trade.initiatorMemberId));
+      }
+
+      // 3. Update trade status
+      await tx.update(choreTrades)
         .set({
-          pointsCurrent: sql`${members.pointsCurrent} - ${trade.pointsOffered}`,
+          status: 'approved',
+          approvedBy: memberId,
+          approvedAt: new Date(),
+          updatedAt: new Date(),
         })
-        .where(eq(members.id, trade.initiatorMemberId));
-
-      // Add to recipient
-      await db.update(members)
-        .set({
-          pointsCurrent: sql`${members.pointsCurrent} + ${trade.pointsOffered}`,
-        })
-        .where(eq(members.id, trade.recipientMemberId));
-    }
-
-    if (trade.pointsRequested > 0) {
-      // Deduct from recipient
-      await db.update(members)
-        .set({
-          pointsCurrent: sql`${members.pointsCurrent} - ${trade.pointsRequested}`,
-        })
-        .where(eq(members.id, trade.recipientMemberId));
-
-      // Add to initiator
-      await db.update(members)
-        .set({
-          pointsCurrent: sql`${members.pointsCurrent} + ${trade.pointsRequested}`,
-        })
-        .where(eq(members.id, trade.initiatorMemberId));
-    }
-
-    // 3. Update trade status
-    await db.update(choreTrades)
-      .set({
-        status: 'approved',
-        approvedBy: memberId,
-        approvedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(choreTrades.id, tradeId));
+        .where(eq(choreTrades.id, tradeId));
+    });
 
     const updated = await getTradeWithDetails(tradeId);
     return updated;

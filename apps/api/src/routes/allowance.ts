@@ -476,24 +476,27 @@ export async function allowanceRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Payout is not pending' });
     }
 
-    // Deduct points from member
-    await db.update(members)
-      .set({
-        pointsCurrent: sql`${members.pointsCurrent} - ${payout.pointsConverted}`,
-      })
-      .where(eq(members.id, payout.memberId));
+    // Deduct points and update payout status atomically
+    const [updated] = await db.transaction(async (tx) => {
+      // Deduct points from member
+      await tx.update(members)
+        .set({
+          pointsCurrent: sql`${members.pointsCurrent} - ${payout.pointsConverted}`,
+        })
+        .where(eq(members.id, payout.memberId));
 
-    // Update payout status
-    const [updated] = await db.update(allowancePayouts)
-      .set({
-        status: 'paid',
-        paidAt: new Date(),
-        paidBy: membership.id,
-        notes: body.notes || null,
-        updatedAt: new Date(),
-      })
-      .where(eq(allowancePayouts.id, payoutId))
-      .returning();
+      // Update payout status
+      return await tx.update(allowancePayouts)
+        .set({
+          status: 'paid',
+          paidAt: new Date(),
+          paidBy: membership.id,
+          notes: body.notes || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(allowancePayouts.id, payoutId))
+        .returning();
+    });
 
     return toAllowancePayout(updated);
   });

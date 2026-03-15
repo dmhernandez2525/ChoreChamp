@@ -1,14 +1,30 @@
 import { Server, Socket } from 'socket.io';
 import { createLogger } from './logger';
+import { verifyMembership } from './membership';
 
 const logger = createLogger('socket');
 
 export function initializeSocket(io: Server) {
   io.on('connection', (socket: Socket) => {
-    logger.info({ socketId: socket.id }, 'Client connected');
+    const userId = socket.handshake.auth?.userId as string | undefined;
+    logger.info({ socketId: socket.id, userId }, 'Client connected');
 
-    // Join household room
-    socket.on('join:household', (householdId: string) => {
+    if (!userId) {
+      logger.warn({ socketId: socket.id }, 'Socket connected without userId, disconnecting');
+      socket.disconnect(true);
+      return;
+    }
+
+    socket.data.userId = userId;
+    socket.join(`user:${userId}`);
+
+    // Join household room (with membership verification)
+    socket.on('join:household', async (householdId: string) => {
+      const membership = await verifyMembership(userId, householdId);
+      if (!membership) {
+        socket.emit('error', { message: 'Not a member of this household' });
+        return;
+      }
       socket.join(`household:${householdId}`);
       logger.info({ socketId: socket.id, householdId }, 'Joined household room');
     });

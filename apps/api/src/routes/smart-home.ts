@@ -92,29 +92,34 @@ const PLATFORM_CONFIG: Record<SmartHomePlatform, {
 
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 
-const ENCRYPTION_KEY = process.env.SMART_HOME_ENCRYPTION_KEY || 'chorechamp-smart-home-default-key!!';
+const ENCRYPTION_KEY = process.env.SMART_HOME_ENCRYPTION_KEY;
 const ALGORITHM = 'aes-256-gcm';
 
-function getKey(): Buffer {
-  return scryptSync(ENCRYPTION_KEY, 'chorechamp-salt', 32);
+if (!ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
+  throw new Error('SMART_HOME_ENCRYPTION_KEY environment variable is required in production');
+}
+
+function getKey(salt: string): Buffer {
+  return scryptSync(ENCRYPTION_KEY || 'dev-only-insecure-key-not-for-prod', salt, 32);
 }
 
 function encryptCredentials(config: HubConfiguration): string {
   const iv = randomBytes(16);
-  const key = getKey();
+  const salt = randomBytes(16);
+  const key = getKey(salt.toString('hex'));
   const cipher = createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(JSON.stringify(config), 'utf8', 'hex');
   encrypted += cipher.final('hex');
   const authTag = cipher.getAuthTag().toString('hex');
-  return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+  return `${salt.toString('hex')}:${iv.toString('hex')}:${authTag}:${encrypted}`;
 }
 
 function decryptCredentials(encrypted: string): HubConfiguration {
-  const [ivHex, authTagHex, data] = encrypted.split(':');
-  if (!ivHex || !authTagHex || !data) {
+  const [saltHex, ivHex, authTagHex, data] = encrypted.split(':');
+  if (!saltHex || !ivHex || !authTagHex || !data) {
     throw new Error('Invalid encrypted credential format');
   }
-  const key = getKey();
+  const key = getKey(saltHex);
   const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, 'hex'));
   decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
   let decrypted = decipher.update(data, 'hex', 'utf8');

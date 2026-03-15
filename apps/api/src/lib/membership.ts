@@ -11,7 +11,8 @@ export async function verifyMembership(
     .from(members)
     .where(and(
       eq(members.householdId, householdId),
-      eq(members.userId, userId)
+      eq(members.userId, userId),
+      eq(members.isActive, true)
     ));
   return membership || null;
 }
@@ -26,7 +27,8 @@ export async function verifyParentMembership(
     .where(and(
       eq(members.householdId, householdId),
       eq(members.userId, userId),
-      eq(members.role, 'parent')
+      eq(members.role, 'parent'),
+      eq(members.isActive, true)
     ));
   return !!membership;
 }

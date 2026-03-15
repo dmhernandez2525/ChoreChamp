@@ -509,8 +509,11 @@ export async function choreRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Build conditions
-    const conditions = [eq(choreCompletions.choreId, choreId)];
+    // Build conditions (scope to household for defense in depth)
+    const conditions = [
+      eq(choreCompletions.choreId, choreId),
+      eq(choreCompletions.householdId, householdId),
+    ];
     if (startDate) {
       conditions.push(gte(choreCompletions.scheduledDate, startDate));
     }

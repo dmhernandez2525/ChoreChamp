@@ -145,8 +145,7 @@ export async function importExportRoutes(app: FastifyInstance) {
         .send(csv);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const exportData = allChores.map((chore: any) => ({
+    const exportData = allChores.map((chore) => ({
       title: chore.title,
       description: chore.description,
       icon: chore.icon,
