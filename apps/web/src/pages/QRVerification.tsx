@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { cn } from '@chorechamp/ui';
 import { QRCodeList } from '../components/qr-verification/QRCodeCard';
 import {
@@ -6,6 +7,85 @@ import {
   ScanStatsSummary,
 } from '../components/qr-verification/ScanHistory';
 import { QR_CODE_TEMPLATES } from '@chorechamp/types';
+import {
+  useQRCodes,
+  useQRScans,
+  useQRCheckpoints,
+  useCreateQRCode,
+} from '@chorechamp/api-client';
+
+interface QRCode {
+  id: string;
+  type: string;
+  name: string;
+  description: string | null;
+  status: string;
+  codeData: string;
+  codeUrl: string;
+  locationName: string | null;
+  linkedZoneName: string | null;
+  verificationRequirement: string;
+  requiresPhoto: boolean;
+  totalScans: number;
+  lastScannedAt: Date | null;
+  checkpointOrder: number | null;
+  checkpointGroupId: string | null;
+}
+
+interface QRCodeScan {
+  id: string;
+  qrCodeId: string;
+  memberId: string;
+  scannedAt: Date;
+  verificationStatus: 'success' | 'failed' | 'pending';
+  failureReason: string | null;
+  gpsVerified: boolean | null;
+  gpsDistanceMeters: number | null;
+  photoUrl: string | null;
+  bonusPointsAwarded: number;
+  qrCode?: { id: string; name: string; type: string };
+  member?: { id: string; name: string };
+}
+
+interface Checkpoint {
+  id: string;
+  name: string;
+  completed: boolean;
+}
+
+interface CheckpointProgress {
+  id: string;
+  checkpointGroupId: string;
+  status: 'in_progress' | 'completed' | 'not_started';
+  member: { id: string; name: string };
+  startedAt: string;
+  checkpoints: Checkpoint[];
+  completedCheckpoints: number;
+  totalCheckpoints: number;
+}
+
+interface EquipmentCheckout {
+  id: string;
+  equipmentName: string;
+  status: 'checked_out' | 'checked_in';
+  member: { id: string; name: string };
+  checkedOutAt: string;
+  conditionOnCheckout: 'good' | 'fair' | 'poor';
+}
+
+interface ScanStats {
+  totalScans: number;
+  successfulScans: number;
+  failedScans: number;
+  successRate: number;
+  totalPointsAwarded: number;
+}
+
+interface CheckpointsResponse {
+  checkpointProgress: CheckpointProgress[];
+  equipmentCheckouts: EquipmentCheckout[];
+  stats: ScanStats;
+}
 
 type TabId = 'overview' | 'codes' | 'scans' | 'checkpoints' | 'equipment';
 
@@ -23,196 +103,66 @@ const tabs: Tab[] = [
   { id: 'equipment', label: 'Equipment', icon: '🧹' },
 ];
 
-// Mock data for demonstration
-const mockQRCodes = [
-  {
-    id: '1',
-    type: 'task_station',
-    name: 'Kitchen Cleaning Station',
-    description: 'Scan before and after cleaning the kitchen',
-    status: 'active',
-    codeData: 'abc123',
-    codeUrl: 'chorechamp://qr/abc123',
-    locationName: 'Kitchen',
-    linkedZoneName: 'Kitchen',
-    verificationRequirement: 'scan_and_photo',
-    requiresPhoto: true,
-    totalScans: 24,
-    lastScannedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    checkpointOrder: null,
-    checkpointGroupId: null,
-  },
-  {
-    id: '2',
-    type: 'location',
-    name: 'Trash Can Area',
-    description: 'Scan after taking out trash',
-    status: 'active',
-    codeData: 'def456',
-    codeUrl: 'chorechamp://qr/def456',
-    locationName: 'Garage',
-    linkedZoneName: null,
-    verificationRequirement: 'gps_verified',
-    requiresPhoto: false,
-    totalScans: 18,
-    lastScannedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    checkpointOrder: null,
-    checkpointGroupId: null,
-  },
-  {
-    id: '3',
-    type: 'equipment',
-    name: 'Vacuum Cleaner',
-    description: 'Check out and return the vacuum',
-    status: 'active',
-    codeData: 'ghi789',
-    codeUrl: 'chorechamp://qr/ghi789',
-    locationName: 'Closet',
-    linkedZoneName: null,
-    verificationRequirement: 'scan_only',
-    requiresPhoto: false,
-    totalScans: 12,
-    lastScannedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    checkpointOrder: null,
-    checkpointGroupId: null,
-  },
-  {
-    id: '4',
-    type: 'checkpoint',
-    name: 'Bedroom - Bed Made',
-    description: 'First checkpoint: verify bed is made',
-    status: 'active',
-    codeData: 'jkl012',
-    codeUrl: 'chorechamp://qr/jkl012',
-    locationName: "Kid's Bedroom",
-    linkedZoneName: 'Bedroom',
-    verificationRequirement: 'scan_and_photo',
-    requiresPhoto: true,
-    totalScans: 8,
-    lastScannedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-    checkpointOrder: 1,
-    checkpointGroupId: 'bedroom-clean',
-  },
-  {
-    id: '5',
-    type: 'checkpoint',
-    name: 'Bedroom - Floor Clear',
-    description: 'Second checkpoint: verify floor is clear',
-    status: 'active',
-    codeData: 'mno345',
-    codeUrl: 'chorechamp://qr/mno345',
-    locationName: "Kid's Bedroom",
-    linkedZoneName: 'Bedroom',
-    verificationRequirement: 'scan_and_photo',
-    requiresPhoto: true,
-    totalScans: 6,
-    lastScannedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-    checkpointOrder: 2,
-    checkpointGroupId: 'bedroom-clean',
-  },
-];
+function LoadingSkeleton({ lines = 3 }: { lines?: number }) {
+  return (
+    <div className="animate-pulse space-y-3">
+      {Array.from({ length: lines }).map((_, i) => (
+        <div key={i} className="h-16 bg-gray-200 rounded-lg" />
+      ))}
+    </div>
+  );
+}
 
-const mockScans = [
-  {
-    id: '1',
-    qrCodeId: '1',
-    memberId: 'member-1',
-    scannedAt: new Date(Date.now() - 30 * 60 * 1000),
-    verificationStatus: 'success' as const,
-    failureReason: null,
-    gpsVerified: null,
-    gpsDistanceMeters: null,
-    photoUrl: 'https://example.com/photo1.jpg',
-    bonusPointsAwarded: 5,
-    qrCode: { id: '1', name: 'Kitchen Cleaning Station', type: 'task_station' },
-    member: { id: 'member-1', name: 'Emma' },
-  },
-  {
-    id: '2',
-    qrCodeId: '2',
-    memberId: 'member-2',
-    scannedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    verificationStatus: 'success' as const,
-    failureReason: null,
-    gpsVerified: true,
-    gpsDistanceMeters: 8.5,
-    photoUrl: null,
-    bonusPointsAwarded: 5,
-    qrCode: { id: '2', name: 'Trash Can Area', type: 'location' },
-    member: { id: 'member-2', name: 'Jake' },
-  },
-  {
-    id: '3',
-    qrCodeId: '2',
-    memberId: 'member-1',
-    scannedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-    verificationStatus: 'failed' as const,
-    failureReason: 'Too far from location (45m away, max 20m)',
-    gpsVerified: false,
-    gpsDistanceMeters: 45,
-    photoUrl: null,
-    bonusPointsAwarded: 0,
-    qrCode: { id: '2', name: 'Trash Can Area', type: 'location' },
-    member: { id: 'member-1', name: 'Emma' },
-  },
-  {
-    id: '4',
-    qrCodeId: '4',
-    memberId: 'member-1',
-    scannedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    verificationStatus: 'success' as const,
-    failureReason: null,
-    gpsVerified: null,
-    gpsDistanceMeters: null,
-    photoUrl: 'https://example.com/photo2.jpg',
-    bonusPointsAwarded: 5,
-    qrCode: { id: '4', name: 'Bedroom - Bed Made', type: 'checkpoint' },
-    member: { id: 'member-1', name: 'Emma' },
-  },
-];
-
-const mockCheckpointProgress = [
-  {
-    id: '1',
-    memberId: 'member-1',
-    checkpointGroupId: 'bedroom-clean',
-    totalCheckpoints: 2,
-    completedCheckpoints: 1,
-    status: 'in_progress',
-    startedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-    checkpoints: [
-      { id: '4', name: 'Bedroom - Bed Made', checkpointOrder: 1, completed: true },
-      { id: '5', name: 'Bedroom - Floor Clear', checkpointOrder: 2, completed: false },
-    ],
-    member: { name: 'Emma' },
-  },
-];
-
-const mockEquipmentCheckouts = [
-  {
-    id: '1',
-    qrCodeId: '3',
-    memberId: 'member-1',
-    equipmentName: 'Vacuum Cleaner',
-    checkedOutAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    checkedInAt: null,
-    status: 'checked_out',
-    conditionOnCheckout: 'good',
-    member: { name: 'Emma' },
-  },
-];
-
-const mockStats = {
-  totalScans: 67,
-  successfulScans: 58,
-  failedScans: 9,
-  successRate: 87,
-  totalPointsAwarded: 290,
-};
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+      <span className="text-red-600 font-medium">Error: </span>
+      <span className="text-red-500">{message}</span>
+    </div>
+  );
+}
 
 export function QRVerification() {
+  const { householdId } = useParams<{ householdId: string }>();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const {
+    data: qrCodesData,
+    isLoading: codesLoading,
+    error: codesError,
+  } = useQRCodes(householdId!);
+
+  const {
+    data: scansData,
+    isLoading: scansLoading,
+    error: scansError,
+  } = useQRScans(householdId!);
+
+  const {
+    data: checkpointsData,
+    isLoading: checkpointsLoading,
+    error: checkpointsError,
+  } = useQRCheckpoints(householdId!);
+
+  const { mutate: createQRCode, isPending: isCreating } = useCreateQRCode(householdId!);
+
+  const qrCodes = (qrCodesData as QRCode[] | undefined) ?? [];
+  const scans = (scansData as QRCodeScan[] | undefined) ?? [];
+  const checkpointsTyped = checkpointsData as unknown as CheckpointsResponse | undefined;
+  const checkpointProgress: CheckpointProgress[] = checkpointsTyped?.checkpointProgress ?? [];
+  const equipmentCheckouts: EquipmentCheckout[] = checkpointsTyped?.equipmentCheckouts ?? [];
+  const defaultStats: ScanStats = {
+    totalScans: 0,
+    successfulScans: 0,
+    failedScans: 0,
+    successRate: 0,
+    totalPointsAwarded: 0,
+  };
+  const stats: ScanStats = checkpointsTyped?.stats ?? defaultStats;
+
+  const hasError = codesError || scansError || checkpointsError;
+  const errorMessage = (codesError || scansError || checkpointsError)?.message ?? 'Something went wrong';
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -226,11 +176,15 @@ export function QRVerification() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          disabled={isCreating}
+          className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          + Create QR Code
+          {isCreating ? 'Creating...' : '+ Create QR Code'}
         </button>
       </div>
+
+      {/* Global Error */}
+      {hasError && <div className="mb-6"><ErrorBanner message={errorMessage} /></div>}
 
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
@@ -257,7 +211,11 @@ export function QRVerification() {
       {activeTab === 'overview' && (
         <div className="space-y-6">
           {/* Stats */}
-          <ScanStatsSummary stats={mockStats} />
+          {checkpointsLoading ? (
+            <LoadingSkeleton lines={1} />
+          ) : (
+            <ScanStatsSummary stats={stats} />
+          )}
 
           {/* Quick Actions */}
           <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-6 text-white">
@@ -269,7 +227,9 @@ export function QRVerification() {
               >
                 <div className="text-2xl mb-2">📱</div>
                 <div className="font-medium">Manage Codes</div>
-                <div className="text-sm text-white/80">{mockQRCodes.length} codes</div>
+                <div className="text-sm text-white/80">
+                  {codesLoading ? '...' : `${qrCodes.length} codes`}
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('scans')}
@@ -277,7 +237,9 @@ export function QRVerification() {
               >
                 <div className="text-2xl mb-2">📜</div>
                 <div className="font-medium">View Scans</div>
-                <div className="text-sm text-white/80">{mockScans.length} recent</div>
+                <div className="text-sm text-white/80">
+                  {scansLoading ? '...' : `${scans.length} recent`}
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('checkpoints')}
@@ -286,7 +248,9 @@ export function QRVerification() {
                 <div className="text-2xl mb-2">🏁</div>
                 <div className="font-medium">Checkpoints</div>
                 <div className="text-sm text-white/80">
-                  {mockCheckpointProgress.filter((p) => p.status === 'in_progress').length} active
+                  {checkpointsLoading
+                    ? '...'
+                    : `${checkpointProgress.filter((p: CheckpointProgress) => p.status === 'in_progress').length} active`}
                 </div>
               </button>
               <button
@@ -296,7 +260,9 @@ export function QRVerification() {
                 <div className="text-2xl mb-2">🧹</div>
                 <div className="font-medium">Equipment</div>
                 <div className="text-sm text-white/80">
-                  {mockEquipmentCheckouts.filter((e) => e.status === 'checked_out').length} out
+                  {checkpointsLoading
+                    ? '...'
+                    : `${equipmentCheckouts.filter((e: EquipmentCheckout) => e.status === 'checked_out').length} out`}
                 </div>
               </button>
             </div>
@@ -306,114 +272,140 @@ export function QRVerification() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl border p-4">
               <h2 className="font-semibold text-gray-900 mb-4">Recent Scans</h2>
-              <div className="space-y-3">
-                {mockScans.slice(0, 4).map((scan) => (
-                  <div
-                    key={scan.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">
-                        {scan.verificationStatus === 'success' ? '✅' : '❌'}
-                      </span>
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {scan.qrCode?.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {scan.member?.name}
+              {scansLoading ? (
+                <LoadingSkeleton lines={4} />
+              ) : (
+                <div className="space-y-3">
+                  {scans.slice(0, 4).map((scan) => (
+                    <div
+                      key={scan.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">
+                          {scan.verificationStatus === 'success' ? '✅' : '❌'}
+                        </span>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {scan.qrCode?.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {scan.member?.name}
+                          </div>
                         </div>
                       </div>
+                      {scan.bonusPointsAwarded > 0 && (
+                        <span className="text-green-600 font-medium">
+                          +{scan.bonusPointsAwarded}
+                        </span>
+                      )}
                     </div>
-                    {scan.bonusPointsAwarded > 0 && (
-                      <span className="text-green-600 font-medium">
-                        +{scan.bonusPointsAwarded}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  {scans.length === 0 && (
+                    <p className="text-gray-400 text-sm text-center py-4">No scans yet</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl border p-4">
               <h2 className="font-semibold text-gray-900 mb-4">In Progress</h2>
-              <div className="space-y-3">
-                {mockCheckpointProgress.map((progress) => (
-                  <div
-                    key={progress.id}
-                    className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900">
-                        {progress.checkpointGroupId.replace('-', ' ')}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {progress.member.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {progress.checkpoints.map((cp) => (
-                        <div
-                          key={cp.id}
-                          className={cn(
-                            'flex-1 h-2 rounded-full',
-                            cp.completed ? 'bg-green-500' : 'bg-gray-200'
-                          )}
-                        />
-                      ))}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {progress.completedCheckpoints} of {progress.totalCheckpoints} complete
-                    </div>
-                  </div>
-                ))}
-                {mockEquipmentCheckouts
-                  .filter((e) => e.status === 'checked_out')
-                  .map((checkout) => (
+              {checkpointsLoading ? (
+                <LoadingSkeleton lines={3} />
+              ) : (
+                <div className="space-y-3">
+                  {checkpointProgress.map((progress) => (
                     <div
-                      key={checkout.id}
-                      className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                      key={progress.id}
+                      className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-gray-900">
-                            {checkout.equipmentName}
-                          </span>
-                          <span className="text-sm text-gray-500 ml-2">
-                            checked out by {checkout.member.name}
-                          </span>
-                        </div>
-                        <span className="text-xs text-blue-600">
-                          {Math.round(
-                            (Date.now() - new Date(checkout.checkedOutAt).getTime()) /
-                              (1000 * 60 * 60)
-                          )}h ago
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-900">
+                          {progress.checkpointGroupId.replace('-', ' ')}
                         </span>
+                        <span className="text-sm text-gray-500">
+                          {progress.member.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {progress.checkpoints.map((cp) => (
+                          <div
+                            key={cp.id}
+                            className={cn(
+                              'flex-1 h-2 rounded-full',
+                              cp.completed ? 'bg-green-500' : 'bg-gray-200'
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {progress.completedCheckpoints} of {progress.totalCheckpoints} complete
                       </div>
                     </div>
                   ))}
-              </div>
+                  {equipmentCheckouts
+                    .filter((e) => e.status === 'checked_out')
+                    .map((checkout) => (
+                      <div
+                        key={checkout.id}
+                        className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-medium text-gray-900">
+                              {checkout.equipmentName}
+                            </span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              checked out by {checkout.member.name}
+                            </span>
+                          </div>
+                          <span className="text-xs text-blue-600">
+                            {Math.round(
+                              (Date.now() - new Date(checkout.checkedOutAt).getTime()) /
+                                (1000 * 60 * 60)
+                            )}h ago
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  {checkpointProgress.length === 0 && equipmentCheckouts.length === 0 && (
+                    <p className="text-gray-400 text-sm text-center py-4">Nothing in progress</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {activeTab === 'codes' && (
-        <QRCodeList
-          qrCodes={mockQRCodes}
-          onView={(id) => console.log('View', id)}
-          onEdit={(id) => console.log('Edit', id)}
-          onDelete={(id) => console.log('Delete', id)}
-          onRegenerate={(id) => console.log('Regenerate', id)}
-          onDownload={(id) => console.log('Download', id)}
-        />
+        codesLoading ? (
+          <LoadingSkeleton lines={5} />
+        ) : (
+          <QRCodeList
+            qrCodes={qrCodes}
+            onView={(id) => console.log('View', id)}
+            onEdit={(id) => console.log('Edit', id)}
+            onDelete={(id) => console.log('Delete', id)}
+            onRegenerate={(id) => console.log('Regenerate', id)}
+            onDownload={(id) => console.log('Download', id)}
+          />
+        )
       )}
 
-      {activeTab === 'scans' && <ScanHistoryList scans={mockScans} />}
+      {activeTab === 'scans' && (
+        scansLoading ? (
+          <LoadingSkeleton lines={5} />
+        ) : (
+          <ScanHistoryList scans={scans} />
+        )
+      )}
 
       {activeTab === 'checkpoints' && (
         <div className="space-y-4">
-          {mockCheckpointProgress.length === 0 ? (
+          {checkpointsLoading ? (
+            <LoadingSkeleton lines={3} />
+          ) : checkpointProgress.length === 0 ? (
             <div className="text-center py-8">
               <span className="text-4xl mb-4 block">🏁</span>
               <p className="text-gray-500">No checkpoint progress</p>
@@ -422,7 +414,7 @@ export function QRVerification() {
               </p>
             </div>
           ) : (
-            mockCheckpointProgress.map((progress) => (
+            checkpointProgress.map((progress) => (
               <div
                 key={progress.id}
                 className="bg-white rounded-xl border p-4"
@@ -502,7 +494,9 @@ export function QRVerification() {
 
       {activeTab === 'equipment' && (
         <div className="space-y-4">
-          {mockEquipmentCheckouts.length === 0 ? (
+          {checkpointsLoading ? (
+            <LoadingSkeleton lines={3} />
+          ) : equipmentCheckouts.length === 0 ? (
             <div className="text-center py-8">
               <span className="text-4xl mb-4 block">🧹</span>
               <p className="text-gray-500">No equipment checkouts</p>
@@ -514,7 +508,7 @@ export function QRVerification() {
             <>
               {/* Current Checkouts */}
               <h2 className="text-lg font-semibold text-gray-900">Currently Out</h2>
-              {mockEquipmentCheckouts
+              {equipmentCheckouts
                 .filter((e) => e.status === 'checked_out')
                 .map((checkout) => (
                   <div
@@ -587,11 +581,22 @@ export function QRVerification() {
               {QR_CODE_TEMPLATES.map((template) => (
                 <button
                   key={template.id}
+                  disabled={isCreating}
                   onClick={() => {
-                    console.log('Selected template', template.id);
-                    setShowCreateModal(false);
+                    createQRCode(
+                      {
+                        householdId: householdId!,
+                        templateId: template.id,
+                        type: template.type,
+                        name: template.name,
+                        requiresPhoto: template.requiresPhoto,
+                      },
+                      {
+                        onSuccess: () => setShowCreateModal(false),
+                      }
+                    );
                   }}
-                  className="w-full text-left p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="w-full text-left p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-medium text-gray-900">{template.name}</h3>
@@ -611,11 +616,20 @@ export function QRVerification() {
               ))}
 
               <button
+                disabled={isCreating}
                 onClick={() => {
-                  console.log('Create custom');
-                  setShowCreateModal(false);
+                  createQRCode(
+                    {
+                      householdId: householdId!,
+                      type: 'custom',
+                      name: 'Custom QR Code',
+                    },
+                    {
+                      onSuccess: () => setShowCreateModal(false),
+                    }
+                  );
                 }}
-                className="w-full text-left p-4 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors"
+                className="w-full text-left p-4 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">⚙️</span>

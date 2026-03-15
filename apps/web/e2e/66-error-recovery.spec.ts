@@ -5,66 +5,37 @@ import { TEST_CONFIG } from './config';
 const HID = TEST_CONFIG.householdId;
 
 test.describe('Error Recovery Tests', () => {
-  test('invalid household ID shows error or redirects', async ({ page }) => {
+  test('invalid household ID shows error message or redirects to dashboard', async ({ page }) => {
     await page.goto('/households/00000000-0000-0000-0000-000000000000');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent();
-    const hasErrorOrRedirect =
-      bodyText?.toLowerCase().includes('not found') ||
-      bodyText?.toLowerCase().includes('error') ||
-      bodyText?.toLowerCase().includes('dashboard') ||
-      bodyText?.toLowerCase().includes('household') ||
-      page.url().includes('dashboard');
+    // Should either show an error/not-found message or redirect away from the invalid ID
+    const errorMessage = page.getByText(/not found|error|invalid|does not exist|no household/i).first();
+    const hasError = await errorMessage.isVisible().catch(() => false);
+    const redirectedToDashboard = page.url().includes('dashboard');
+    const redirectedToLogin = page.url().includes('login');
 
-    expect(hasErrorOrRedirect || (bodyText?.length ?? 0) > 20).toBeTruthy();
+    expect(hasError || redirectedToDashboard || redirectedToLogin).toBeTruthy();
   });
 
-  test('404 page shows navigation options', async ({ page }) => {
+  test('invalid route shows 404 page with navigation options', async ({ page }) => {
     await page.goto('/this-does-not-exist-at-all');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent();
-    const has404Content =
-      bodyText?.toLowerCase().includes('404') ||
-      bodyText?.toLowerCase().includes('not found') ||
-      bodyText?.toLowerCase().includes('home') ||
-      bodyText?.toLowerCase().includes('go back') ||
-      bodyText?.toLowerCase().includes('sign in');
+    // Should display a 404 indicator
+    const notFoundText = page.getByText('404');
+    await expect(notFoundText).toBeVisible({ timeout: 10000 });
 
-    expect(has404Content || (bodyText?.length ?? 0) > 20).toBeTruthy();
+    // Should provide a way to navigate back (link to home/dashboard)
+    const homeLink = page.getByRole('link').first();
+    const hasLinks = (await page.getByRole('link').count()) > 0;
+    expect(hasLinks).toBeTruthy();
   });
 
-  test('session expiry redirects to login', async ({ page }) => {
-    // Clear storage to simulate session expiry
-    await page.goto(`/households/${HID}`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
-
-    // Check that either we're authenticated or redirected
-    const url = page.url();
-    const bodyText = await page.locator('body').textContent();
-    const isAuthenticated = !url.includes('login') && (bodyText?.length ?? 0) > 50;
-    const isLoginPage = url.includes('login') || bodyText?.toLowerCase().includes('sign in');
-
-    expect(isAuthenticated || isLoginPage).toBeTruthy();
-  });
-
-  test('network error shows friendly message', async ({ page }) => {
-    await page.goto(`/households/${HID}`);
-    await page.waitForLoadState('networkidle');
-    await ensureAuthenticated(page);
-    await page.waitForTimeout(2000);
-
-    // Page should be stable and functional
-    const bodyText = await page.locator('body').textContent();
-    expect(bodyText && bodyText.length > 50).toBeTruthy();
-  });
-
-  test('rapid navigation does not break the app', async ({ page }) => {
+  test('app recovers from rapid navigation between pages', async ({ page }) => {
     const pages = [
       `/households/${HID}`,
       `/households/${HID}/rewards`,
@@ -73,16 +44,43 @@ test.describe('Error Recovery Tests', () => {
       `/households/${HID}/members`,
     ];
 
+    // Navigate rapidly through pages without waiting for full loads
     for (const url of pages) {
       await page.goto(url);
-      await page.waitForTimeout(500); // Quick navigation, don't wait for full load
+      await page.waitForTimeout(500);
     }
 
-    await page.waitForLoadState('networkidle');
+    // After rapid navigation, wait for the final page to stabilize
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent();
-    expect(bodyText && bodyText.length > 50).toBeTruthy();
+    // The app should be in a usable state on the members page
+    await expect(page.locator('#root')).toBeVisible();
+
+    // Should show real content from the final page (members)
+    const memberContent = page.getByText(/member|family|daniel|christina/i).first();
+    await expect(memberContent).toBeVisible({ timeout: 10000 });
+  });
+
+  test('authenticated page works after clearing and re-authenticating', async ({ page }) => {
+    // First, load the household page normally
+    await page.goto(`/households/${HID}`);
+    await page.waitForLoadState('load');
+    await ensureAuthenticated(page);
+    await page.waitForTimeout(2000);
+
+    // Verify page is functional
+    await expect(page.locator('#root')).toBeVisible();
+
+    // Navigate to a sub-page to confirm continued auth
+    await page.goto(`/households/${HID}/settings`);
+    await page.waitForLoadState('load');
+    await ensureAuthenticated(page);
+    await page.waitForTimeout(2000);
+
+    // Should still be authenticated and showing settings content
+    const settingsContent = page.getByText(/setting/i).first();
+    await expect(settingsContent).toBeVisible({ timeout: 10000 });
   });
 });

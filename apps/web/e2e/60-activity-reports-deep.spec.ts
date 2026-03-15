@@ -7,119 +7,76 @@ const HID = TEST_CONFIG.householdId;
 test.describe('Activity Feed Deep Interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/activity`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('activity feed shows entries with timestamps', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasTimestamps =
-      bodyText?.match(/\d{1,2}[:/]\d{2}/) !== null ||
-      bodyText?.toLowerCase().includes('ago') ||
-      bodyText?.toLowerCase().includes('today') ||
-      bodyText?.toLowerCase().includes('yesterday');
+  test('activity shows recent actions by family members', async ({ page }) => {
+    // Should display an activity heading
+    const heading = page.getByText(/activity/i).first();
+    await expect(heading).toBeVisible({ timeout: 10000 });
 
-    expect(hasTimestamps || (bodyText?.length ?? 0) > 100).toBeTruthy();
+    // Should show member names or action descriptions
+    const memberAction = page.getByText(/Daniel|Christina|Adam|Addison|Aiden/i).first();
+    const hasMember = await memberAction.isVisible().catch(() => false);
+
+    // Or show action-related text (completed, assigned, earned, etc.)
+    const actionText = page.getByText(/completed|assigned|earned|created|updated/i).first();
+    const hasAction = await actionText.isVisible().catch(() => false);
+
+    // Or show timestamps
+    const timestampText = page.getByText(/ago|today|yesterday|just now/i).first();
+    const hasTimestamp = await timestampText.isVisible().catch(() => false);
+
+    expect(hasMember || hasAction || hasTimestamp).toBeTruthy();
   });
 
-  test('category filter buttons change displayed items', async ({ page }) => {
-    const filterBtns = page.getByRole('button').filter({
-      hasText: /all|chore|reward|point|achievement|member/i,
+  test('can filter activity by member or type', async ({ page }) => {
+    // Look for filter controls: buttons, dropdowns, or tabs
+    const filterButtons = page.getByRole('button').filter({
+      hasText: /all|chore|reward|point|achievement|member|filter/i,
     });
+    const filterCount = await filterButtons.count();
 
-    if ((await filterBtns.count()) >= 2) {
-      await filterBtns.nth(1).click();
-      await page.waitForTimeout(1000);
+    const filterDropdown = page.locator('select, [role="combobox"], [role="listbox"]').first();
+    const hasDropdown = await filterDropdown.isVisible().catch(() => false);
 
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 20).toBeTruthy();
-    }
-  });
-
-  test('member filter narrows results', async ({ page }) => {
-    const memberFilter = page.locator('select, [role="combobox"]').filter({
-      hasText: /member|all|daniel|christina/i,
-    });
-
-    if ((await memberFilter.count()) > 0) {
-      await memberFilter.first().click();
-      await page.waitForTimeout(500);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 20).toBeTruthy();
-    }
+    // The page should have at least some filter mechanism
+    expect(filterCount > 0 || hasDropdown).toBeTruthy();
   });
 });
 
 test.describe('Reports Deep Interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/reports`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('date range presets change the display', async ({ page }) => {
-    const presetBtns = page.getByRole('button').filter({
-      hasText: /7 day|30 day|this week|this month|last month|custom/i,
+  test('reports show date range controls and chart sections', async ({ page }) => {
+    // Should display a reports heading
+    const heading = page.getByText(/report/i).first();
+    await expect(heading).toBeVisible({ timeout: 10000 });
+
+    // Look for date range controls: preset buttons, date inputs, or selectors
+    const dateControls = page.getByRole('button').filter({
+      hasText: /7 day|30 day|this week|this month|last month|custom|week|month/i,
     });
-
-    if ((await presetBtns.count()) >= 2) {
-      await presetBtns.first().click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
-  });
-
-  test('export button shows format options', async ({ page }) => {
-    const exportBtn = page.getByRole('button', { name: /export|download/i }).first();
-    const hasExport = await exportBtn.isVisible().catch(() => false);
-
-    if (hasExport) {
-      await exportBtn.click();
-      await page.waitForTimeout(500);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasFormats =
-        bodyText?.toLowerCase().includes('csv') ||
-        bodyText?.toLowerCase().includes('pdf') ||
-        bodyText?.toLowerCase().includes('json') ||
-        bodyText?.toLowerCase().includes('format');
-
-      expect(hasFormats || (bodyText?.length ?? 0) > 50).toBeTruthy();
-      await page.keyboard.press('Escape');
-    }
-  });
-
-  test('report sections display chart or data', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasReportData =
-      bodyText?.toLowerCase().includes('chart') ||
-      bodyText?.toLowerCase().includes('graph') ||
-      bodyText?.toLowerCase().includes('total') ||
-      bodyText?.toLowerCase().includes('average') ||
-      bodyText?.toLowerCase().includes('completion') ||
-      bodyText?.match(/\d+%/) !== null ||
-      bodyText?.match(/\d+/) !== null;
-
-    expect(hasReportData || (bodyText?.length ?? 0) > 100).toBeTruthy();
-  });
-
-  test('custom date range inputs work', async ({ page }) => {
     const dateInputs = page.locator('input[type="date"]');
-    if ((await dateInputs.count()) >= 2) {
-      await dateInputs.first().fill('2026-03-01');
-      await dateInputs.nth(1).fill('2026-03-15');
-      await page.waitForTimeout(500);
 
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
+    const hasPresets = (await dateControls.count()) > 0;
+    const hasDateInputs = (await dateInputs.count()) > 0;
+
+    // Look for chart or data visualization areas
+    const chartArea = page.locator('canvas, svg, [class*="chart"], [class*="Chart"], [role="img"]').first();
+    const hasChart = await chartArea.isVisible().catch(() => false);
+
+    // Should have report content: either date controls or chart areas
+    const reportContent = page.getByText(/completion|total|average|rate|trend/i).first();
+    const hasReportData = await reportContent.isVisible().catch(() => false);
+
+    expect(hasPresets || hasDateInputs || hasChart || hasReportData).toBeTruthy();
   });
 });

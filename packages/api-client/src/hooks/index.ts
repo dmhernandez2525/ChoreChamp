@@ -3460,3 +3460,371 @@ export function useCreateCollegePrepActivity(householdId: string) {
   });
 }
 
+// ===== Chore Detection =====
+export function useDetectionRules(householdId: string) {
+  return useQuery({
+    queryKey: ['detectionRules', householdId],
+    queryFn: () => apiClient.getDetectionRules(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateDetectionRule(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiClient.createDetectionRule(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['detectionRules', householdId] }); },
+  });
+}
+
+export function useUpdateDetectionRule(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ruleId, ...data }: { ruleId: string } & Record<string, unknown>) => apiClient.updateDetectionRule(householdId, ruleId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['detectionRules', householdId] }); },
+  });
+}
+
+export function useDeleteDetectionRule(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ruleId: string) => apiClient.deleteDetectionRule(householdId, ruleId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['detectionRules', householdId] }); },
+  });
+}
+
+export function useDetectionEvents(householdId: string) {
+  return useQuery({
+    queryKey: ['detectionEvents', householdId],
+    queryFn: () => apiClient.getDetectionEvents(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useConfirmDetectionEvent(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ eventId, wasAccurate }: { eventId: string; wasAccurate: boolean }) =>
+      apiClient.confirmDetectionEvent(householdId, eventId, { wasAccurate }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['detectionEvents', householdId] }); },
+  });
+}
+
+export function useCleanlinessMetrics(householdId: string) {
+  return useQuery({
+    queryKey: ['cleanlinessMetrics', householdId],
+    queryFn: () => apiClient.getCleanlinessMetrics(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useDetectionAnalytics(householdId: string) {
+  return useQuery({
+    queryKey: ['detectionAnalytics', householdId],
+    queryFn: () => apiClient.getDetectionAnalytics(householdId),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Geofencing =====
+export function useGeofences(householdId: string) {
+  return useQuery({
+    queryKey: ['geofences', householdId],
+    queryFn: () => apiClient.getGeofences(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateGeofence(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiClient.createGeofence(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['geofences', householdId] }); },
+  });
+}
+
+export function useDeleteGeofence(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (geofenceId: string) => apiClient.deleteGeofence(householdId, geofenceId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['geofences', householdId] }); },
+  });
+}
+
+export function useMemberLocations(householdId: string) {
+  return useQuery({
+    queryKey: ['memberLocations', householdId],
+    queryFn: () => apiClient.getMemberLocations(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useGeofenceEvents(householdId: string) {
+  return useQuery({
+    queryKey: ['geofenceEvents', householdId],
+    queryFn: () => apiClient.getGeofenceEvents(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useGeofenceAutomations(householdId: string) {
+  return useQuery({
+    queryKey: ['geofenceAutomations', householdId],
+    queryFn: () => apiClient.getGeofenceAutomations(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useGeofenceAnalytics(householdId: string) {
+  return useQuery({
+    queryKey: ['geofenceAnalytics', householdId],
+    queryFn: () => apiClient.getGeofenceAnalytics(householdId),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Screen Time =====
+export function useTrackedDevices(householdId: string) {
+  return useQuery({
+    queryKey: ['trackedDevices', householdId],
+    queryFn: () => apiClient.getTrackedDevices(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useScreenTimeUsage(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: ['screenTimeUsage', householdId, memberId],
+    queryFn: () => apiClient.getScreenTimeUsage(householdId, { memberId }),
+    enabled: !!householdId,
+  });
+}
+
+export function useScreenTimeLimits(householdId: string) {
+  return useQuery({
+    queryKey: ['screenTimeLimits', householdId],
+    queryFn: () => apiClient.getScreenTimeLimits(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useScreenTimeRewards(householdId: string) {
+  return useQuery({
+    queryKey: ['screenTimeRewards', householdId],
+    queryFn: () => apiClient.getScreenTimeRewards(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useScreenTimeExtensions(householdId: string) {
+  return useQuery({
+    queryKey: ['screenTimeExtensions', householdId],
+    queryFn: () => apiClient.getScreenTimeExtensions(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useApproveScreenTimeExtension(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ extensionId, approved }: { extensionId: string; approved: boolean }) =>
+      apiClient.approveScreenTimeExtension(householdId, extensionId, { approved }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['screenTimeExtensions', householdId] }); },
+  });
+}
+
+// ===== Homework =====
+export function useHomeworkSubjects(householdId: string) {
+  return useQuery({
+    queryKey: ['homeworkSubjects', householdId],
+    queryFn: () => apiClient.getHomeworkSubjects(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useHomeworkAssignments(householdId: string, params?: { memberId?: string; status?: string }) {
+  return useQuery({
+    queryKey: ['homeworkAssignments', householdId, params],
+    queryFn: () => apiClient.getHomeworkAssignments(householdId, params),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateHomeworkAssignment(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiClient.createHomeworkAssignment(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['homeworkAssignments', householdId] }); },
+  });
+}
+
+export function useUpdateHomeworkAssignment(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ assignmentId, ...data }: { assignmentId: string } & Record<string, unknown>) =>
+      apiClient.updateHomeworkAssignment(householdId, assignmentId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['homeworkAssignments', householdId] }); },
+  });
+}
+
+export function useStudySessions(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: ['studySessions', householdId, memberId],
+    queryFn: () => apiClient.getStudySessions(householdId, { memberId }),
+    enabled: !!householdId,
+  });
+}
+
+export function useStudyGoals(householdId: string) {
+  return useQuery({
+    queryKey: ['studyGoals', householdId],
+    queryFn: () => apiClient.getStudyGoals(householdId),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Skill Building =====
+export function useSkillTrees(householdId: string) {
+  return useQuery({
+    queryKey: ['skillTrees', householdId],
+    queryFn: () => apiClient.getSkillTrees(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useSkillProgress(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: ['skillProgress', householdId, memberId],
+    queryFn: () => apiClient.getSkillProgress(householdId, { memberId }),
+    enabled: !!householdId,
+  });
+}
+
+export function useUpdateSkillProgress(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ skillId, ...data }: { skillId: string } & Record<string, unknown>) =>
+      apiClient.updateSkillProgress(householdId, skillId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['skillProgress', householdId] }); },
+  });
+}
+
+export function useSkillCertifications(householdId: string) {
+  return useQuery({
+    queryKey: ['skillCertifications', householdId],
+    queryFn: () => apiClient.getSkillCertifications(householdId),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Story Mode =====
+export function useStoryChapters(householdId: string) {
+  return useQuery({
+    queryKey: ['storyChapters', householdId],
+    queryFn: () => apiClient.getStoryChapters(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useStoryProgress(householdId: string, memberId?: string) {
+  return useQuery({
+    queryKey: ['storyProgress', householdId, memberId],
+    queryFn: () => apiClient.getStoryProgress(householdId, { memberId }),
+    enabled: !!householdId,
+  });
+}
+
+export function useStoryQuests(householdId: string) {
+  return useQuery({
+    queryKey: ['storyQuests', householdId],
+    queryFn: () => apiClient.getStoryQuests(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useStartStoryQuest(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (questId: string) => apiClient.startStoryQuest(householdId, questId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['storyQuests', householdId] });
+      queryClient.invalidateQueries({ queryKey: ['storyProgress', householdId] });
+    },
+  });
+}
+
+export function useStoryCharacters(householdId: string) {
+  return useQuery({
+    queryKey: ['storyCharacters', householdId],
+    queryFn: () => apiClient.getStoryCharacters(householdId),
+    enabled: !!householdId,
+  });
+}
+
+// ===== QR Verification =====
+export function useQRCodes(householdId: string) {
+  return useQuery({
+    queryKey: ['qrCodes', householdId],
+    queryFn: () => apiClient.getQRCodes(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useCreateQRCode(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiClient.createQRCode(householdId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['qrCodes', householdId] }); },
+  });
+}
+
+export function useQRScans(householdId: string) {
+  return useQuery({
+    queryKey: ['qrScans', householdId],
+    queryFn: () => apiClient.getQRScans(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useQRCheckpoints(householdId: string) {
+  return useQuery({
+    queryKey: ['qrCheckpoints', householdId],
+    queryFn: () => apiClient.getQRCheckpoints(householdId),
+    enabled: !!householdId,
+  });
+}
+
+// ===== Smart Home =====
+export function useSmartHomeHubs(householdId: string) {
+  return useQuery({
+    queryKey: ['smartHomeHubs', householdId],
+    queryFn: () => apiClient.getSmartHomeHubs(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useSmartDevices(householdId: string) {
+  return useQuery({
+    queryKey: ['smartDevices', householdId],
+    queryFn: () => apiClient.getSmartDevices(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useControlSmartDevice(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ deviceId, ...data }: { deviceId: string } & Record<string, unknown>) =>
+      apiClient.controlSmartDevice(householdId, deviceId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['smartDevices', householdId] }); },
+  });
+}
+
+export function useSmartHomeAutomations(householdId: string) {
+  return useQuery({
+    queryKey: ['smartHomeAutomations', householdId],
+    queryFn: () => apiClient.getSmartHomeAutomations(householdId),
+    enabled: !!householdId,
+  });
+}
+

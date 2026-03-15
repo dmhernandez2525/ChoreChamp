@@ -7,51 +7,76 @@ const HID = TEST_CONFIG.householdId;
 test.describe('Reports & Export', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/reports`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('reports page loads with heading', async ({ page }) => {
-    const heading = page.getByText(/report/i).first();
-    await expect(heading).toBeVisible({ timeout: 10000 });
+  test('reports page shows date range controls', async ({ page }) => {
+    // Reports should have date pickers or range selectors
+    const dateInputs = page.locator('input[type="date"]');
+    const dateInputCount = await dateInputs.count();
+
+    // Or text-based date range controls
+    const dateRangeText = page.getByText(/from|to|start date|end date|date range|this week|this month|last 7|last 30/i).first();
+    const hasDateText = await dateRangeText.isVisible().catch(() => false);
+
+    // Or a date picker button/dropdown
+    const dateButton = page.getByRole('button').filter({
+      hasText: /date|calendar|range|period|week|month/i,
+    }).first();
+    const hasDateButton = await dateButton.isVisible().catch(() => false);
+
+    expect(dateInputCount > 0 || hasDateText || hasDateButton).toBeTruthy();
   });
 
-  test('shows export subtitle', async ({ page }) => {
-    const subtitle = page.getByText(/export|generate/i).first();
-    await expect(subtitle).toBeVisible({ timeout: 10000 });
+  test('reports show charts or data visualizations', async ({ page }) => {
+    // Look for chart elements (SVG charts, canvas, or chart containers)
+    const svgCharts = page.locator('svg');
+    const svgCount = await svgCharts.count();
+
+    const canvasCharts = page.locator('canvas');
+    const canvasCount = await canvasCharts.count();
+
+    const chartContainers = page.locator(
+      '[class*="chart"], [class*="graph"], [data-testid*="chart"], [class*="recharts"], [class*="visualization"]'
+    );
+    const chartCount = await chartContainers.count();
+
+    // Or look for tabular data (report tables)
+    const tables = page.locator('table');
+    const tableCount = await tables.count();
+
+    // Reports page should have at least one visualization element or data table
+    expect(svgCount > 0 || canvasCount > 0 || chartCount > 0 || tableCount > 0).toBeTruthy();
   });
 
-  test('shows date range picker', async ({ page }) => {
-    const datePicker = page.getByText(/date|range|from|to|start|end/i).first();
-    const hasPicker = await datePicker.isVisible().catch(() => false);
+  test('can switch between report types', async ({ page }) => {
+    // Look for report type selectors: tabs, buttons, or dropdown
+    const reportTypeTabs = page.getByRole('tab');
+    const tabCount = await reportTypeTabs.count();
 
-    // Or just has some form of date selection
-    const dateInput = page.locator('input[type="date"]').first();
-    const hasInput = await dateInput.isVisible().catch(() => false);
+    const reportTypeButtons = page.getByRole('button').filter({
+      hasText: /summary|detail|completion|member|weekly|monthly|export|csv|pdf|json|overview|breakdown/i,
+    });
+    const buttonCount = await reportTypeButtons.count();
 
-    // Reports page always has content
-    const bodyText = await page.locator('body').textContent();
-    const hasContent = bodyText !== null && bodyText.length > 50;
+    const reportSelect = page.locator('select').first();
+    const hasSelect = await reportSelect.isVisible().catch(() => false);
 
-    expect(hasPicker || hasInput || hasContent).toBeTruthy();
-  });
+    expect(tabCount > 0 || buttonCount > 0 || hasSelect).toBeTruthy();
 
-  test('shows export buttons', async ({ page }) => {
-    const csvBtn = page.getByText(/csv/i).first();
-    const hasCsv = await csvBtn.isVisible().catch(() => false);
-
-    const jsonBtn = page.getByText(/json/i).first();
-    const hasJson = await jsonBtn.isVisible().catch(() => false);
-
-    const exportBtn = page.getByText(/export/i).first();
-    const hasExport = await exportBtn.isVisible().catch(() => false);
-
-    expect(hasCsv || hasJson || hasExport).toBeTruthy();
-  });
-
-  test('shows report types', async ({ page }) => {
-    const generateBtn = page.getByText(/generate|report/i).first();
-    await expect(generateBtn).toBeVisible({ timeout: 10000 });
+    // If there are report type controls, click one and verify the page updates
+    if (tabCount > 1) {
+      const secondTab = reportTypeTabs.nth(1);
+      await secondTab.click();
+      await page.waitForTimeout(1500);
+      await expect(page.locator('#root')).toBeVisible();
+    } else if (buttonCount > 0) {
+      const firstButton = reportTypeButtons.first();
+      await firstButton.click();
+      await page.waitForTimeout(1500);
+      await expect(page.locator('#root')).toBeVisible();
+    }
   });
 });

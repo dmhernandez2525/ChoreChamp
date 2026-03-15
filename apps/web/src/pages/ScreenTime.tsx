@@ -1,12 +1,21 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import type {
+  ChoreScreenTimeReward,
   TrackedDevice,
+  ScreenTimeUsage as ScreenTimeUsageType,
   ScreenTimeLimit,
-  ScreenTimeUsage,
   ScreenTimeReward,
   ScreenTimeExtensionRequest,
-  ChoreScreenTimeReward,
 } from '@chorechamp/types';
+import {
+  useTrackedDevices,
+  useScreenTimeUsage,
+  useScreenTimeLimits,
+  useScreenTimeRewards,
+  useScreenTimeExtensions,
+  useApproveScreenTimeExtension,
+} from '@chorechamp/api-client';
 import { DeviceCard } from '../components/screen-time/DeviceCard';
 import { UsageCard } from '../components/screen-time/UsageCard';
 import { ExtensionRequestCard } from '../components/screen-time/ExtensionRequestCard';
@@ -15,207 +24,48 @@ import { RewardCard } from '../components/screen-time/RewardCard';
 
 type TabType = 'overview' | 'devices' | 'limits' | 'rewards' | 'requests' | 'chore-rewards';
 
-// Mock data for demonstration
-const mockDevices: TrackedDevice[] = [
-  {
-    id: '1',
-    householdId: 'h1',
-    memberId: 'm1',
-    name: 'Emma\'s iPad',
-    type: 'tablet',
-    platform: 'apple_screen_time',
-    platformDeviceId: 'abc123',
-    isActive: true,
-    isConnected: true,
-    lastSyncAt: new Date(Date.now() - 15 * 60000),
-    iconUrl: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    householdId: 'h1',
-    memberId: 'm1',
-    name: 'Nintendo Switch',
-    type: 'gaming_console',
-    platform: 'nintendo_parental',
-    platformDeviceId: null,
-    isActive: true,
-    isConnected: false,
-    lastSyncAt: new Date(Date.now() - 2 * 60 * 60000),
-    iconUrl: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+function LoadingSkeleton({ count = 2 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="bg-white rounded-lg shadow p-4 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+          <div className="h-3 bg-gray-200 rounded w-1/2 mb-2" />
+          <div className="h-3 bg-gray-200 rounded w-2/3" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
-const mockUsage: ScreenTimeUsage = {
-  id: 'u1',
-  memberId: 'm1',
-  householdId: 'h1',
-  date: new Date(),
-  totalMinutesUsed: 85,
-  limitMinutes: 120,
-  bonusMinutesEarned: 30,
-  bonusMinutesUsed: 10,
-  deviceUsage: [
-    { deviceId: '1', deviceName: 'Emma\'s iPad', minutesUsed: 60 },
-    { deviceId: '2', deviceName: 'Nintendo Switch', minutesUsed: 25 },
-  ],
-  appUsage: [
-    { appId: 'yt', appName: 'YouTube', categoryName: 'Entertainment', minutesUsed: 30 },
-    { appId: 'mc', appName: 'Minecraft', categoryName: 'Games', minutesUsed: 25 },
-    { appId: 'rob', appName: 'Roblox', categoryName: 'Games', minutesUsed: 20 },
-    { appId: 'tt', appName: 'TikTok', categoryName: 'Social', minutesUsed: 10 },
-  ],
-  limitReached: false,
-  limitExtended: true,
-  lastUpdatedAt: new Date(),
-};
-
-const mockLimit: ScreenTimeLimit = {
-  id: 'l1',
-  householdId: 'h1',
-  memberId: 'm1',
-  dailyLimitMinutes: 120,
-  weekendLimitMinutes: 180,
-  allowedStartTime: '08:00',
-  allowedEndTime: '20:00',
-  bedtimeStart: '20:00',
-  bedtimeEnd: '07:00',
-  dayLimits: [
-    { day: 0, limitMinutes: 180, startTime: '09:00', endTime: '21:00' },
-    { day: 6, limitMinutes: 180, startTime: '09:00', endTime: '21:00' },
-  ],
-  appLimits: [
-    { appId: 'yt', appName: 'YouTube', categoryId: null, categoryName: 'Entertainment', limitMinutes: 60 },
-    { appId: null, appName: 'All Games', categoryId: 'games', categoryName: 'Games', limitMinutes: 90 },
-  ],
-  allowExtensions: true,
-  pauseOnSchoolDays: false,
-  requireChoreCompletion: true,
-  isEnabled: true,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
-const mockRewards: ScreenTimeReward[] = [
-  {
-    id: 'r1',
-    memberId: 'm1',
-    householdId: 'h1',
-    rewardType: 'bonus_minutes',
-    minutesAmount: 15,
-    description: 'Completed bedroom cleaning',
-    earnedFrom: 'chore_completion',
-    sourceId: 'c1',
-    sourceName: 'Clean Bedroom',
-    isUsed: false,
-    usedAt: null,
-    expiresAt: new Date(Date.now() + 24 * 60 * 60000),
-    createdAt: new Date(),
-  },
-  {
-    id: 'r2',
-    memberId: 'm1',
-    householdId: 'h1',
-    rewardType: 'weekend_bonus',
-    minutesAmount: 30,
-    description: '7-day chore streak bonus',
-    earnedFrom: 'streak',
-    sourceId: null,
-    sourceName: '7-Day Streak',
-    isUsed: false,
-    usedAt: null,
-    expiresAt: null,
-    createdAt: new Date(Date.now() - 24 * 60 * 60000),
-  },
-  {
-    id: 'r3',
-    memberId: 'm1',
-    householdId: 'h1',
-    rewardType: 'bonus_minutes',
-    minutesAmount: 10,
-    description: 'Helped with dishes',
-    earnedFrom: 'bonus_chore',
-    sourceId: 'c2',
-    sourceName: 'Wash Dishes',
-    isUsed: true,
-    usedAt: new Date(Date.now() - 2 * 60 * 60000),
-    expiresAt: null,
-    createdAt: new Date(Date.now() - 3 * 60 * 60000),
-  },
-];
-
-const mockRequests: ScreenTimeExtensionRequest[] = [
-  {
-    id: 'req1',
-    memberId: 'm1',
-    householdId: 'h1',
-    requestedMinutes: 30,
-    reason: 'Finishing a movie with family',
-    requestedAt: new Date(Date.now() - 30 * 60000),
-    status: 'pending',
-    respondedBy: null,
-    respondedAt: null,
-    responseNote: null,
-    grantedMinutes: null,
-  },
-  {
-    id: 'req2',
-    memberId: 'm1',
-    householdId: 'h1',
-    requestedMinutes: 15,
-    reason: 'Almost done with homework research',
-    requestedAt: new Date(Date.now() - 24 * 60 * 60000),
-    status: 'approved',
-    respondedBy: 'm2',
-    respondedAt: new Date(Date.now() - 23 * 60 * 60000),
-    responseNote: 'Good job on homework!',
-    grantedMinutes: 15,
-  },
-];
-
-const mockChoreRewards: ChoreScreenTimeReward[] = [
-  {
-    id: 'cr1',
-    householdId: 'h1',
-    choreId: null,
-    choreName: null,
-    choreCategory: null,
-    rewardType: 'bonus_minutes',
-    minutesAmount: 5,
-    requirePerfectCompletion: false,
-    requirePhotoProof: false,
-    onlyOnWeekdays: false,
-    maxPerDay: 30,
-    maxPerWeek: null,
-    isEnabled: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'cr2',
-    householdId: 'h1',
-    choreId: 'c5',
-    choreName: 'Clean Room',
-    choreCategory: 'Cleaning',
-    rewardType: 'bonus_minutes',
-    minutesAmount: 15,
-    requirePerfectCompletion: true,
-    requirePhotoProof: true,
-    onlyOnWeekdays: false,
-    maxPerDay: 1,
-    maxPerWeek: null,
-    isEnabled: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+      <p className="font-medium">Something went wrong</p>
+      <p className="text-sm mt-1">{message}</p>
+    </div>
+  );
+}
 
 export function ScreenTime() {
+  const { householdId } = useParams<{ householdId: string }>();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [selectedMember, setSelectedMember] = useState<string>('all');
+
+  const { data: devices, isLoading: devicesLoading, error: devicesError } = useTrackedDevices(householdId!);
+  const { data: usage, isLoading: usageLoading, error: usageError } = useScreenTimeUsage(householdId!);
+  const { data: limits, isLoading: limitsLoading, error: limitsError } = useScreenTimeLimits(householdId!);
+  const { data: rewards, isLoading: rewardsLoading, error: rewardsError } = useScreenTimeRewards(householdId!);
+  const { data: extensions, isLoading: extensionsLoading, error: extensionsError } = useScreenTimeExtensions(householdId!);
+
+  const { mutate: approveExtension } = useApproveScreenTimeExtension(householdId!);
+
+  const deviceList = (devices ?? []) as TrackedDevice[];
+  const usageList = (usage ?? []) as ScreenTimeUsageType[];
+  const usageData = usageList[0] ?? null;
+  const limitList = (limits ?? []) as ScreenTimeLimit[];
+  const rewardList = (rewards ?? []) as ScreenTimeReward[];
+  const extensionList = (extensions ?? []) as ScreenTimeExtensionRequest[];
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -226,20 +76,40 @@ export function ScreenTime() {
     { id: 'chore-rewards', label: 'Chore Rewards', icon: '🔗' },
   ];
 
-  const handleApproveRequest = (requestId: string, grantedMinutes: number) => {
-    console.log('Approve request:', requestId, 'with', grantedMinutes, 'minutes');
+  const handleApproveRequest = (requestId: string, _grantedMinutes: number) => {
+    approveExtension({ extensionId: requestId, approved: true });
   };
 
-  const handleDenyRequest = (requestId: string, note?: string) => {
-    console.log('Deny request:', requestId, 'with note:', note);
+  const handleDenyRequest = (requestId: string, _note?: string) => {
+    approveExtension({ extensionId: requestId, approved: false });
   };
 
-  const handleUseReward = (rewardId: string) => {
-    console.log('Use reward:', rewardId);
+  const handleUseReward = (_rewardId: string) => {
+    // Reward usage is tracked server-side; placeholder for future mutation hook
   };
 
-  const handleSyncDevice = (deviceId: string) => {
-    console.log('Sync device:', deviceId);
+  const handleSyncDevice = (_deviceId: string) => {
+    // Device sync is triggered server-side; placeholder for future mutation hook
+  };
+
+  const pendingRequests = extensionList.filter((r) => r.status === 'pending');
+  const pastRequests = extensionList.filter((r) => r.status !== 'pending');
+  const availableRewards = rewardList.filter((r) => !r.isUsed);
+  const usedRewards = rewardList.filter((r) => r.isUsed);
+
+  // Derive overview stats from real usage data
+  const totalMinutesUsed = usageData?.totalMinutesUsed ?? 0;
+  const limitMinutes = usageData?.limitMinutes ?? 0;
+  const bonusMinutesEarned = usageData?.bonusMinutesEarned ?? 0;
+  const remainingMinutes = Math.max(0, limitMinutes - totalMinutesUsed + bonusMinutesEarned);
+  const activeDeviceCount = deviceList.filter((d) => d.isActive).length;
+
+  const formatMinutes = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
   };
 
   return (
@@ -289,37 +159,47 @@ export function ScreenTime() {
           {activeTab === 'overview' && (
             <>
               {/* Quick stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg shadow p-4 text-center">
-                  <p className="text-3xl font-bold text-blue-600">1h 25m</p>
-                  <p className="text-sm text-gray-500">Used Today</p>
+              {usageLoading ? (
+                <LoadingSkeleton count={4} />
+              ) : usageError ? (
+                <ErrorBanner message={usageError instanceof Error ? usageError.message : 'Failed to load usage data'} />
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg shadow p-4 text-center">
+                    <p className="text-3xl font-bold text-blue-600">{formatMinutes(totalMinutesUsed)}</p>
+                    <p className="text-sm text-gray-500">Used Today</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-4 text-center">
+                    <p className="text-3xl font-bold text-green-600">{formatMinutes(remainingMinutes)}</p>
+                    <p className="text-sm text-gray-500">Remaining</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-4 text-center">
+                    <p className="text-3xl font-bold text-purple-600">+{formatMinutes(bonusMinutesEarned)}</p>
+                    <p className="text-sm text-gray-500">Bonus Earned</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-4 text-center">
+                    <p className="text-3xl font-bold text-orange-600">{activeDeviceCount}</p>
+                    <p className="text-sm text-gray-500">Devices Active</p>
+                  </div>
                 </div>
-                <div className="bg-white rounded-lg shadow p-4 text-center">
-                  <p className="text-3xl font-bold text-green-600">45m</p>
-                  <p className="text-sm text-gray-500">Remaining</p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-4 text-center">
-                  <p className="text-3xl font-bold text-purple-600">+30m</p>
-                  <p className="text-sm text-gray-500">Bonus Earned</p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-4 text-center">
-                  <p className="text-3xl font-bold text-orange-600">2</p>
-                  <p className="text-sm text-gray-500">Devices Active</p>
-                </div>
-              </div>
+              )}
 
               {/* Today's usage */}
-              <UsageCard usage={mockUsage} memberName="Emma" />
+              {usageLoading ? (
+                <LoadingSkeleton count={1} />
+              ) : usageError ? null : usageData ? (
+                <UsageCard usage={usageData} memberName="Emma" />
+              ) : null}
 
               {/* Pending requests alert */}
-              {mockRequests.filter(r => r.status === 'pending').length > 0 && (
+              {extensionsLoading ? null : pendingRequests.length > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">✋</span>
                     <div>
                       <h3 className="font-semibold text-yellow-800">Pending Extension Requests</h3>
                       <p className="text-sm text-yellow-700">
-                        {mockRequests.filter(r => r.status === 'pending').length} request(s) waiting for approval
+                        {pendingRequests.length} request(s) waiting for approval
                       </p>
                     </div>
                     <button
@@ -333,22 +213,28 @@ export function ScreenTime() {
               )}
 
               {/* Available rewards */}
-              <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="font-semibold text-gray-900 mb-4">Available Rewards</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockRewards.filter(r => !r.isUsed).slice(0, 2).map((reward) => (
-                    <RewardCard key={reward.id} reward={reward} onUse={handleUseReward} />
-                  ))}
+              {rewardsLoading ? (
+                <LoadingSkeleton count={2} />
+              ) : rewardsError ? (
+                <ErrorBanner message={rewardsError instanceof Error ? rewardsError.message : 'Failed to load rewards'} />
+              ) : (
+                <div className="bg-white rounded-lg shadow p-4">
+                  <h3 className="font-semibold text-gray-900 mb-4">Available Rewards</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {availableRewards.slice(0, 2).map((reward) => (
+                      <RewardCard key={reward.id} reward={reward} onUse={handleUseReward} />
+                    ))}
+                  </div>
+                  {availableRewards.length > 2 && (
+                    <button
+                      onClick={() => setActiveTab('rewards')}
+                      className="mt-4 text-blue-600 text-sm font-medium hover:underline"
+                    >
+                      View all {availableRewards.length} rewards →
+                    </button>
+                  )}
                 </div>
-                {mockRewards.filter(r => !r.isUsed).length > 2 && (
-                  <button
-                    onClick={() => setActiveTab('rewards')}
-                    className="mt-4 text-blue-600 text-sm font-medium hover:underline"
-                  >
-                    View all {mockRewards.filter(r => !r.isUsed).length} rewards →
-                  </button>
-                )}
-              </div>
+              )}
             </>
           )}
 
@@ -360,17 +246,23 @@ export function ScreenTime() {
                   + Add Device
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mockDevices.map((device) => (
-                  <DeviceCard
-                    key={device.id}
-                    device={device}
-                    onSync={handleSyncDevice}
-                    onEdit={(d) => console.log('Edit device:', d)}
-                    onDelete={(id) => console.log('Delete device:', id)}
-                  />
-                ))}
-              </div>
+              {devicesLoading ? (
+                <LoadingSkeleton count={2} />
+              ) : devicesError ? (
+                <ErrorBanner message={devicesError instanceof Error ? devicesError.message : 'Failed to load devices'} />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {deviceList.map((device) => (
+                    <DeviceCard
+                      key={device.id}
+                      device={device}
+                      onSync={handleSyncDevice}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Platform connections */}
               <div className="bg-white rounded-lg shadow p-4">
@@ -407,12 +299,23 @@ export function ScreenTime() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Screen Time Limits</h2>
               </div>
-              <ScreenTimeLimitCard
-                limit={mockLimit}
-                memberName="Emma"
-                onEdit={(l) => console.log('Edit limit:', l)}
-                onToggle={(id, enabled) => console.log('Toggle limit:', id, enabled)}
-              />
+              {limitsLoading ? (
+                <LoadingSkeleton count={1} />
+              ) : limitsError ? (
+                <ErrorBanner message={limitsError instanceof Error ? limitsError.message : 'Failed to load limits'} />
+              ) : limitList.length > 0 ? (
+                limitList.map((limit) => (
+                  <ScreenTimeLimitCard
+                    key={limit.id}
+                    limit={limit}
+                    memberName="Emma"
+                    onEdit={() => {}}
+                    onToggle={(_id, _enabled) => { /* TODO: add useUpdateScreenTimeLimit hook */ }}
+                  />
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">No limits configured yet</p>
+              )}
 
               {/* Quick limit adjustments */}
               <div className="bg-white rounded-lg shadow p-4">
@@ -444,25 +347,33 @@ export function ScreenTime() {
                 </button>
               </div>
 
-              {/* Available rewards */}
-              <div>
-                <h3 className="text-md font-medium text-gray-700 mb-3">Available</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mockRewards.filter(r => !r.isUsed).map((reward) => (
-                    <RewardCard key={reward.id} reward={reward} onUse={handleUseReward} />
-                  ))}
-                </div>
-              </div>
+              {rewardsLoading ? (
+                <LoadingSkeleton count={3} />
+              ) : rewardsError ? (
+                <ErrorBanner message={rewardsError instanceof Error ? rewardsError.message : 'Failed to load rewards'} />
+              ) : (
+                <>
+                  {/* Available rewards */}
+                  <div>
+                    <h3 className="text-md font-medium text-gray-700 mb-3">Available</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {availableRewards.map((reward) => (
+                        <RewardCard key={reward.id} reward={reward} onUse={handleUseReward} />
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Used rewards */}
-              <div>
-                <h3 className="text-md font-medium text-gray-700 mb-3">Used</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mockRewards.filter(r => r.isUsed).map((reward) => (
-                    <RewardCard key={reward.id} reward={reward} />
-                  ))}
-                </div>
-              </div>
+                  {/* Used rewards */}
+                  <div>
+                    <h3 className="text-md font-medium text-gray-700 mb-3">Used</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {usedRewards.map((reward) => (
+                        <RewardCard key={reward.id} reward={reward} />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -472,40 +383,48 @@ export function ScreenTime() {
                 <h2 className="text-lg font-semibold text-gray-900">Extension Requests</h2>
               </div>
 
-              {/* Pending requests */}
-              <div>
-                <h3 className="text-md font-medium text-gray-700 mb-3">Pending Review</h3>
-                <div className="space-y-4">
-                  {mockRequests.filter(r => r.status === 'pending').map((request) => (
-                    <ExtensionRequestCard
-                      key={request.id}
-                      request={request}
-                      memberName="Emma"
-                      isParentView={true}
-                      onApprove={handleApproveRequest}
-                      onDeny={handleDenyRequest}
-                    />
-                  ))}
-                  {mockRequests.filter(r => r.status === 'pending').length === 0 && (
-                    <p className="text-gray-500 text-center py-8">No pending requests</p>
-                  )}
-                </div>
-              </div>
+              {extensionsLoading ? (
+                <LoadingSkeleton count={2} />
+              ) : extensionsError ? (
+                <ErrorBanner message={extensionsError instanceof Error ? extensionsError.message : 'Failed to load requests'} />
+              ) : (
+                <>
+                  {/* Pending requests */}
+                  <div>
+                    <h3 className="text-md font-medium text-gray-700 mb-3">Pending Review</h3>
+                    <div className="space-y-4">
+                      {pendingRequests.map((request) => (
+                        <ExtensionRequestCard
+                          key={request.id}
+                          request={request}
+                          memberName="Emma"
+                          isParentView={true}
+                          onApprove={handleApproveRequest}
+                          onDeny={handleDenyRequest}
+                        />
+                      ))}
+                      {pendingRequests.length === 0 && (
+                        <p className="text-gray-500 text-center py-8">No pending requests</p>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Past requests */}
-              <div>
-                <h3 className="text-md font-medium text-gray-700 mb-3">History</h3>
-                <div className="space-y-4">
-                  {mockRequests.filter(r => r.status !== 'pending').map((request) => (
-                    <ExtensionRequestCard
-                      key={request.id}
-                      request={request}
-                      memberName="Emma"
-                      responderName="Mom"
-                    />
-                  ))}
-                </div>
-              </div>
+                  {/* Past requests */}
+                  <div>
+                    <h3 className="text-md font-medium text-gray-700 mb-3">History</h3>
+                    <div className="space-y-4">
+                      {pastRequests.map((request) => (
+                        <ExtensionRequestCard
+                          key={request.id}
+                          request={request}
+                          memberName="Emma"
+                          responderName="Mom"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -522,81 +441,94 @@ export function ScreenTime() {
                 Configure how completing chores earns screen time rewards.
               </p>
 
-              <div className="space-y-4">
-                {mockChoreRewards.map((rule) => (
-                  <div
-                    key={rule.id}
-                    className={`bg-white rounded-lg shadow p-4 ${!rule.isEnabled ? 'opacity-60' : ''}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">
-                          {rule.choreName || 'All Chores'}
-                          {rule.choreCategory && (
-                            <span className="ml-2 text-sm text-gray-500">({rule.choreCategory})</span>
-                          )}
-                        </h4>
-                        <p className="text-lg font-bold text-blue-600 mt-1">
-                          +{rule.minutesAmount} minutes
-                        </p>
+              {rewardsLoading ? (
+                <LoadingSkeleton count={2} />
+              ) : rewardsError ? (
+                <ErrorBanner message={rewardsError instanceof Error ? rewardsError.message : 'Failed to load chore rewards'} />
+              ) : (
+                <div className="space-y-4">
+                  {(rewardList as unknown as ChoreScreenTimeReward[]).map((rule) => (
+                    <div
+                      key={rule.id}
+                      className={`bg-white rounded-lg shadow p-4 ${!rule.isEnabled ? 'opacity-60' : ''}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">
+                            {rule.choreName || 'All Chores'}
+                            {rule.choreCategory && (
+                              <span className="ml-2 text-sm text-gray-500">({rule.choreCategory})</span>
+                            )}
+                          </h4>
+                          <p className="text-lg font-bold text-blue-600 mt-1">
+                            +{rule.minutesAmount} minutes
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={rule.isEnabled}
+                            onChange={() => {}}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                        </label>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={rule.isEnabled}
-                          onChange={() => {}}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
-                      </label>
-                    </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {rule.requirePerfectCompletion && (
-                        <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded text-xs">
-                          ⭐ Perfect completion required
-                        </span>
-                      )}
-                      {rule.requirePhotoProof && (
-                        <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs">
-                          📸 Photo proof required
-                        </span>
-                      )}
-                      {rule.onlyOnWeekdays && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                          📅 Weekdays only
-                        </span>
-                      )}
-                      {rule.maxPerDay && (
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-                          Max {rule.maxPerDay}/day
-                        </span>
-                      )}
-                      {rule.maxPerWeek && (
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-                          Max {rule.maxPerWeek}/week
-                        </span>
-                      )}
-                    </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {rule.requirePerfectCompletion && (
+                          <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded text-xs">
+                            ⭐ Perfect completion required
+                          </span>
+                        )}
+                        {rule.requirePhotoProof && (
+                          <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs">
+                            📸 Photo proof required
+                          </span>
+                        )}
+                        {rule.onlyOnWeekdays && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                            📅 Weekdays only
+                          </span>
+                        )}
+                        {rule.maxPerDay && (
+                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                            Max {rule.maxPerDay}/day
+                          </span>
+                        )}
+                        {rule.maxPerWeek && (
+                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                            Max {rule.maxPerWeek}/week
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-                      <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200">
-                        Edit
-                      </button>
-                      <button className="px-3 py-1 bg-red-50 text-red-700 rounded text-sm hover:bg-red-100">
-                        Delete
-                      </button>
+                      <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
+                        <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200">
+                          Edit
+                        </button>
+                        <button className="px-3 py-1 bg-red-50 text-red-700 rounded text-sm hover:bg-red-100">
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {/* Summary */}
               <div className="bg-green-50 rounded-lg p-4">
                 <h4 className="font-semibold text-green-800 mb-2">Earning Summary</h4>
                 <p className="text-sm text-green-700">
                   With current rules, completing all daily chores can earn up to{' '}
-                  <strong>45 minutes</strong> of bonus screen time per day.
+                  <strong>
+                    {(rewardList as unknown as ChoreScreenTimeReward[]).reduce(
+                      (sum, r) => sum + (r.isEnabled ? r.minutesAmount : 0),
+                      0,
+                    )}{' '}
+                    minutes
+                  </strong>{' '}
+                  of bonus screen time per day.
                 </p>
               </div>
             </>

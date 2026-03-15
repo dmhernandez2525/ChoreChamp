@@ -3701,6 +3701,210 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+  // ===== Chore Detection =====
+  async getDetectionRules(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/detection/rules`);
+  }
+
+  async createDetectionRule(householdId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/detection/rules`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateDetectionRule(householdId: string, ruleId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/detection/rules/${ruleId}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  async deleteDetectionRule(householdId: string, ruleId: string): Promise<void> {
+    return this.request(`/${householdId}/detection/rules/${ruleId}`, { method: 'DELETE' });
+  }
+
+  async getDetectionEvents(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/detection/events`);
+  }
+
+  async confirmDetectionEvent(householdId: string, eventId: string, data: { wasAccurate: boolean }): Promise<unknown> {
+    return this.request(`/${householdId}/detection/events/${eventId}/confirm`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getCleanlinessMetrics(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/detection/cleanliness`);
+  }
+
+  async getDetectionAnalytics(householdId: string): Promise<unknown> {
+    return this.request(`/${householdId}/detection/analytics`);
+  }
+
+  async getDetectionTemplates(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/detection/templates`);
+  }
+
+  // ===== Geofencing =====
+  async getGeofences(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/geofencing/geofences`);
+  }
+
+  async createGeofence(householdId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/geofencing/geofences`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateGeofence(householdId: string, geofenceId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/geofencing/geofences/${geofenceId}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  async deleteGeofence(householdId: string, geofenceId: string): Promise<void> {
+    return this.request(`/${householdId}/geofencing/geofences/${geofenceId}`, { method: 'DELETE' });
+  }
+
+  async getMemberLocations(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/geofencing/locations`);
+  }
+
+  async getGeofenceEvents(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/geofencing/events`);
+  }
+
+  async getGeofenceAutomations(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/geofencing/automations`);
+  }
+
+  async getGeofenceAnalytics(householdId: string): Promise<unknown> {
+    return this.request(`/${householdId}/geofencing/analytics`);
+  }
+
+  // ===== Screen Time =====
+  async getTrackedDevices(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/screen-time/devices`);
+  }
+
+  async getScreenTimeUsage(householdId: string, params?: { memberId?: string }): Promise<unknown[]> {
+    const query = params?.memberId ? `?memberId=${params.memberId}` : '';
+    return this.request(`/${householdId}/screen-time/usage${query}`);
+  }
+
+  async getScreenTimeLimits(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/screen-time/limits`);
+  }
+
+  async updateScreenTimeLimit(householdId: string, limitId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/screen-time/limits/${limitId}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  async getScreenTimeRewards(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/screen-time/rewards`);
+  }
+
+  async getScreenTimeExtensions(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/screen-time/extensions`);
+  }
+
+  async approveScreenTimeExtension(householdId: string, extensionId: string, data: { approved: boolean }): Promise<unknown> {
+    return this.request(`/${householdId}/screen-time/extensions/${extensionId}/approve`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  // ===== Homework =====
+  async getHomeworkSubjects(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/homework/subjects`);
+  }
+
+  async getHomeworkAssignments(householdId: string, params?: { memberId?: string; status?: string }): Promise<unknown[]> {
+    const qs = new URLSearchParams();
+    if (params?.memberId) qs.set('memberId', params.memberId);
+    if (params?.status) qs.set('status', params.status);
+    const query = qs.toString() ? `?${qs}` : '';
+    return this.request(`/${householdId}/homework/assignments${query}`);
+  }
+
+  async createHomeworkAssignment(householdId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/homework/assignments`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateHomeworkAssignment(householdId: string, assignmentId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/homework/assignments/${assignmentId}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  async getStudySessions(householdId: string, params?: { memberId?: string }): Promise<unknown[]> {
+    const query = params?.memberId ? `?memberId=${params.memberId}` : '';
+    return this.request(`/${householdId}/homework/sessions${query}`);
+  }
+
+  async getStudyGoals(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/homework/goals`);
+  }
+
+  // ===== Skill Building =====
+  async getSkillTrees(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/skill-building/trees`);
+  }
+
+  async getSkillProgress(householdId: string, params?: { memberId?: string }): Promise<unknown[]> {
+    const query = params?.memberId ? `?memberId=${params.memberId}` : '';
+    return this.request(`/${householdId}/skill-building/progress${query}`);
+  }
+
+  async updateSkillProgress(householdId: string, skillId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/skill-building/progress/${skillId}`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getSkillCertifications(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/skill-building/certifications`);
+  }
+
+  // ===== Story Mode =====
+  async getStoryChapters(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/story-mode/chapters`);
+  }
+
+  async getStoryProgress(householdId: string, params?: { memberId?: string }): Promise<unknown> {
+    const query = params?.memberId ? `?memberId=${params.memberId}` : '';
+    return this.request(`/${householdId}/story-mode/progress${query}`);
+  }
+
+  async getStoryQuests(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/story-mode/quests`);
+  }
+
+  async startStoryQuest(householdId: string, questId: string): Promise<unknown> {
+    return this.request(`/${householdId}/story-mode/quests/${questId}/start`, { method: 'POST' });
+  }
+
+  async getStoryCharacters(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/story-mode/characters`);
+  }
+
+  // ===== QR Verification =====
+  async getQRCodes(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/qr-verification/codes`);
+  }
+
+  async createQRCode(householdId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/qr-verification/codes`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getQRScans(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/qr-verification/scans`);
+  }
+
+  async getQRCheckpoints(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/qr-verification/checkpoints`);
+  }
+
+  // ===== Smart Home =====
+  async getSmartHomeHubs(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/smart-home/hubs`);
+  }
+
+  async getSmartDevices(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/smart-home/devices`);
+  }
+
+  async controlSmartDevice(householdId: string, deviceId: string, data: Record<string, unknown>): Promise<unknown> {
+    return this.request(`/${householdId}/smart-home/devices/${deviceId}/control`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getSmartHomeAutomations(householdId: string): Promise<unknown[]> {
+    return this.request(`/${householdId}/smart-home/automations`);
+  }
+
 }
 
 export const apiClient = new ApiClient();

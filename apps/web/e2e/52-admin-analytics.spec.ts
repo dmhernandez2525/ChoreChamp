@@ -5,51 +5,45 @@ import { TEST_CONFIG } from './config';
 const HID = TEST_CONFIG.householdId;
 
 test.describe('Admin Analytics Page', () => {
-  test('admin analytics page loads', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/admin-analytics`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
-
-    const bodyText = await page.locator('body').textContent();
-    const hasContent =
-      bodyText?.toLowerCase().includes('analytics') ||
-      bodyText?.toLowerCase().includes('admin') ||
-      bodyText?.toLowerCase().includes('report') ||
-      bodyText?.toLowerCase().includes('stat') ||
-      (bodyText?.length ?? 0) > 50;
-
-    expect(hasContent).toBeTruthy();
   });
 
-  test('admin analytics shows charts or data', async ({ page }) => {
-    await page.goto(`/households/${HID}/admin-analytics`);
-    await page.waitForLoadState('networkidle');
-    await ensureAuthenticated(page);
-    await page.waitForTimeout(2000);
+  test('analytics shows dashboard with metrics', async ({ page }) => {
+    // Should display analytics heading or dashboard label
+    const heading = page.getByText(/analytics|admin|dashboard|overview/i).first();
+    await expect(heading).toBeVisible({ timeout: 10000 });
 
-    const bodyText = await page.locator('body').textContent();
-    expect(bodyText && bodyText.length > 20).toBeTruthy();
+    // Should show metric values (numbers, percentages, or stat cards)
+    const metricContent = page.getByText(/total|average|completion|chore|member|point/i).first();
+    const hasMetrics = await metricContent.isVisible().catch(() => false);
+
+    // Or displays chart/graph areas
+    const chartArea = page.locator('canvas, svg, [class*="chart"], [class*="Chart"], [role="img"]').first();
+    const hasChart = await chartArea.isVisible().catch(() => false);
+
+    expect(hasMetrics || hasChart).toBeTruthy();
   });
 
-  test('admin analytics has date range controls', async ({ page }) => {
-    await page.goto(`/households/${HID}/admin-analytics`);
-    await page.waitForLoadState('networkidle');
-    await ensureAuthenticated(page);
-    await page.waitForTimeout(2000);
+  test('has tabs or sections for different analytics views', async ({ page }) => {
+    // Look for tabs, nav pills, or section headings that divide analytics
+    const tabs = page.getByRole('tab');
+    const tabCount = await tabs.count();
 
-    // Look for date range or filter controls
-    const dateControls = page.locator('input[type="date"], select, button').filter({
-      hasText: /date|range|week|month|year|filter/i,
+    const sectionButtons = page.getByRole('button').filter({
+      hasText: /overview|member|chore|trend|weekly|monthly|summary|detail/i,
     });
-    const hasDateControls = (await dateControls.count()) > 0;
+    const buttonCount = await sectionButtons.count();
 
-    const bodyText = await page.locator('body').textContent();
-    const hasAnalyticsContent =
-      bodyText?.toLowerCase().includes('analytics') ||
-      bodyText?.toLowerCase().includes('data') ||
-      (bodyText?.length ?? 0) > 50;
+    const sectionHeadings = page.getByRole('heading').filter({
+      hasText: /overview|member|chore|completion|leaderboard|trend/i,
+    });
+    const headingCount = await sectionHeadings.count();
 
-    expect(hasDateControls || hasAnalyticsContent).toBeTruthy();
+    // Should have multiple tabs, filter buttons, or section headings
+    expect(tabCount > 0 || buttonCount > 0 || headingCount > 0).toBeTruthy();
   });
 });

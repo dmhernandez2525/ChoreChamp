@@ -5,48 +5,41 @@ import { TEST_CONFIG } from './config';
 const HID = TEST_CONFIG.householdId;
 
 test.describe('Community Page', () => {
-  test('community page loads', async ({ page }) => {
+  test('community page loads with community features', async ({ page }) => {
     await page.goto(`/households/${HID}/community`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent();
-    const hasContent =
-      bodyText?.toLowerCase().includes('community') ||
-      bodyText?.toLowerCase().includes('share') ||
-      bodyText?.toLowerCase().includes('social') ||
-      (bodyText?.length ?? 0) > 50;
+    // Page should display a heading or section related to community features
+    const communityHeading = page.getByText(/community/i).first();
+    const socialSection = page.getByText(/social|forum|event|share|connect/i).first();
 
-    expect(hasContent).toBeTruthy();
+    const hasHeading = await communityHeading.isVisible().catch(() => false);
+    const hasSocial = await socialSection.isVisible().catch(() => false);
+
+    expect(hasHeading || hasSocial).toBeTruthy();
   });
 });
 
 test.describe('Automation Page', () => {
-  test('automation page loads', async ({ page }) => {
+  test('automation page shows rules or empty state with create button', async ({ page }) => {
     await page.goto(`/households/${HID}/automation`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent();
-    const hasContent =
-      bodyText?.toLowerCase().includes('automation') ||
-      bodyText?.toLowerCase().includes('rule') ||
-      bodyText?.toLowerCase().includes('trigger') ||
-      bodyText?.toLowerCase().includes('schedule') ||
-      (bodyText?.length ?? 0) > 50;
+    // Should show existing automation rules OR an empty state with a way to create one
+    const automationHeading = page.getByText(/automation/i).first();
+    const hasHeading = await automationHeading.isVisible().catch(() => false);
 
-    expect(hasContent).toBeTruthy();
-  });
+    const ruleContent = page.getByText(/rule|trigger|schedule|when|then/i).first();
+    const hasRules = await ruleContent.isVisible().catch(() => false);
 
-  test('automation shows rules or creation option', async ({ page }) => {
-    await page.goto(`/households/${HID}/automation`);
-    await page.waitForLoadState('networkidle');
-    await ensureAuthenticated(page);
-    await page.waitForTimeout(2000);
+    const createButton = page.getByRole('button', { name: /create|add|new/i }).first();
+    const hasCreate = await createButton.isVisible().catch(() => false);
 
-    const bodyText = await page.locator('body').textContent();
-    expect(bodyText && bodyText.length > 20).toBeTruthy();
+    // Page must show either a heading, existing rules, or a create button
+    expect(hasHeading || hasRules || hasCreate).toBeTruthy();
   });
 });

@@ -1,203 +1,54 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  useSkillTrees,
+  useSkillProgress,
+  useSkillCertifications,
+  useUpdateSkillProgress,
+} from '@chorechamp/api-client';
 import {
   SkillTreeCard,
   SkillCard,
   MentorshipCard,
   CertificationBadge,
 } from '../components/skill-building';
-import {
-  SkillTree,
+import { Skeleton } from '../components/common';
+import type {
   Skill,
+  SkillTree,
   MemberSkillProgress,
   SkillCertification,
   MentorshipRelation,
-  SkillCategory,
-  MasteryLevel,
 } from '@chorechamp/types';
 
 type TabType = 'trees' | 'skills' | 'certifications' | 'mentorship' | 'challenges' | 'badges';
 
-// Mock data
-const mockSkillTrees: SkillTree[] = [
-  {
-    id: '1',
-    householdId: 'h1',
-    category: 'cooking' as SkillCategory,
-    name: 'Cooking Basics',
-    description: 'Learn essential cooking skills from meal prep to cleaning up',
-    iconUrl: null,
-    colorTheme: '#ef4444',
-    totalSkills: 12,
-    totalXp: 5000,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    householdId: 'h1',
-    category: 'cleaning' as SkillCategory,
-    name: 'Home Cleaning',
-    description: 'Master the art of keeping your home spotless and organized',
-    iconUrl: null,
-    colorTheme: '#3b82f6',
-    totalSkills: 15,
-    totalXp: 6000,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '3',
-    householdId: 'h1',
-    category: 'laundry' as SkillCategory,
-    name: 'Laundry Pro',
-    description: 'From sorting to folding - become a laundry expert',
-    iconUrl: null,
-    colorTheme: '#06b6d4',
-    totalSkills: 8,
-    totalXp: 3000,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
-const mockSkills: Skill[] = [
-  {
-    id: 's1',
-    skillTreeId: '1',
-    householdId: 'h1',
-    name: 'Kitchen Safety',
-    description: 'Learn knife handling, hot surface awareness, and food safety basics',
-    iconUrl: null,
-    level: 1,
-    tier: 1,
-    xpRequired: 100,
-    prerequisites: [],
-    ageMinimum: 8,
-    estimatedPracticeTime: 30,
-    videoTutorialUrl: 'https://example.com/kitchen-safety',
-    articleUrl: null,
-    tips: ['Always cut away from yourself', 'Keep handles turned inward'],
-    safetyNotes: 'Adult supervision required for ages 8-12',
-    linkedChoreIds: [],
-    isCore: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 's2',
-    skillTreeId: '1',
-    householdId: 'h1',
-    name: 'Basic Meal Prep',
-    description: 'Washing, peeling, and chopping vegetables and fruits',
-    iconUrl: null,
-    level: 2,
-    tier: 1,
-    xpRequired: 200,
-    prerequisites: ['s1'],
-    ageMinimum: 10,
-    estimatedPracticeTime: 45,
-    videoTutorialUrl: null,
-    articleUrl: null,
-    tips: ['Start with soft vegetables', 'Use a sharp knife - its safer!'],
-    safetyNotes: null,
-    linkedChoreIds: [],
-    isCore: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
-const mockProgress: MemberSkillProgress[] = [
-  {
-    id: 'p1',
-    memberId: 'm1',
-    skillId: 's1',
-    householdId: 'h1',
-    status: 'completed',
-    masteryLevel: 'intermediate' as MasteryLevel,
-    currentXp: 150,
-    practiceCount: 8,
-    totalPracticeMinutes: 240,
-    lastPracticedAt: new Date('2025-01-28'),
-    startedAt: new Date('2025-01-01'),
-    completedAt: new Date('2025-01-20'),
-    masteredAt: null,
-    mentorId: null,
-    notes: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'p2',
-    memberId: 'm1',
-    skillId: 's2',
-    householdId: 'h1',
-    status: 'in_progress',
-    masteryLevel: 'beginner' as MasteryLevel,
-    currentXp: 75,
-    practiceCount: 3,
-    totalPracticeMinutes: 90,
-    lastPracticedAt: new Date('2025-01-30'),
-    startedAt: new Date('2025-01-21'),
-    completedAt: null,
-    masteredAt: null,
-    mentorId: 'm2',
-    notes: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
-const mockCertifications: SkillCertification[] = [
-  {
-    id: 'c1',
-    memberId: 'm1',
-    skillId: 's1',
-    householdId: 'h1',
-    certificationName: 'Kitchen Safety Certified',
-    status: 'certified',
-    assessmentScore: 92,
-    assessmentPassingScore: 70,
-    assessmentAttempts: 1,
-    certifiedAt: new Date('2025-01-20'),
-    certifiedById: 'm2',
-    expiresAt: null,
-    certificateUrl: null,
-    badgeIconUrl: null,
-    notes: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
-const mockMentorships: MentorshipRelation[] = [
-  {
-    id: 'men1',
-    mentorId: 'm2',
-    menteeId: 'm1',
-    skillId: 's2',
-    householdId: 'h1',
-    status: 'active',
-    sessionsCompleted: 3,
-    totalSessionMinutes: 90,
-    mentorXpEarned: 45,
-    menteeXpEarned: 94,
-    startedAt: new Date('2025-01-21'),
-    completedAt: null,
-    notes: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
 export default function SkillBuilding() {
+  const { householdId } = useParams<{ householdId: string }>();
   const [activeTab, setActiveTab] = useState<TabType>('trees');
   const [selectedTree, setSelectedTree] = useState<string | null>(null);
   const [showPracticeModal, setShowPracticeModal] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [practiceDuration, setPracticeDuration] = useState(30);
+  const [practiceRating, setPracticeRating] = useState(0);
+  const [practiceNotes, setPracticeNotes] = useState('');
+
+  // API hooks
+  const { data: skillTreesData, isLoading: loadingTrees, error: treesError } = useSkillTrees(householdId!);
+  const { data: progressData, isLoading: loadingProgress, error: progressError } = useSkillProgress(householdId!);
+  const { data: certificationsData, isLoading: loadingCerts, error: certsError } = useSkillCertifications(householdId!);
+  const { mutate: updateProgress, isPending: isUpdating } = useUpdateSkillProgress(householdId!);
+
+  const skillTreesTyped = skillTreesData as unknown as { trees?: SkillTree[]; skills?: Skill[] } | undefined;
+  const skillTrees: SkillTree[] = skillTreesTyped?.trees ?? [];
+  const skills: Skill[] = skillTreesTyped?.skills ?? [];
+  const progress: MemberSkillProgress[] = (progressData ?? []) as MemberSkillProgress[];
+  const certsTyped = certificationsData as unknown as { certifications?: SkillCertification[]; mentorships?: MentorshipRelation[] } | undefined;
+  const certifications: SkillCertification[] = certsTyped?.certifications ?? [];
+  const mentorships: MentorshipRelation[] = certsTyped?.mentorships ?? [];
+
+  const isLoading = loadingTrees || loadingProgress || loadingCerts;
+  const error = treesError || progressError || certsError;
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'trees', label: 'Skill Trees', icon: '🌳' },
@@ -209,13 +60,55 @@ export default function SkillBuilding() {
   ];
 
   // Calculate stats
-  const totalXp = mockProgress.reduce((sum, p) => sum + p.currentXp, 0);
-  const completedSkills = mockProgress.filter(p => ['completed', 'mastered'].includes(p.status)).length;
-  const certCount = mockCertifications.filter(c => c.status === 'certified').length;
+  const totalXp = progress.reduce((sum, p) => sum + p.currentXp, 0);
+  const completedSkills = progress.filter(p => ['completed', 'mastered'].includes(p.status)).length;
+  const certCount = certifications.filter(c => c.status === 'certified').length;
 
   const getProgressForSkill = (skillId: string) => {
-    return mockProgress.find(p => p.skillId === skillId) || null;
+    return progress.find(p => p.skillId === skillId) || null;
   };
+
+  const handleStartSkill = (skillId: string) => {
+    updateProgress({
+      householdId: householdId!,
+      skillId,
+      action: 'start',
+    });
+  };
+
+  const handleLogPractice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSkill) return;
+
+    updateProgress({
+      householdId: householdId!,
+      skillId: selectedSkill.id,
+      action: 'practice',
+      duration: practiceDuration,
+      rating: practiceRating,
+      notes: practiceNotes || undefined,
+    });
+
+    setShowPracticeModal(false);
+    setPracticeDuration(30);
+    setPracticeRating(0);
+    setPracticeNotes('');
+    setSelectedSkill(null);
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center py-12 bg-white rounded-lg shadow px-8">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="text-lg font-medium text-gray-900">Failed to load skill data</h3>
+          <p className="text-gray-500 mt-1">
+            {error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -236,19 +129,35 @@ export default function SkillBuilding() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold">{totalXp.toLocaleString()}</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 mx-auto mb-1 bg-white/20 rounded" />
+              ) : (
+                <div className="text-2xl font-bold">{totalXp.toLocaleString()}</div>
+              )}
               <div className="text-sm opacity-80">Total XP</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{mockProgress.length}</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 mx-auto mb-1 bg-white/20 rounded" />
+              ) : (
+                <div className="text-2xl font-bold">{progress.length}</div>
+              )}
               <div className="text-sm opacity-80">Skills Started</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{completedSkills}</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 mx-auto mb-1 bg-white/20 rounded" />
+              ) : (
+                <div className="text-2xl font-bold">{completedSkills}</div>
+              )}
               <div className="text-sm opacity-80">Completed</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{certCount}</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 mx-auto mb-1 bg-white/20 rounded" />
+              ) : (
+                <div className="text-2xl font-bold">{certCount}</div>
+              )}
               <div className="text-sm opacity-80">Certifications</div>
             </div>
           </div>
@@ -285,19 +194,38 @@ export default function SkillBuilding() {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Skill Categories</h2>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {mockSkillTrees.map((tree) => (
-                <SkillTreeCard
-                  key={tree.id}
-                  tree={tree}
-                  skillsCompleted={2}
-                  onSelect={() => {
-                    setSelectedTree(tree.id);
-                    setActiveTab('skills');
-                  }}
-                />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg shadow p-6">
+                    <Skeleton className="h-6 w-3/4 mb-3" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-4" />
+                    <Skeleton className="h-2 w-full rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {skillTrees.map((tree) => {
+                  const treeSkills = skills.filter(s => s.skillTreeId === tree.id);
+                  const treeCompleted = treeSkills.filter(s =>
+                    progress.some(p => p.skillId === s.id && ['completed', 'mastered'].includes(p.status))
+                  ).length;
+                  return (
+                    <SkillTreeCard
+                      key={tree.id}
+                      tree={tree}
+                      skillsCompleted={treeCompleted}
+                      onSelect={() => {
+                        setSelectedTree(tree.id);
+                        setActiveTab('skills');
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -307,7 +235,7 @@ export default function SkillBuilding() {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">
                 {selectedTree
-                  ? mockSkillTrees.find(t => t.id === selectedTree)?.name || 'Skills'
+                  ? skillTrees.find(t => t.id === selectedTree)?.name || 'Skills'
                   : 'All Skills'}
               </h2>
               {selectedTree && (
@@ -319,23 +247,38 @@ export default function SkillBuilding() {
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {mockSkills
-                .filter(s => !selectedTree || s.skillTreeId === selectedTree)
-                .map((skill) => (
-                  <SkillCard
-                    key={skill.id}
-                    skill={skill}
-                    progress={getProgressForSkill(skill.id)}
-                    onStart={() => console.log('Start skill:', skill.id)}
-                    onPractice={() => {
-                      setSelectedSkill(skill);
-                      setShowPracticeModal(true);
-                    }}
-                    onView={() => console.log('View skill:', skill.id)}
-                  />
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg shadow p-6">
+                    <Skeleton className="h-5 w-2/3 mb-2" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-3/4 mb-4" />
+                    <Skeleton className="h-8 w-24 rounded-lg" />
+                  </div>
                 ))}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {skills
+                  .filter(s => !selectedTree || s.skillTreeId === selectedTree)
+                  .map((skill) => (
+                    <SkillCard
+                      key={skill.id}
+                      skill={skill}
+                      progress={getProgressForSkill(skill.id)}
+                      onStart={() => handleStartSkill(skill.id)}
+                      onPractice={() => {
+                        setSelectedSkill(skill);
+                        setShowPracticeModal(true);
+                      }}
+                      onView={() => {
+                        setSelectedSkill(skill);
+                      }}
+                    />
+                  ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -343,7 +286,17 @@ export default function SkillBuilding() {
         {activeTab === 'certifications' && (
           <div className="space-y-6">
             <h2 className="text-lg font-semibold">My Certifications</h2>
-            {mockCertifications.length === 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg shadow p-6">
+                    <Skeleton className="h-12 w-12 rounded-full mb-3" />
+                    <Skeleton className="h-5 w-2/3 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : certifications.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow">
                 <div className="text-4xl mb-4">📜</div>
                 <h3 className="text-lg font-medium text-gray-900">No Certifications Yet</h3>
@@ -351,11 +304,11 @@ export default function SkillBuilding() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {mockCertifications.map((cert) => (
+                {certifications.map((cert) => (
                   <CertificationBadge
                     key={cert.id}
                     certification={cert}
-                    skillName={mockSkills.find(s => s.id === cert.skillId)?.name}
+                    skillName={skills.find(s => s.id === cert.skillId)?.name}
                     showDetails
                   />
                 ))}
@@ -374,37 +327,52 @@ export default function SkillBuilding() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">As Mentee</h3>
-                {mockMentorships.filter(m => m.menteeId === 'm1').length === 0 ? (
-                  <div className="text-center py-8 bg-white rounded-lg shadow text-gray-500">
-                    No active mentorships
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i}>
+                    <Skeleton className="h-5 w-24 mb-3" />
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <Skeleton className="h-5 w-2/3 mb-2" />
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {mockMentorships
-                      .filter(m => m.menteeId === 'm1')
-                      .map((m) => (
-                        <MentorshipCard
-                          key={m.id}
-                          mentorship={m}
-                          memberNames={{ mentor: 'Parent', mentee: 'Alex' }}
-                          skillName={mockSkills.find(s => s.id === m.skillId)?.name || 'Unknown'}
-                          isMentor={false}
-                        />
-                      ))}
-                  </div>
-                )}
+                ))}
               </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3">As Mentee</h3>
+                  {mentorships.filter(m => m.menteeId === 'm1').length === 0 ? (
+                    <div className="text-center py-8 bg-white rounded-lg shadow text-gray-500">
+                      No active mentorships
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {mentorships
+                        .filter(m => m.menteeId === 'm1')
+                        .map((m) => (
+                          <MentorshipCard
+                            key={m.id}
+                            mentorship={m}
+                            memberNames={{ mentor: 'Parent', mentee: 'Alex' }}
+                            skillName={skills.find(s => s.id === m.skillId)?.name || 'Unknown'}
+                            isMentor={false}
+                          />
+                        ))}
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">As Mentor</h3>
-                <div className="text-center py-8 bg-white rounded-lg shadow text-gray-500">
-                  You can mentor others once you reach Advanced level in a skill
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3">As Mentor</h3>
+                  <div className="text-center py-8 bg-white rounded-lg shadow text-gray-500">
+                    You can mentor others once you reach Advanced level in a skill
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -444,10 +412,17 @@ export default function SkillBuilding() {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-xl font-bold mb-4">Log Practice Session</h2>
             <p className="text-gray-600 mb-4">Skill: {selectedSkill.name}</p>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleLogPractice}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                <input type="number" min="5" step="5" defaultValue="30" className="w-full border rounded-lg px-3 py-2" />
+                <input
+                  type="number"
+                  min="5"
+                  step="5"
+                  value={practiceDuration}
+                  onChange={(e) => setPracticeDuration(Number(e.target.value))}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quality Rating</label>
@@ -456,7 +431,10 @@ export default function SkillBuilding() {
                     <button
                       key={rating}
                       type="button"
-                      className="flex-1 py-2 border rounded-lg hover:bg-gray-50"
+                      onClick={() => setPracticeRating(rating)}
+                      className={`flex-1 py-2 border rounded-lg hover:bg-gray-50 ${
+                        practiceRating === rating ? 'border-purple-600 bg-purple-50' : ''
+                      }`}
                     >
                       {'⭐'.repeat(rating)}
                     </button>
@@ -465,21 +443,34 @@ export default function SkillBuilding() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-                <textarea className="w-full border rounded-lg px-3 py-2" rows={3} placeholder="What did you practice?" />
+                <textarea
+                  className="w-full border rounded-lg px-3 py-2"
+                  rows={3}
+                  placeholder="What did you practice?"
+                  value={practiceNotes}
+                  onChange={(e) => setPracticeNotes(e.target.value)}
+                />
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button
                   type="button"
-                  onClick={() => setShowPracticeModal(false)}
+                  onClick={() => {
+                    setShowPracticeModal(false);
+                    setSelectedSkill(null);
+                    setPracticeDuration(30);
+                    setPracticeRating(0);
+                    setPracticeNotes('');
+                  }}
                   className="px-4 py-2 border rounded-lg hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  disabled={isUpdating}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Log Practice
+                  {isUpdating ? 'Saving...' : 'Log Practice'}
                 </button>
               </div>
             </form>
