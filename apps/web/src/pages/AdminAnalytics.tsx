@@ -720,14 +720,13 @@ function AuditLogTab({ householdId }: { householdId: string }) {
   const [actorFilter, setActorFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
 
-  const query = {
-    ...(actorFilter ? { actorId: actorFilter } : {}),
-    ...(actionFilter ? { action: actionFilter as any } : {}),
-  };
+  const query: Record<string, string> = {};
+  if (actorFilter) query.actorId = actorFilter;
+  if (actionFilter) query.action = actionFilter;
 
   const { data: logsData, isLoading: logsLoading, error: logsError } = useAuditLogs(
     householdId,
-    Object.keys(query).length > 0 ? query : undefined,
+    Object.keys(query).length > 0 ? (query as Parameters<typeof useAuditLogs>[1]) : undefined,
   );
   const { data: summary, isLoading: summaryLoading } = useAuditLogSummary(householdId);
 

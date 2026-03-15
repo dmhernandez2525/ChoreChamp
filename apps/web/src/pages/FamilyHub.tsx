@@ -416,10 +416,10 @@ function PhotoAlbumTab({ householdId }: { householdId: string }) {
       ) : albums?.albums && albums.albums.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {albums.albums
-            .filter((album: any) =>
-              activeFilter === 'All' ? true : album.category === activeFilter
+            .filter((album) =>
+              activeFilter === 'All' ? true : (album as unknown as Record<string, unknown>).category === activeFilter
             )
-            .map((album: any) => (
+            .map((album) => (
               <div
                 key={album.id}
                 className="rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
@@ -470,8 +470,8 @@ function ShareableAchievementsTab({ householdId }: { householdId: string }) {
   const { data: achievements, isLoading } = useShareableAchievements(householdId);
 
   const achievementList = achievements?.achievements;
-  const sharedCount = achievementList?.filter((a: any) => a.sharedAt)?.length ?? 0;
-  const totalViews = achievementList?.reduce((sum: number, a: any) => sum + (a.viewCount ?? 0), 0) ?? 0;
+  const sharedCount = achievementList?.filter((a) => a.shareCount > 0)?.length ?? 0;
+  const totalViews = achievementList?.reduce((sum: number, a) => sum + (a.viewCount ?? 0), 0) ?? 0;
   const cardCount = achievementList?.length ?? 0;
 
   return (
@@ -592,7 +592,7 @@ function ProgressiveUnlocksTab({ householdId }: { householdId: string }) {
   });
 
   const totalCount = unlockList?.length ?? 0;
-  const unlockedCount = unlockList?.filter((u: any) => u.unlocked)?.length ?? 0;
+  const unlockedCount = unlockList?.filter((u) => (u as unknown as Record<string, unknown>).unlocked)?.length ?? 0;
   const progressPct = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
 
   const categories = ['Feature', 'Cosmetic', 'Gamification', 'Social', 'Advanced'];

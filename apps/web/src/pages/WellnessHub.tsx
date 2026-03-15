@@ -118,7 +118,7 @@ function ActivityTab({ householdId }: { householdId: string }) {
 
   const isLoading = logsLoading || statsLoading;
 
-  const activityLogs: ActivityLog[] = Array.isArray(logs) ? logs : (logs as any)?.data ?? [];
+  const activityLogs = (Array.isArray(logs) ? logs : (logs as unknown as Record<string, unknown[]>)?.data ?? []) as ActivityLog[];
   const summary = Array.isArray(stats) ? stats[0] : stats;
 
   const totalMinutesToday = summary?.totalMinutesToday ?? 0;
@@ -302,7 +302,7 @@ function CheckInTab({ householdId }: { householdId: string }) {
   const [checkInNote, setCheckInNote] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const checkInList: WellnessCheckInType[] = Array.isArray(checkIns) ? checkIns : (checkIns as any)?.data ?? [];
+  const checkInList = (Array.isArray(checkIns) ? checkIns : (checkIns as unknown as Record<string, unknown[]>)?.data ?? []) as WellnessCheckInType[];
 
   const handleSubmit = () => {
     if (selectedMood === null) return;
@@ -435,12 +435,12 @@ function SleepTab({ householdId }: { householdId: string }) {
   const { data: stats, isLoading: statsLoading } = useSleepStats(householdId);
 
   const isLoading = logsLoading || statsLoading;
-  const sleepLogs: SleepLog[] = Array.isArray(logs) ? logs : (logs as any)?.data ?? [];
-  const sleepStats = stats as any;
+  const sleepLogs = (Array.isArray(logs) ? logs : (logs as unknown as Record<string, unknown[]>)?.data ?? []) as SleepLog[];
+  const sleepStats = stats as unknown as Record<string, unknown>;
 
-  const avgDuration = sleepStats?.averageDurationMinutes;
-  const avgQuality = sleepStats?.averageQuality;
-  const consistency = sleepStats?.consistencyScore;
+  const avgDuration = sleepStats?.averageDurationMinutes as number | undefined;
+  const avgQuality = sleepStats?.averageQuality as number | undefined;
+  const consistency = sleepStats?.consistencyScore as number | undefined;
 
   if (isLoading) return <LoadingSpinner label="Loading sleep data..." />;
 
@@ -530,7 +530,7 @@ function MealsTab({ householdId }: { householdId: string }) {
   });
   const deleteMealPlan = useDeleteMealPlan(householdId);
 
-  const mealPlans: MealPlan[] = Array.isArray(plans) ? plans : (plans as any)?.data ?? [];
+  const mealPlans = (Array.isArray(plans) ? plans : (plans as unknown as Record<string, unknown[]>)?.data ?? []) as MealPlan[];
 
   const mealsByType: Record<MealType, MealPlan[]> = {
     breakfast: [],
@@ -645,8 +645,8 @@ function MentalHealthTab({ householdId }: { householdId: string }) {
 
   const [gratitudeText, setGratitudeText] = useState('');
 
-  const resourceList: MentalHealthResource[] = Array.isArray(resources) ? resources : (resources as any)?.data ?? [];
-  const gratitudeList: GratitudeEntry[] = Array.isArray(entries) ? entries : (entries as any)?.data ?? [];
+  const resourceList = (Array.isArray(resources) ? resources : (resources as unknown as Record<string, unknown[]>)?.data ?? []) as MentalHealthResource[];
+  const gratitudeList = (Array.isArray(entries) ? entries : (entries as unknown as Record<string, unknown[]>)?.data ?? []) as GratitudeEntry[];
 
   const isLoading = resourcesLoading || entriesLoading;
 

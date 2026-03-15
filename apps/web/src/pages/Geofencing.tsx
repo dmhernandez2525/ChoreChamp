@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { cn } from '@chorechamp/ui';
-import { GeofenceList } from '../components/geofencing/GeofenceCard';
+import { GeofenceList, type Geofence } from '../components/geofencing/GeofenceCard';
 import { GEOFENCE_PRESETS } from '@chorechamp/types';
 import {
   useGeofences,
@@ -329,7 +329,7 @@ export function Geofencing() {
             <ErrorBanner message={String(geofencesError)} />
           ) : (
             <GeofenceList
-              geofences={geofenceList as any}
+              geofences={geofenceList as Geofence[]}
               memberCounts={memberCounts}
               onEdit={(id) => {
                 // TODO: implement edit geofence modal

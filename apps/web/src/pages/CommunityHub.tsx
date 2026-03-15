@@ -172,7 +172,7 @@ function ForumsTab({ householdId }: { householdId: string }) {
 }
 
 function SocialChallengesTab({ householdId }: { householdId: string }) {
-  const [statusFilter, _setStatusFilter] = useState<string | undefined>(undefined);
+  const [statusFilter] = useState<string | undefined>(undefined);
   const { data, isLoading } = useSocialChallenges(householdId, statusFilter);
 
   const challengeTypes = ['Competitive', 'Collaborative', 'Milestone'];

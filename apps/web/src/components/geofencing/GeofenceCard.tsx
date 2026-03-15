@@ -1,6 +1,6 @@
 import { cn } from '@chorechamp/ui';
 
-interface Geofence {
+export interface Geofence {
   id: string;
   name: string;
   type: string;
