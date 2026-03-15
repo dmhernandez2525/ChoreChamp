@@ -5,30 +5,49 @@ type AccountRole = keyof typeof TEST_CONFIG.accounts;
 
 /**
  * Sign in as a specific account role.
- * Uses real auth against the production API.
+ * Handles rate limiting by waiting and retrying.
  */
 export async function login(page: Page, role: AccountRole = 'parent') {
   const account = TEST_CONFIG.accounts[role];
+  const maxRetries = 3;
 
-  await page.goto('/login');
-  await page.waitForLoadState('networkidle');
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
 
-  // Fill login form
-  await page.getByLabel(/email/i).fill(account.email);
-  await page.getByLabel(/password/i).fill(account.password);
-  await page.getByRole('button', { name: /sign in/i }).click();
+    // Check for rate limit message before attempting
+    const rateLimited = await page.getByText(/too many request/i).isVisible().catch(() => false);
+    if (rateLimited) {
+      // Wait for rate limit window to reset (15 seconds)
+      await page.waitForTimeout(15000);
+      continue;
+    }
 
-  // Wait for redirect to dashboard (Render free tier can be slow)
-  await page.waitForURL('**/dashboard', { timeout: 30000 });
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1000);
+    await page.getByLabel(/email/i).fill(account.email);
+    await page.getByLabel(/password/i).fill(account.password);
+    await page.getByRole('button', { name: /sign in/i }).click();
+
+    // Wait for redirect or rate limit error
+    try {
+      await page.waitForURL('**/dashboard', { timeout: 30000 });
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+      return; // Success
+    } catch {
+      if (attempt < maxRetries - 1) {
+        // Wait for rate limit window to reset before retrying
+        await page.waitForTimeout(15000);
+        continue;
+      }
+      throw new Error(`Login failed after ${maxRetries} attempts`);
+    }
+  }
 }
 
 /**
  * Sign out the current user.
  */
 export async function logout(page: Page) {
-  // Click the Sign Out button in the header
   await page.getByRole('button', { name: /sign out/i }).click();
   await page.waitForURL('**/login', { timeout: 10000 });
 }
@@ -45,22 +64,25 @@ export async function openHousehold(page: Page) {
 /**
  * Ensure the page is authenticated. If the session expired and we see
  * the login page, re-authenticate and navigate back to the intended URL.
+ * Also handles delayed client-side auth redirects.
  */
 export async function ensureAuthenticated(page: Page, role: AccountRole = 'parent') {
-  // Check if we landed on the login page (session expired)
+  // Wait briefly for client-side auth check to potentially redirect
+  await page.waitForTimeout(1500);
+
   const currentUrl = page.url();
   const onLogin = currentUrl.includes('/login');
   const hasLoginForm = await page.getByLabel(/email/i).isVisible().catch(() => false);
 
   if (onLogin || hasLoginForm) {
-    // Save the intended destination before re-authenticating
     const intendedPath = new URL(currentUrl).pathname;
+
     await login(page, role);
 
-    // If we were trying to go somewhere other than dashboard, navigate there
     if (intendedPath && !intendedPath.includes('/login') && !intendedPath.includes('/dashboard')) {
       await page.goto(intendedPath);
       await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
     }
   }
 }

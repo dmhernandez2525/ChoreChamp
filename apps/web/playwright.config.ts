@@ -9,9 +9,9 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: false, // Run tests in order for video tutorial
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: 1, // Sequential for consistent video recording
-  timeout: process.env.PLAYWRIGHT_FAST_MODE ? 30000 : 60000,
+  timeout: process.env.PLAYWRIGHT_FAST_MODE ? 60000 : 90000,
   expect: {
     timeout: process.env.PLAYWRIGHT_FAST_MODE ? 5000 : 10000,
   },

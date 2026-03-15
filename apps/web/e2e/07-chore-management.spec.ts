@@ -49,6 +49,7 @@ test.describe('Chore Management', () => {
   test('create chore form has point value field', async ({ page }) => {
     await page.goto(`/households/${HID}/chores/new`);
     await page.waitForLoadState('networkidle');
+    await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
     // May be labeled "Points" or "Point Value" or be a number input
@@ -64,6 +65,7 @@ test.describe('Chore Management', () => {
   test('create chore form has difficulty selector', async ({ page }) => {
     await page.goto(`/households/${HID}/chores/new`);
     await page.waitForLoadState('networkidle');
+    await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
     const difficultyField = page.getByText(/difficulty/i).first();
