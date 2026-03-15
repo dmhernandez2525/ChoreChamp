@@ -19,21 +19,8 @@ import type {
   ParentDashboard,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
-
-// Helper to verify membership and get member
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
+import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 // Helper to get date range based on period
 function getDateRange(period: string): { start: Date; end: Date; label: string } {
@@ -77,6 +64,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const query = request.query as { period?: string };
 
     const membership = await verifyMembership(user.id, householdId);
@@ -391,6 +379,8 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
     const query = request.query as { period?: string };
 
     const membership = await verifyMembership(user.id, householdId);

@@ -5,6 +5,7 @@ import {
   useMembers,
   useCurrentBossBattle,
   useBossBattleHistory,
+  useBossBattleStats,
 } from '@chorechamp/api-client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -14,7 +15,6 @@ import {
   ContributionLeaderboard,
 } from '../components/bossbattle';
 import { Skeleton } from '../components/common';
-import type { FamilyParty } from '@chorechamp/types';
 
 export default function BossBattle() {
   const { householdId } = useParams<{ householdId: string }>();
@@ -24,29 +24,22 @@ export default function BossBattle() {
   const { data: members, isLoading: loadingMembers } = useMembers(householdId!);
   const { data: currentBoss, isLoading: loadingBoss } = useCurrentBossBattle(householdId!);
   const { data: bossHistory, isLoading: loadingHistory } = useBossBattleHistory(householdId!);
+  const { data: battleStats, isLoading: loadingStats } = useBossBattleStats(householdId!);
 
   const currentMember = members?.find((m) => m.userId === user?.id);
-  const isLoading = loadingHousehold || loadingMembers || loadingBoss || loadingHistory;
+  const isLoading = loadingHousehold || loadingMembers || loadingBoss || loadingHistory || loadingStats;
 
-  // TODO: Get party stats from API when endpoint is available
-  const mockParty: FamilyParty = {
+  const party = battleStats?.party ?? {
     householdId: householdId || '',
-    healthCurrent: 85,
+    healthCurrent: 0,
     healthMax: 100,
-    weeklyGoal: 20,
-    weeklyProgress: 14,
-    bossActive: !!currentBoss,
-    bossId: currentBoss?.id || null,
+    weeklyGoal: 0,
+    weeklyProgress: 0,
+    bossActive: false,
+    bossId: null,
   };
 
-  // TODO: Get contributor damage stats from API when endpoint is available
-  const contributors = members?.map((member, i) => ({
-    memberId: member.id,
-    memberName: member.name,
-    memberColor: member.color || '#3B82F6',
-    damage: Math.max(0, 30 - i * 8),
-    chores: Math.max(1, 5 - i),
-  })) || [];
+  const contributors = battleStats?.contributors ?? [];
 
   if (isLoading) {
     return (
@@ -137,7 +130,7 @@ export default function BossBattle() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Left column */}
             <div className="space-y-6">
-              <FamilyGoalProgress party={mockParty} />
+              <FamilyGoalProgress party={party} />
               <ContributionLeaderboard
                 contributors={contributors}
                 currentUserId={currentMember?.id}

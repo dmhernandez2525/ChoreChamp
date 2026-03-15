@@ -21,6 +21,7 @@ import {
   webhookSubscriptions,
 } from '@chorechamp/database';
 import { getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
+import { verifyMembership } from '../lib/membership';
 import { optionalApiKeyAuth, type ApiKeyAuthenticatedRequest } from '../middleware/api-key-auth';
 import { createLogger } from '../lib/logger';
 import type {
@@ -137,16 +138,8 @@ function getApiBaseUrl(): string {
   return process.env.BETTER_AUTH_URL || 'https://chorechamp-api-u0o9.onrender.com';
 }
 
-async function getMembership(userId: string, householdId: string) {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.userId, userId), eq(members.householdId, householdId)));
-  return membership ?? null;
-}
-
 async function requireParentMembership(userId: string, householdId: string) {
-  const membership = await getMembership(userId, householdId);
+  const membership = await verifyMembership(userId, householdId);
   if (!membership || membership.role !== 'parent') return null;
   return membership;
 }
@@ -959,7 +952,7 @@ export async function developerApiPlatformRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Household membership required.' });
     }
@@ -982,7 +975,7 @@ export async function developerApiPlatformRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Household membership required.' });
     }
@@ -1004,7 +997,7 @@ export async function developerApiPlatformRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = createMarketplaceRequestSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Household membership required.' });
     }
@@ -1182,7 +1175,7 @@ export async function developerApiPlatformRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Household membership required.' });
     }
@@ -1289,7 +1282,7 @@ export async function oauthPlatformRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const body = authorizeOAuthSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, body.householdId);
+    const membership = await verifyMembership(user.id, body.householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Parent membership required.' });
     }

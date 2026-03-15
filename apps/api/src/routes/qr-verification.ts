@@ -11,6 +11,8 @@ import {
 } from '@chorechamp/database/schema';
 import { QR_CODE_TEMPLATES } from '@chorechamp/types';
 import { randomBytes } from 'crypto';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Helper to generate unique code data
 function generateCodeData(): string {
@@ -127,7 +129,13 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   /**
    * GET /qr/templates - Get QR code templates
    */
-  fastify.get('/qr/templates', async () => {
+  fastify.get('/qr/templates', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return { templates: QR_CODE_TEMPLATES };
   });
 
@@ -141,8 +149,13 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { type?: string; status?: string };
-  }>('/qr/codes', async (request) => {
-    const { householdId } = request.params;
+  }>('/qr/codes', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { type, status } = request.query;
 
     const conditions = [eq(qrCodes.householdId, householdId)];
@@ -169,10 +182,15 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createQRCodeSchema>;
-  }>('/qr/codes', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/qr/codes', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createQRCodeSchema.parse(request.body);
-    const memberId = request.headers['x-member-id'] as string;
+    const memberId = membership.id;
 
     const codeData = generateCodeData();
     const codeUrl = `chorechamp://qr/${codeData}`;
@@ -209,8 +227,14 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string; codeId: string };
-  }>('/qr/codes/:codeId', async (request, reply) => {
-    const { householdId, codeId } = request.params;
+  }>('/qr/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { codeId } = request.params;
 
     const code = await db.query.qrCodes.findFirst({
       where: and(eq(qrCodes.id, codeId), eq(qrCodes.householdId, householdId)),
@@ -250,8 +274,14 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; codeId: string };
     Body: z.infer<typeof updateQRCodeSchema>;
-  }>('/qr/codes/:codeId', async (request, reply) => {
-    const { householdId, codeId } = request.params;
+  }>('/qr/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { codeId } = request.params;
     const data = updateQRCodeSchema.parse(request.body);
 
     const existing = await db.query.qrCodes.findFirst({
@@ -286,8 +316,14 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{
     Params: { householdId: string; codeId: string };
-  }>('/qr/codes/:codeId', async (request, reply) => {
-    const { householdId, codeId } = request.params;
+  }>('/qr/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { codeId } = request.params;
 
     const existing = await db.query.qrCodes.findFirst({
       where: and(eq(qrCodes.id, codeId), eq(qrCodes.householdId, householdId)),
@@ -307,8 +343,14 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
    */
   fastify.post<{
     Params: { householdId: string; codeId: string };
-  }>('/qr/codes/:codeId/regenerate', async (request, reply) => {
-    const { householdId, codeId } = request.params;
+  }>('/qr/codes/:codeId/regenerate', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { codeId } = request.params;
 
     const existing = await db.query.qrCodes.findFirst({
       where: and(eq(qrCodes.id, codeId), eq(qrCodes.householdId, householdId)),
@@ -344,14 +386,15 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof scanQRCodeSchema>;
-  }>('/qr/scan', async (request, reply) => {
-    const { householdId } = request.params;
-    const data = scanQRCodeSchema.parse(request.body);
-    const memberId = request.headers['x-member-id'] as string;
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
+  }>('/qr/scan', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    const data = scanQRCodeSchema.parse(request.body);
+    const memberId = membership.id;
 
     // Find the QR code
     const code = await db.query.qrCodes.findFirst({
@@ -626,8 +669,13 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
       limit?: string;
       offset?: string;
     };
-  }>('/qr/scans', async (request) => {
-    const { householdId } = request.params;
+  }>('/qr/scans', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, qrCodeId, status, limit = '50', offset = '0' } = request.query;
 
     const conditions = [eq(qrCodeScans.householdId, householdId)];
@@ -688,14 +736,15 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof checkoutEquipmentSchema>;
-  }>('/qr/equipment/checkout', async (request, reply) => {
-    const { householdId } = request.params;
-    const data = checkoutEquipmentSchema.parse(request.body);
-    const memberId = request.headers['x-member-id'] as string;
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
+  }>('/qr/equipment/checkout', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    const data = checkoutEquipmentSchema.parse(request.body);
+    const memberId = membership.id;
 
     // Verify QR code exists and is equipment type
     const code = await db.query.qrCodes.findFirst({
@@ -747,8 +796,14 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string; checkoutId: string };
     Body: z.infer<typeof checkinEquipmentSchema>;
-  }>('/qr/equipment/:checkoutId/checkin', async (request, reply) => {
-    const { householdId, checkoutId } = request.params;
+  }>('/qr/equipment/:checkoutId/checkin', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { checkoutId } = request.params;
     const data = checkinEquipmentSchema.parse(request.body);
 
     const checkout = await db.query.equipmentCheckouts.findFirst({
@@ -786,8 +841,13 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { status?: string; memberId?: string };
-  }>('/qr/equipment/checkouts', async (request) => {
-    const { householdId } = request.params;
+  }>('/qr/equipment/checkouts', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { status, memberId } = request.query;
 
     const conditions = [eq(equipmentCheckouts.householdId, householdId)];
@@ -830,9 +890,14 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; status?: string };
-  }>('/qr/checkpoints/progress', async (request) => {
-    const { householdId } = request.params;
-    const memberId = request.query.memberId || (request.headers['x-member-id'] as string);
+  }>('/qr/checkpoints/progress', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const memberId = request.query.memberId || membership.id;
     const { status } = request.query;
 
     const conditions = [eq(checkpointProgress.householdId, householdId)];
@@ -886,8 +951,13 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { days?: string };
-  }>('/qr/analytics', async (request) => {
-    const { householdId } = request.params;
+  }>('/qr/analytics', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const days = parseInt(request.query.days || '30');
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 

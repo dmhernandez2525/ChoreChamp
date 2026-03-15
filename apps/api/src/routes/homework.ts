@@ -12,6 +12,8 @@ import {
   members,
 } from '@chorechamp/database/schema';
 import { SUBJECT_COLORS, STUDY_METHODS } from '@chorechamp/types';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Zod schemas
 const createSubjectSchema = z.object({
@@ -128,11 +130,23 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   // Configuration Data
   // ========================================
 
-  fastify.get('/homework/colors', async () => {
+  fastify.get('/homework/colors', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return { colors: SUBJECT_COLORS };
   });
 
-  fastify.get('/homework/study-methods', async () => {
+  fastify.get('/homework/study-methods', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return { methods: STUDY_METHODS };
   });
 
@@ -143,8 +157,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; includeArchived?: string };
-  }>('/homework/subjects', async (request) => {
-    const { householdId } = request.params;
+  }>('/homework/subjects', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, includeArchived } = request.query;
 
     const conditions = [eq(subjects.householdId, householdId)];
@@ -179,11 +198,23 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createSubjectSchema> & { memberId: string };
-  }>('/homework/subjects', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/homework/subjects', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, ...data } = createSubjectSchema.extend({
       memberId: z.string().uuid(),
     }).parse(request.body);
+
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
     const [subject] = await db
       .insert(subjects)
@@ -200,8 +231,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; subjectId: string };
     Body: Partial<z.infer<typeof createSubjectSchema>> & { isArchived?: boolean; currentGrade?: string };
-  }>('/homework/subjects/:subjectId', async (request, reply) => {
-    const { householdId, subjectId } = request.params;
+  }>('/homework/subjects/:subjectId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { subjectId } = request.params;
     const data = request.body;
 
     const existing = await db.query.subjects.findFirst({
@@ -229,8 +266,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.delete<{
     Params: { householdId: string; subjectId: string };
-  }>('/homework/subjects/:subjectId', async (request, reply) => {
-    const { householdId, subjectId } = request.params;
+  }>('/homework/subjects/:subjectId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { subjectId } = request.params;
 
     const existing = await db.query.subjects.findFirst({
       where: and(
@@ -261,8 +304,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
       dueBefore?: string;
       dueAfter?: string;
     };
-  }>('/homework/assignments', async (request) => {
-    const { householdId } = request.params;
+  }>('/homework/assignments', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, subjectId, status, dueBefore, dueAfter } = request.query;
 
     const conditions = [eq(assignments.householdId, householdId)];
@@ -302,8 +350,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.get<{
     Params: { householdId: string; assignmentId: string };
-  }>('/homework/assignments/:assignmentId', async (request, reply) => {
-    const { householdId, assignmentId } = request.params;
+  }>('/homework/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { assignmentId } = request.params;
 
     const result = await db
       .select({
@@ -343,9 +397,21 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createAssignmentSchema>;
-  }>('/homework/assignments', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/homework/assignments', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createAssignmentSchema.parse(request.body);
+
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
     const [assignment] = await db
       .insert(assignments)
@@ -374,8 +440,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; assignmentId: string };
     Body: z.infer<typeof updateAssignmentSchema>;
-  }>('/homework/assignments/:assignmentId', async (request, reply) => {
-    const { householdId, assignmentId } = request.params;
+  }>('/homework/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { assignmentId } = request.params;
     const data = updateAssignmentSchema.parse(request.body);
 
     const existing = await db.query.assignments.findFirst({
@@ -419,8 +491,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.delete<{
     Params: { householdId: string; assignmentId: string };
-  }>('/homework/assignments/:assignmentId', async (request, reply) => {
-    const { householdId, assignmentId } = request.params;
+  }>('/homework/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { assignmentId } = request.params;
 
     const existing = await db.query.assignments.findFirst({
       where: and(
@@ -451,8 +529,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
       startBefore?: string;
       limit?: string;
     };
-  }>('/homework/sessions', async (request) => {
-    const { householdId } = request.params;
+  }>('/homework/sessions', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, subjectId, startAfter, startBefore, limit } = request.query;
 
     const conditions = [eq(studySessions.householdId, householdId)];
@@ -493,9 +576,21 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof startSessionSchema>;
-  }>('/homework/sessions/start', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/homework/sessions/start', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = startSessionSchema.parse(request.body);
+
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
     const [session] = await db
       .insert(studySessions)
@@ -519,8 +614,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; sessionId: string };
     Body: z.infer<typeof endSessionSchema>;
-  }>('/homework/sessions/:sessionId/end', async (request, reply) => {
-    const { householdId, sessionId } = request.params;
+  }>('/homework/sessions/:sessionId/end', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { sessionId } = request.params;
     const data = endSessionSchema.parse(request.body);
 
     const existing = await db.query.studySessions.findFirst({
@@ -574,8 +675,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.post<{
     Params: { householdId: string; sessionId: string };
-  }>('/homework/sessions/:sessionId/break', async (request, reply) => {
-    const { householdId, sessionId } = request.params;
+  }>('/homework/sessions/:sessionId/break', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { sessionId } = request.params;
 
     const existing = await db.query.studySessions.findFirst({
       where: and(
@@ -606,8 +713,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; activeOnly?: string };
-  }>('/homework/goals', async (request) => {
-    const { householdId } = request.params;
+  }>('/homework/goals', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, activeOnly } = request.query;
 
     const conditions = [eq(studyGoals.householdId, householdId)];
@@ -639,9 +751,21 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createGoalSchema>;
-  }>('/homework/goals', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/homework/goals', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createGoalSchema.parse(request.body);
+
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
     const [goal] = await db
       .insert(studyGoals)
@@ -668,8 +792,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; goalId: string };
     Body: { currentValue?: number; isActive?: boolean; isCompleted?: boolean };
-  }>('/homework/goals/:goalId', async (request, reply) => {
-    const { householdId, goalId } = request.params;
+  }>('/homework/goals/:goalId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { goalId } = request.params;
     const data = request.body;
 
     const existing = await db.query.studyGoals.findFirst({
@@ -707,8 +837,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.get<{
     Params: { householdId: string; memberId: string };
-  }>('/homework/streaks/:memberId', async (request) => {
-    const { householdId, memberId } = request.params;
+  }>('/homework/streaks/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params;
 
     let streak = await db.query.studyStreaks.findFirst({
       where: and(
@@ -737,8 +873,13 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; date?: string; planType?: string };
-  }>('/homework/plans', async (request) => {
-    const { householdId } = request.params;
+  }>('/homework/plans', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, date, planType } = request.query;
 
     const conditions = [eq(studyPlans.householdId, householdId)];
@@ -757,9 +898,21 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createPlanSchema>;
-  }>('/homework/plans', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/homework/plans', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createPlanSchema.parse(request.body);
+
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
     const totalPlannedMinutes = data.plannedItems.reduce(
       (sum, item) => sum + item.plannedMinutes, 0
@@ -786,8 +939,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
     Body: {
       plannedItems?: z.infer<typeof createPlanSchema>['plannedItems'];
     };
-  }>('/homework/plans/:planId', async (request, reply) => {
-    const { householdId, planId } = request.params;
+  }>('/homework/plans/:planId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { planId } = request.params;
     const { plannedItems } = request.body;
 
     const existing = await db.query.studyPlans.findFirst({
@@ -839,8 +998,14 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string; memberId: string };
     Querystring: { period?: string; startDate?: string; endDate?: string };
-  }>('/homework/stats/:memberId', async (request) => {
-    const { householdId, memberId } = request.params;
+  }>('/homework/stats/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params;
     const { period = 'week', startDate, endDate } = request.query;
 
     let start: Date;

@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
-import { tags, choreTags } from '@chorechamp/database/schema';
+import { tags, choreTags, chores } from '@chorechamp/database/schema';
 import { db } from '../lib/db';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 const createTagSchema = z.object({
   name: z.string().min(1).max(50),
@@ -19,7 +20,12 @@ export async function tagRoutes(app: FastifyInstance) {
   app.get('/:householdId/tags', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const result = await db
       .select()
@@ -34,7 +40,12 @@ export async function tagRoutes(app: FastifyInstance) {
   app.post('/:householdId/tags', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createTagSchema.parse(request.body);
 
     const [tag] = await db
@@ -53,7 +64,12 @@ export async function tagRoutes(app: FastifyInstance) {
   app.delete('/:householdId/tags/:tagId', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId, tagId } = request.params as { householdId: string; tagId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     await db
       .delete(tags)
@@ -66,7 +82,12 @@ export async function tagRoutes(app: FastifyInstance) {
   app.get('/:householdId/chores/:choreId/tags', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { choreId } = request.params as { householdId: string; choreId: string };
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const result = await db
       .select({
@@ -86,8 +107,23 @@ export async function tagRoutes(app: FastifyInstance) {
   app.post('/:householdId/chores/:choreId/tags', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { choreId } = request.params as { householdId: string; choreId: string };
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = addChoreTagSchema.parse(request.body);
+
+    // Verify chore belongs to this household
+    const [chore] = await db
+      .select({ id: chores.id })
+      .from(chores)
+      .where(and(eq(chores.id, choreId), eq(chores.householdId, householdId)));
+
+    if (!chore) {
+      return reply.status(404).send({ error: 'Chore not found in this household' });
+    }
 
     const [choreTag] = await db
       .insert(choreTags)
@@ -105,7 +141,12 @@ export async function tagRoutes(app: FastifyInstance) {
   app.delete('/:householdId/chores/:choreId/tags/:tagId', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { choreId, tagId } = request.params as { householdId: string; choreId: string; tagId: string };
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId, tagId } = request.params as { householdId: string; choreId: string; tagId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     await db
       .delete(choreTags)

@@ -14,12 +14,21 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Star, Clock } from 'lucide-react';
 import type { Chore, ChorePriority, Member } from '@chorechamp/types';
 import { useSelectionStore } from '@/stores/selection-store';
 import { useBoardStore } from '@/stores/board-store';
+import { InlineEditCell, InlineSelectCell } from './InlineEditCell';
 
 interface ListViewProps {
   chores: Chore[];
   members?: Member[];
   onChoreClick?: (choreId: string) => void;
+  onUpdateChore?: (choreId: string, field: string, value: string) => void;
 }
+
+const PRIORITY_OPTIONS = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' },
+];
 
 const priorityOrder: Record<ChorePriority, number> = {
   urgent: 0,
@@ -37,7 +46,7 @@ const priorityBadge: Record<string, string> = {
 
 const columnHelper = createColumnHelper<Chore>();
 
-export function ListView({ chores, members, onChoreClick }: ListViewProps) {
+export function ListView({ chores, members, onChoreClick, onUpdateChore }: ListViewProps) {
   const { selectedIds, toggle, selectAll, deselectAll } = useSelectionStore();
   const { groupBy } = useBoardStore();
 
@@ -88,7 +97,16 @@ export function ListView({ chores, members, onChoreClick }: ListViewProps) {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <span className="text-lg">{row.original.icon}</span>
-          <span className="font-medium text-gray-900">{row.original.title}</span>
+          {onUpdateChore ? (
+            <div onClick={(e) => e.stopPropagation()}>
+              <InlineEditCell
+                value={row.original.title}
+                onSave={(val) => onUpdateChore(row.original.id, 'title', val)}
+              />
+            </div>
+          ) : (
+            <span className="font-medium text-gray-900">{row.original.title}</span>
+          )}
         </div>
       ),
     }),
@@ -96,8 +114,23 @@ export function ListView({ chores, members, onChoreClick }: ListViewProps) {
     // Priority
     columnHelper.accessor('priority', {
       header: 'Priority',
-      cell: ({ getValue }) => {
+      cell: ({ getValue, row }) => {
         const priority = getValue();
+        if (onUpdateChore) {
+          return (
+            <div onClick={(e) => e.stopPropagation()}>
+              <InlineSelectCell
+                value={priority}
+                options={PRIORITY_OPTIONS}
+                onSave={(val) => onUpdateChore(row.original.id, 'priority', val)}
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+                  priorityBadge[priority] || 'bg-gray-100 text-gray-600'
+                )}
+              />
+            </div>
+          );
+        }
         return (
           <span className={cn(
             'rounded-full px-2 py-0.5 text-xs font-medium capitalize',
@@ -192,7 +225,7 @@ export function ListView({ chores, members, onChoreClick }: ListViewProps) {
         );
       },
     }),
-  ], [chores, memberMap, selectedIds, toggle, selectAll, deselectAll]);
+  ], [chores, memberMap, selectedIds, toggle, selectAll, deselectAll, onUpdateChore]);
 
   const table = useReactTable({
     data: chores,

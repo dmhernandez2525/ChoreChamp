@@ -12,21 +12,7 @@ import type {
   PayoutFrequency,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
-
-// Helper to verify membership and get member
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
+import { verifyMembership } from '../lib/membership';
 
 // Helper to convert database row to AllowanceSettings type
 function toAllowanceSettings(row: typeof allowanceSettings.$inferSelect): AllowanceSettings {
@@ -490,24 +476,34 @@ export async function allowanceRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Payout is not pending' });
     }
 
-    // Deduct points from member
-    await db.update(members)
-      .set({
-        pointsCurrent: sql`${members.pointsCurrent} - ${payout.pointsConverted}`,
-      })
-      .where(eq(members.id, payout.memberId));
+    // Deduct points and update payout status atomically
+    const [updated] = await db.transaction(async (tx) => {
+      // Check sufficient balance before deducting
+      const [currentMember] = await tx.select({ pointsCurrent: members.pointsCurrent })
+        .from(members).where(eq(members.id, payout.memberId));
+      if (!currentMember || (currentMember.pointsCurrent || 0) < payout.pointsConverted) {
+        throw Object.assign(new Error('Insufficient points for payout'), { statusCode: 400 });
+      }
 
-    // Update payout status
-    const [updated] = await db.update(allowancePayouts)
-      .set({
-        status: 'paid',
-        paidAt: new Date(),
-        paidBy: membership.id,
-        notes: body.notes || null,
-        updatedAt: new Date(),
-      })
-      .where(eq(allowancePayouts.id, payoutId))
-      .returning();
+      // Deduct points from member
+      await tx.update(members)
+        .set({
+          pointsCurrent: sql`${members.pointsCurrent} - ${payout.pointsConverted}`,
+        })
+        .where(eq(members.id, payout.memberId));
+
+      // Update payout status
+      return await tx.update(allowancePayouts)
+        .set({
+          status: 'paid',
+          paidAt: new Date(),
+          paidBy: membership.id,
+          notes: body.notes || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(allowancePayouts.id, payoutId))
+        .returning();
+    });
 
     return toAllowancePayout(updated);
   });

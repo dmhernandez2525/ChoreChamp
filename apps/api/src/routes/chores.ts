@@ -8,6 +8,8 @@ import { calculateChorePoints, getStreakBonus } from '@chorechamp/gamification';
 import type { Difficulty } from '@chorechamp/gamification';
 import { Server } from 'socket.io';
 import { emitToHousehold } from '../lib/socket';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 // Validation schemas
 const createChoreSchema = z.object({
@@ -69,42 +71,61 @@ function mapDifficulty(choreDifficulty: string | null): Difficulty {
   return map[choreDifficulty || 'medium'] || 'medium';
 }
 
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
-async function verifyParentMembership(
-  userId: string,
-  householdId: string
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId),
-      eq(members.role, 'parent')
-    ));
-  return !!membership;
-}
-
 export async function choreRoutes(fastify: FastifyInstance) {
+  // Get pending completions awaiting approval
+  fastify.get('/pending-completions', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can view pending completions',
+      });
+    }
+
+    const pendingCompletions = await db
+      .select({
+        id: choreCompletions.id,
+        choreId: choreCompletions.choreId,
+        householdId: choreCompletions.householdId,
+        memberId: choreCompletions.memberId,
+        scheduledDate: choreCompletions.scheduledDate,
+        completedAt: choreCompletions.completedAt,
+        status: choreCompletions.status,
+        photoUrl: choreCompletions.photoUrl,
+        pointsAwarded: choreCompletions.pointsAwarded,
+        startedAt: choreCompletions.startedAt,
+        durationSeconds: choreCompletions.durationSeconds,
+        createdAt: choreCompletions.createdAt,
+        choreName: chores.title,
+        choreIcon: chores.icon,
+        memberName: members.name,
+        memberColor: members.color,
+      })
+      .from(choreCompletions)
+      .innerJoin(chores, eq(choreCompletions.choreId, chores.id))
+      .innerJoin(members, eq(choreCompletions.memberId, members.id))
+      .where(and(
+        eq(choreCompletions.householdId, householdId),
+        eq(choreCompletions.status, 'pending')
+      ))
+      .orderBy(desc(choreCompletions.completedAt));
+
+    return reply.send(pendingCompletions);
+  });
+
   // Get all chores for a household
   fastify.get('/', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -123,7 +144,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
     ];
 
     if (query.search) {
-      conditions.push(ilike(chores.title, `%${query.search}%`));
+      const escapedSearch = query.search.replace(/[%_\\]/g, '\\$&');
+      conditions.push(ilike(chores.title, `%${escapedSearch}%`));
     }
     if (query.category) {
       conditions.push(eq(chores.category, query.category));
@@ -167,6 +189,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = createChoreSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -222,6 +245,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -255,6 +280,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
     const body = updateChoreSchema.parse(request.body);
 
     const isParent = await verifyParentMembership(user.id, householdId);
@@ -293,6 +320,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
 
     const isParent = await verifyParentMembership(user.id, householdId);
     if (!isParent) {
@@ -331,6 +360,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
     const body = completeChoreSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -384,57 +415,59 @@ export async function choreRoutes(fastify: FastifyInstance) {
     // Determine initial status
     const status = chore.requiresApproval ? 'pending' : 'approved';
 
-    // Create completion
-    const [completion] = await db
-      .insert(choreCompletions)
-      .values({
-        choreId,
-        householdId,
-        memberId: membership.id,
-        scheduledDate: body.scheduledDate,
-        status,
-        photoUrl: body.photoUrl,
-        pointsAwarded: status === 'approved' ? totalPoints : 0,
-        streakDay: memberCurrentStreak + 1,
-        startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
-        durationSeconds: body.durationSeconds,
-      })
-      .returning();
+    // Wrap insert + point/streak updates in a transaction to prevent race conditions
+    const { completion } = await db.transaction(async (tx) => {
+      const [comp] = await tx
+        .insert(choreCompletions)
+        .values({
+          choreId,
+          householdId,
+          memberId: membership.id,
+          scheduledDate: body.scheduledDate,
+          status,
+          photoUrl: body.photoUrl,
+          pointsAwarded: status === 'approved' ? totalPoints : 0,
+          streakDay: memberCurrentStreak + 1,
+          startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
+          durationSeconds: body.durationSeconds,
+        })
+        .returning();
 
-    // If auto-approved, award points and update streak
-    if (status === 'approved') {
-      const today = new Date().toISOString().split('T')[0];
-      const lastCompleted = membership.streakLastCompletedDate;
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      if (status === 'approved') {
+        const today = new Date().toISOString().split('T')[0];
+        const lastCompleted = membership.streakLastCompletedDate;
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-      let newStreak = memberCurrentStreak;
-      if (lastCompleted === yesterday || lastCompleted === today) {
-        newStreak = memberCurrentStreak + 1;
-      } else if (lastCompleted !== today) {
-        newStreak = 1; // Reset streak
+        let newStreak = memberCurrentStreak;
+        if (lastCompleted === yesterday || lastCompleted === today) {
+          newStreak = memberCurrentStreak + 1;
+        } else if (lastCompleted !== today) {
+          newStreak = 1;
+        }
+
+        await tx
+          .update(members)
+          .set({
+            pointsCurrent: memberCurrentPoints + totalPoints,
+            pointsLifetime: memberLifetimePoints + totalPoints,
+            streakCurrent: newStreak,
+            streakLongest: Math.max(memberLongestStreak, newStreak),
+            streakLastCompletedDate: today,
+            updatedAt: new Date(),
+          })
+          .where(eq(members.id, membership.id));
+
+        await tx
+          .update(households)
+          .set({
+            totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(households.id, householdId));
       }
 
-      await db
-        .update(members)
-        .set({
-          pointsCurrent: memberCurrentPoints + totalPoints,
-          pointsLifetime: memberLifetimePoints + totalPoints,
-          streakCurrent: newStreak,
-          streakLongest: Math.max(memberLongestStreak, newStreak),
-          streakLastCompletedDate: today,
-          updatedAt: new Date(),
-        })
-        .where(eq(members.id, membership.id));
-
-      // Update household stats
-      await db
-        .update(households)
-        .set({
-          totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(eq(households.id, householdId));
-    }
+      return { completion: comp };
+    });
 
     // Emit real-time event
     const io = fastify.io as Server;
@@ -464,6 +497,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
     const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
 
     const membership = await verifyMembership(user.id, householdId);
@@ -474,8 +509,11 @@ export async function choreRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Build conditions
-    const conditions = [eq(choreCompletions.choreId, choreId)];
+    // Build conditions (scope to household for defense in depth)
+    const conditions = [
+      eq(choreCompletions.choreId, choreId),
+      eq(choreCompletions.householdId, householdId),
+    ];
     if (startDate) {
       conditions.push(gte(choreCompletions.scheduledDate, startDate));
     }
@@ -497,6 +535,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, completionId } = request.params as { householdId: string; completionId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(completionId, 'completionId');
 
     const isParent = await verifyParentMembership(user.id, householdId);
     if (!isParent) {
@@ -507,6 +547,12 @@ export async function choreRoutes(fastify: FastifyInstance) {
     }
 
     const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
 
     // Get the completion
     const [completion] = await db
@@ -531,11 +577,25 @@ export async function choreRoutes(fastify: FastifyInstance) {
       .from(chores)
       .where(eq(chores.id, completion.choreId));
 
+    if (!chore) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Chore not found',
+      });
+    }
+
     // Get the member who completed it
     const [completingMember] = await db
       .select()
       .from(members)
       .where(eq(members.id, completion.memberId));
+
+    if (!completingMember) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Completing member not found',
+      });
+    }
 
     // Extract member stats with null handling
     const currentStreak = completingMember.streakCurrent || 0;
@@ -551,50 +611,52 @@ export async function choreRoutes(fastify: FastifyInstance) {
     const milestoneBonus = getStreakBonus(currentStreak + 1);
     const totalPoints = basePoints + milestoneBonus;
 
-    // Update completion
-    const [updatedCompletion] = await db
-      .update(choreCompletions)
-      .set({
-        status: 'approved',
-        approvedBy: membership!.id,
-        approvedAt: new Date(),
-        pointsAwarded: totalPoints,
-      })
-      .where(eq(choreCompletions.id, completionId))
-      .returning();
+    // Wrap approval + point/streak updates in a transaction
+    const { updatedCompletion } = await db.transaction(async (tx) => {
+      const [comp] = await tx
+        .update(choreCompletions)
+        .set({
+          status: 'approved',
+          approvedBy: membership.id,
+          approvedAt: new Date(),
+          pointsAwarded: totalPoints,
+        })
+        .where(eq(choreCompletions.id, completionId))
+        .returning();
 
-    // Award points and update streak
-    const today = new Date().toISOString().split('T')[0];
-    const lastCompleted = completingMember.streakLastCompletedDate;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      const lastCompleted = completingMember.streakLastCompletedDate;
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-    let newStreak = currentStreak;
-    if (lastCompleted === yesterday || lastCompleted === today) {
-      newStreak = currentStreak + 1;
-    } else if (lastCompleted !== today) {
-      newStreak = 1;
-    }
+      let newStreak = currentStreak;
+      if (lastCompleted === yesterday || lastCompleted === today) {
+        newStreak = currentStreak + 1;
+      } else if (lastCompleted !== today) {
+        newStreak = 1;
+      }
 
-    await db
-      .update(members)
-      .set({
-        pointsCurrent: currentPoints + totalPoints,
-        pointsLifetime: lifetimePoints + totalPoints,
-        streakCurrent: newStreak,
-        streakLongest: Math.max(longestStreak, newStreak),
-        streakLastCompletedDate: today,
-        updatedAt: new Date(),
-      })
-      .where(eq(members.id, completion.memberId));
+      await tx
+        .update(members)
+        .set({
+          pointsCurrent: currentPoints + totalPoints,
+          pointsLifetime: lifetimePoints + totalPoints,
+          streakCurrent: newStreak,
+          streakLongest: Math.max(longestStreak, newStreak),
+          streakLastCompletedDate: today,
+          updatedAt: new Date(),
+        })
+        .where(eq(members.id, completion.memberId));
 
-    // Update household stats
-    await db
-      .update(households)
-      .set({
-        totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
-        updatedAt: new Date(),
-      })
-      .where(eq(households.id, householdId));
+      await tx
+        .update(households)
+        .set({
+          totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(households.id, householdId));
+
+      return { updatedCompletion: comp };
+    });
 
     // Emit real-time event
     const io = fastify.io as Server;
@@ -605,7 +667,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
         memberId: completion.memberId,
         memberName: completingMember.name,
         pointsAwarded: totalPoints,
-        approvedBy: membership!.name,
+        approvedBy: membership.name,
         timestamp: new Date().toISOString(),
       });
     }
@@ -622,6 +684,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, completionId } = request.params as { householdId: string; completionId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(completionId, 'completionId');
     const { reason } = request.body as { reason?: string };
 
     const isParent = await verifyParentMembership(user.id, householdId);
@@ -633,12 +697,18 @@ export async function choreRoutes(fastify: FastifyInstance) {
     }
 
     const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
 
     const [completion] = await db
       .update(choreCompletions)
       .set({
         status: 'rejected',
-        approvedBy: membership!.id,
+        approvedBy: membership.id,
         approvedAt: new Date(),
         rejectionReason: reason,
       })
@@ -664,7 +734,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
         choreId: completion.choreId,
         memberId: completion.memberId,
         reason,
-        rejectedBy: membership!.name,
+        rejectedBy: membership.name,
         timestamp: new Date().toISOString(),
       });
     }

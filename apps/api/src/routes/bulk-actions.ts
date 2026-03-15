@@ -2,10 +2,12 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, inArray } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { chores, choreActivityLog, members } from '@chorechamp/database';
+import { chores, choreActivityLog } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { emitToHousehold } from '../lib/socket';
 import { Server } from 'socket.io';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 const bulkUpdateSchema = z.object({
   choreIds: z.array(z.string().uuid()).min(1).max(50),
@@ -29,21 +31,6 @@ const bulkDeleteSchema = z.object({
   choreIds: z.array(z.string().uuid()).min(1).max(50),
 });
 
-async function verifyParentMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId),
-      eq(members.role, 'parent')
-    ));
-  return membership || null;
-}
-
 export async function bulkActionRoutes(fastify: FastifyInstance) {
   // Bulk update chores (assign, change category/priority)
   fastify.patch('/bulk', {
@@ -51,10 +38,11 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = bulkUpdateSchema.parse(request.body);
 
-    const membership = await verifyParentMembership(user.id, householdId);
-    if (!membership) {
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Only parents can perform bulk actions',
@@ -123,6 +111,7 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = bulkReorderSchema.parse(request.body);
 
     const membership = await verifyParentMembership(user.id, householdId);
@@ -163,6 +152,7 @@ export async function bulkActionRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = bulkDeleteSchema.parse(request.body);
 
     const membership = await verifyParentMembership(user.id, householdId);

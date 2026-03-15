@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { chores } from '@chorechamp/database/schema';
 import { db } from '../lib/db';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
 
 const exportFormatSchema = z.enum(['csv', 'json']).default('json');
 
@@ -117,7 +118,17 @@ export async function importExportRoutes(app: FastifyInstance) {
   app.get('/:householdId/chores/export', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
     const query = request.query as { format?: string };
     const format = exportFormatSchema.parse(query.format);
 
@@ -134,8 +145,7 @@ export async function importExportRoutes(app: FastifyInstance) {
         .send(csv);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const exportData = allChores.map((chore: any) => ({
+    const exportData = allChores.map((chore) => ({
       title: chore.title,
       description: chore.description,
       icon: chore.icon,
@@ -162,6 +172,15 @@ export async function importExportRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can import chores',
+      });
+    }
+
     const { content, format: explicitFormat } = request.body as { content: string; format?: string };
 
     const format = explicitFormat ?? detectFormat(content);
@@ -170,8 +189,15 @@ export async function importExportRoutes(app: FastifyInstance) {
     if (format === 'csv') {
       rawRows = parseCSV(content);
     } else {
-      const parsed = JSON.parse(content);
-      rawRows = Array.isArray(parsed) ? parsed : [parsed];
+      try {
+        const parsed = JSON.parse(content);
+        rawRows = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: 'Invalid JSON format in import content',
+        });
+      }
     }
 
     let imported = 0;

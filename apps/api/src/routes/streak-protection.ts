@@ -18,24 +18,11 @@ import type {
 } from '@chorechamp/types';
 import { getRiskLevelFromScore, getNextMilestone } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // In-memory storage (in production, use database)
 const protectionSettings = new Map<string, StreakProtectionSettings>();
 const streakAlerts = new Map<string, StreakAlert[]>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(
-      and(eq(members.householdId, householdId), eq(members.userId, userId))
-    );
-  return membership || null;
-}
 
 // Get default settings
 function getDefaultSettings(): StreakProtectionSettings {
@@ -429,6 +416,11 @@ export async function streakProtectionRoutes(fastify: FastifyInstance) {
 
     if (!member) {
       return reply.status(404).send({ error: 'Member not found' });
+    }
+
+    // Only allow using your own freeze, or a parent can use a child's freeze
+    if (membership.id !== body.memberId && membership.role !== 'parent') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can use another member\'s streak freeze' });
     }
 
     const freezesAvailable = member.streakFreezesAvailable || 0;

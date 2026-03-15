@@ -1,5 +1,7 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 const forumCategoryValues = [
   'general', 'tips', 'questions', 'showcase', 'feedback', 'off_topic',
@@ -86,18 +88,17 @@ const createCommunityEventSchema = z.object({
   maxParticipants: z.number().int().min(1).optional().nullable(),
 });
 
-function requireAuth(request: FastifyRequest, reply: FastifyReply) {
-  if (!request.headers.authorization) {
-    reply.status(401).send({ error: 'Unauthorized' });
-  }
-}
-
 export async function communitySocialRoutes(fastify: FastifyInstance) {
-  fastify.addHook('onRequest', requireAuth);
 
   // ===== F16.1: Community Forums =====
 
-  fastify.get('/forums/posts', async (request) => {
+  fastify.get('/forums/posts', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { category, limit, offset } = request.query as Record<string, string | undefined>;
     return {
       posts: [],
@@ -107,6 +108,12 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/forums/posts', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createForumPostSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -119,7 +126,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/forums/posts/:postId', async (request) => {
+  fastify.get('/forums/posts/:postId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; postId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { postId } = request.params as { postId: string };
     return {
       post: {
@@ -137,6 +150,12 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/forums/posts/:postId/replies', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; postId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { postId } = request.params as { postId: string };
     const body = createForumReplySchema.parse(request.body);
     return reply.status(201).send({
@@ -149,7 +168,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.post('/forums/posts/:postId/like', async (request) => {
+  fastify.post('/forums/posts/:postId/like', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; postId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { postId } = request.params as { postId: string };
     return {
       postId,
@@ -158,13 +183,25 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.delete('/forums/posts/:postId', async (_request, reply) => {
+  fastify.delete('/forums/posts/:postId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 
   // ===== F16.2: Social Challenges =====
 
-  fastify.get('/social-challenges', async (request) => {
+  fastify.get('/social-challenges', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { status } = request.query as Record<string, string | undefined>;
     return {
       challenges: [],
@@ -174,6 +211,12 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/social-challenges', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createSocialChallengeSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -185,7 +228,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/social-challenges/:challengeId', async (request) => {
+  fastify.get('/social-challenges/:challengeId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; challengeId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { challengeId } = request.params as { challengeId: string };
     return {
       challenge: {
@@ -205,7 +254,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.post('/social-challenges/:challengeId/join', async (request) => {
+  fastify.post('/social-challenges/:challengeId/join', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; challengeId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { challengeId } = request.params as { challengeId: string };
     return {
       challengeId,
@@ -213,7 +268,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.post('/social-challenges/:challengeId/progress', async (request) => {
+  fastify.post('/social-challenges/:challengeId/progress', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; challengeId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { challengeId } = request.params as { challengeId: string };
     const body = updateChallengeProgressSchema.parse(request.body);
     return {
@@ -226,7 +287,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
 
   // ===== F16.3: Social Sharing =====
 
-  fastify.get('/social/feed', async (request) => {
+  fastify.get('/social/feed', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { visibility, limit, offset } = request.query as Record<string, string | undefined>;
     return {
       posts: [],
@@ -236,6 +303,12 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/social/posts', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createSocialPostSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -247,7 +320,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/social/posts/:postId', async (request) => {
+  fastify.get('/social/posts/:postId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; postId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { postId } = request.params as { postId: string };
     return {
       post: {
@@ -265,6 +344,12 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/social/posts/:postId/comments', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; postId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { postId } = request.params as { postId: string };
     const body = createCommentSchema.parse(request.body);
     return reply.status(201).send({
@@ -275,7 +360,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.post('/social/posts/:postId/like', async (request) => {
+  fastify.post('/social/posts/:postId/like', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; postId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { postId } = request.params as { postId: string };
     return {
       postId,
@@ -284,13 +375,25 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.delete('/social/posts/:postId', async (_request, reply) => {
+  fastify.delete('/social/posts/:postId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 
   // ===== F16.4: Friend System =====
 
-  fastify.get('/friends', async () => {
+  fastify.get('/friends', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       friends: [],
       pending: [],
@@ -299,6 +402,12 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/friends/request', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createFriendRequestSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -309,7 +418,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.patch('/friends/:connectionId/respond', async (request) => {
+  fastify.patch('/friends/:connectionId/respond', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; connectionId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { connectionId } = request.params as { connectionId: string };
     const body = respondToFriendRequestSchema.parse(request.body);
     return {
@@ -319,11 +434,23 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.delete('/friends/:connectionId', async (_request, reply) => {
+  fastify.delete('/friends/:connectionId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 
-  fastify.get('/friends/suggestions', async () => {
+  fastify.get('/friends/suggestions', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       suggestions: [],
     };
@@ -331,7 +458,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
 
   // ===== F16.5: Community Events =====
 
-  fastify.get('/community-events', async (request) => {
+  fastify.get('/community-events', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { status, eventType } = request.query as Record<string, string | undefined>;
     return {
       events: [],
@@ -341,6 +474,12 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/community-events', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createCommunityEventSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -355,7 +494,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/community-events/:eventId', async (request) => {
+  fastify.get('/community-events/:eventId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; eventId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { eventId } = request.params as { eventId: string };
     return {
       event: {
@@ -376,7 +521,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.post('/community-events/:eventId/join', async (request) => {
+  fastify.post('/community-events/:eventId/join', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; eventId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { eventId } = request.params as { eventId: string };
     return {
       eventId,
@@ -384,7 +535,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.patch('/community-events/:eventId', async (request) => {
+  fastify.patch('/community-events/:eventId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; eventId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { eventId } = request.params as { eventId: string };
     const body = request.body as Record<string, unknown>;
     return {
@@ -394,7 +551,13 @@ export async function communitySocialRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.delete('/community-events/:eventId', async (_request, reply) => {
+  fastify.delete('/community-events/:eventId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 }

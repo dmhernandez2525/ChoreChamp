@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { db } from '@chorechamp/database';
 import { members, chores, choreSchedules, choreCompletions, rewards } from '@chorechamp/database/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type {
   VoiceCommand,
   VoiceResponse,
@@ -11,25 +11,12 @@ import type {
 } from '@chorechamp/types';
 import { parseVoiceCommand } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 import { randomUUID } from 'crypto';
 
 // In-memory storage (in production, use database/redis)
 const voiceSessions = new Map<string, VoiceSession>();
 const voiceSettings = new Map<string, VoiceSettings>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(
-      and(eq(members.householdId, householdId), eq(members.userId, userId))
-    );
-  return membership || null;
-}
 
 // Helper to get default settings
 function getDefaultSettings(): VoiceSettings {
@@ -427,28 +414,29 @@ async function handleCompleteChore(
     };
   }
 
-  // Create completion
-  const [completion] = await db.insert(choreCompletions).values({
-    choreId: matchingChore.id,
-    householdId,
-    memberId: member.id,
-    scheduledDate: today,
-    status: 'pending',
-    pointsAwarded: matchingChore.pointValue,
-  }).returning();
+  // Create completion, update schedule, and award points atomically
+  await db.transaction(async (tx) => {
+    const [comp] = await tx.insert(choreCompletions).values({
+      choreId: matchingChore.id,
+      householdId,
+      memberId: member.id,
+      scheduledDate: today,
+      status: 'pending',
+      pointsAwarded: matchingChore.pointValue,
+    }).returning();
 
-  // Update schedule
-  await db.update(choreSchedules)
-    .set({ isCompleted: true, completionId: completion.id })
-    .where(eq(choreSchedules.id, schedule.id));
+    await tx.update(choreSchedules)
+      .set({ isCompleted: true, completionId: comp.id })
+      .where(eq(choreSchedules.id, schedule.id));
 
-  // Update member points
-  await db.update(members)
-    .set({
-      pointsCurrent: (member.pointsCurrent || 0) + matchingChore.pointValue,
-      pointsLifetime: (member.pointsLifetime || 0) + matchingChore.pointValue,
-    })
-    .where(eq(members.id, member.id));
+    await tx.update(members)
+      .set({
+        pointsCurrent: sql`${members.pointsCurrent} + ${matchingChore.pointValue}`,
+        pointsLifetime: sql`${members.pointsLifetime} + ${matchingChore.pointValue}`,
+      })
+      .where(eq(members.id, member.id));
+
+  });
 
   return {
     success: true,

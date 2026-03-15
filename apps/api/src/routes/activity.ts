@@ -8,6 +8,8 @@ import {
   chores,
 } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 interface ActivityItem {
   id: string;
@@ -22,20 +24,6 @@ interface ActivityItem {
   metadata?: Record<string, unknown>;
 }
 
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 export async function activityRoutes(fastify: FastifyInstance) {
   // Get activity feed for household
   fastify.get('/', {
@@ -43,6 +31,7 @@ export async function activityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const {
       limit = 50,
       offset = 0,
@@ -206,6 +195,7 @@ export async function activityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const { period = 'week' } = request.query as { period?: 'day' | 'week' | 'month' };
 
     const membership = await verifyMembership(user.id, householdId);

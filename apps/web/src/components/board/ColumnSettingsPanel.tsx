@@ -3,7 +3,11 @@ import { X, Eye, EyeOff, GripVertical, Palette } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button, cn } from '@chorechamp/ui';
 import { useBoardStore } from '@/stores/board-store';
-import { useUpdateBoardPreferences } from '@chorechamp/api-client';
+import { useUpdateBoardPreferences, useAutomationRules, useCreateAutomationRule, useUpdateAutomationRule, useDeleteAutomationRule } from '@chorechamp/api-client';
+import type { AutomationRule as ApiAutomationRule } from '@chorechamp/types';
+import { AutomationRuleBuilder } from './AutomationRuleBuilder';
+import { AutomationRuleList } from './AutomationRuleList';
+import type { AutomationRule } from '../../lib/api';
 
 interface ColumnSettingsPanelProps {
   householdId: string;
@@ -37,6 +41,29 @@ export function ColumnSettingsPanel({ householdId, open, onOpenChange }: ColumnS
   const updatePrefs = useUpdateBoardPreferences(householdId);
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [editingColor, setEditingColor] = useState<string | null>(null);
+  const [showAutomation, setShowAutomation] = useState(false);
+  const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
+  const [showRuleBuilder, setShowRuleBuilder] = useState(false);
+
+  const { data: automationData } = useAutomationRules(householdId);
+  const automationRulesRaw = Array.isArray(automationData) ? automationData : (automationData?.rules ?? []);
+  // Map API rules to the format AutomationRuleList expects
+  const automationRules: AutomationRule[] = automationRulesRaw.map((r: ApiAutomationRule) => ({
+    id: r.id,
+    householdId: r.householdId,
+    name: r.name,
+    description: r.description ?? '',
+    trigger: typeof r.trigger === 'object' ? r.trigger.type : String(r.trigger),
+    triggerConfig: typeof r.trigger === 'object' ? (r.trigger.conditions ?? {}) : {},
+    action: Array.isArray(r.actions) && r.actions[0] ? r.actions[0].type : '',
+    actionConfig: Array.isArray(r.actions) && r.actions[0] ? (r.actions[0].parameters ?? {}) : {},
+    enabled: r.status === 'active',
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  }));
+  const createRule = useCreateAutomationRule(householdId);
+  const updateRule = useUpdateAutomationRule(householdId);
+  const deleteRule = useDeleteAutomationRule(householdId);
 
   useEffect(() => {
     if (columnSettings && Object.keys(columnSettings).length > 0) {
@@ -64,6 +91,32 @@ export function ColumnSettingsPanel({ householdId, open, onOpenChange }: ColumnS
     setColumns(prev => prev.map(col =>
       col.id === colId ? { ...col, wipLimit: Math.max(0, limit) } : col
     ));
+  };
+
+  const handleSaveRule = (data: { name: string; description: string; trigger: string; triggerConfig: Record<string, unknown>; action: string; actionConfig: Record<string, unknown>; enabled: boolean }) => {
+    const apiPayload = {
+      name: data.name,
+      description: data.description,
+      trigger: { type: data.trigger, conditions: data.triggerConfig },
+      actions: [{ type: data.action, parameters: data.actionConfig }],
+      status: data.enabled ? 'active' as const : 'inactive' as const,
+    };
+    if (editingRule) {
+      updateRule.mutate({ ruleId: editingRule.id, data: apiPayload } as Parameters<typeof updateRule.mutate>[0], {
+        onSuccess: () => { setShowRuleBuilder(false); setEditingRule(null); },
+      });
+    } else {
+      createRule.mutate(apiPayload as Parameters<typeof createRule.mutate>[0], {
+        onSuccess: () => { setShowRuleBuilder(false); },
+      });
+    }
+  };
+
+  const handleToggleRule = (ruleId: string) => {
+    const rule = automationRules.find((r) => r.id === ruleId);
+    if (rule) {
+      updateRule.mutate({ ruleId, data: { status: rule.enabled ? 'inactive' : 'active' } } as Parameters<typeof updateRule.mutate>[0]);
+    }
   };
 
   const handleSave = () => {
@@ -165,6 +218,46 @@ export function ColumnSettingsPanel({ householdId, open, onOpenChange }: ColumnS
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Automation Rules section */}
+          <div className="border-t border-gray-200 px-5 py-4">
+            <button
+              onClick={() => setShowAutomation(!showAutomation)}
+              className="flex w-full items-center justify-between text-sm font-semibold text-gray-700"
+            >
+              Automation Rules
+              <span className="text-xs text-gray-400">{automationRules.length} rules</span>
+            </button>
+            {showAutomation && (
+              <div className="mt-3">
+                {showRuleBuilder ? (
+                  <AutomationRuleBuilder
+                    initialData={editingRule ? {
+                      name: editingRule.name,
+                      description: editingRule.description ?? '',
+                      trigger: editingRule.trigger as 'chore_completed' | 'chore_created' | 'due_date_passed' | 'status_changed' | 'assigned',
+                      triggerConfig: editingRule.triggerConfig,
+                      action: editingRule.action as 'assign' | 'change_status' | 'add_tag' | 'send_notification' | 'set_priority' | 'create_chore',
+                      actionConfig: editingRule.actionConfig,
+                      enabled: editingRule.enabled,
+                    } : undefined}
+                    onSave={handleSaveRule}
+                    onCancel={() => { setShowRuleBuilder(false); setEditingRule(null); }}
+                    isSaving={createRule.isPending || updateRule.isPending}
+                  />
+                ) : (
+                  <AutomationRuleList
+                    rules={automationRules}
+                    onEdit={(rule) => { setEditingRule(rule); setShowRuleBuilder(true); }}
+                    onDelete={(ruleId) => deleteRule.mutate(ruleId)}
+                    onToggle={handleToggleRule}
+                    onCreate={() => { setEditingRule(null); setShowRuleBuilder(true); }}
+                    isDeleting={deleteRule.isPending ? (deleteRule.variables as string) : null}
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           <div className="sticky bottom-0 border-t border-gray-200 bg-white px-5 py-4 flex justify-end gap-2">

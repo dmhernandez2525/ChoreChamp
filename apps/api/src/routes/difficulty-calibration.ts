@@ -20,25 +20,12 @@ import {
   determineCalibrationStatus,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 import { randomUUID } from 'crypto';
 
 // In-memory storage (in production, use database)
 const calibrationSettings = new Map<string, CalibrationSettings>();
 const calibrationHistory = new Map<string, CalibrationHistoryEntry[]>();
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(
-      and(eq(members.householdId, householdId), eq(members.userId, userId))
-    );
-  return membership || null;
-}
 
 // Get default settings
 function getDefaultSettings(_householdId: string): CalibrationSettings {

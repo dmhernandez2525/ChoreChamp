@@ -101,6 +101,19 @@ export interface BossBattle {
   defeatedAt: Date | null;
 }
 
+export interface BossBattleContributor {
+  memberId: string;
+  memberName: string;
+  memberColor: string;
+  damage: number;
+  chores: number;
+}
+
+export interface BossBattleStats {
+  party: FamilyParty;
+  contributors: BossBattleContributor[];
+}
+
 // Celebration Events
 export type CelebrationType =
   | 'chore_completed'

@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and, isNull, desc, sql } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, gte } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { bossBattles, members } from '@chorechamp/database';
+import { bossBattles, members, choreCompletions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
 
 // Pagination constants
 const MAX_LIMIT = 50;
@@ -22,35 +23,6 @@ const createBossBattleSchema = z.object({
 const damageBossSchema = z.object({
   damage: z.number().int().min(1),
 });
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
-async function verifyParentMembership(
-  userId: string,
-  householdId: string
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId),
-      eq(members.role, 'parent')
-    ));
-  return !!membership;
-}
 
 export async function bossBattleRoutes(fastify: FastifyInstance) {
   // Get current active boss battle
@@ -228,47 +200,59 @@ export async function bossBattleRoutes(fastify: FastifyInstance) {
     const newHealth = Math.max(0, battle.healthCurrent - body.damage);
     const isDefeated = newHealth === 0;
 
-    // Update battle
-    const [updatedBattle] = await db
-      .update(bossBattles)
-      .set({
-        healthCurrent: newHealth,
-        defeatedAt: isDefeated ? new Date() : null,
-      })
-      .where(eq(bossBattles.id, battleId))
-      .returning();
+    // Update battle and award points atomically
+    const { updatedBattle, pointsPerMember: awardedPoints } = await db.transaction(async (tx) => {
+      const [updatedBattle] = await tx
+        .update(bossBattles)
+        .set({
+          healthCurrent: newHealth,
+          defeatedAt: isDefeated ? new Date() : null,
+        })
+        .where(and(eq(bossBattles.id, battleId), isNull(bossBattles.defeatedAt)))
+        .returning();
 
-    // If defeated, award points to all active members
-    if (isDefeated) {
-      const activeMembers = await db
-        .select()
-        .from(members)
-        .where(and(
-          eq(members.householdId, householdId),
-          eq(members.isActive, true)
-        ));
-
-      // Award points to each member
-      const pointsPerMember = Math.floor(battle.pointReward / activeMembers.length);
-
-      for (const member of activeMembers) {
-        await db
-          .update(members)
-          .set({
-            pointsCurrent: (member.pointsCurrent || 0) + pointsPerMember,
-            pointsLifetime: (member.pointsLifetime || 0) + pointsPerMember,
-          })
-          .where(eq(members.id, member.id));
+      if (!updatedBattle) {
+        throw new Error('Battle already defeated');
       }
 
-      // Emit victory event
+      let pointsPerMember = 0;
+
+      if (isDefeated) {
+        const activeMembers = await tx
+          .select()
+          .from(members)
+          .where(and(
+            eq(members.householdId, householdId),
+            eq(members.isActive, true)
+          ));
+
+        if (activeMembers.length > 0) {
+          pointsPerMember = Math.floor(battle.pointReward / activeMembers.length);
+
+          for (const member of activeMembers) {
+            await tx
+              .update(members)
+              .set({
+                pointsCurrent: sql`${members.pointsCurrent} + ${pointsPerMember}`,
+                pointsLifetime: sql`${members.pointsLifetime} + ${pointsPerMember}`,
+              })
+              .where(eq(members.id, member.id));
+          }
+        }
+      }
+
+      return { updatedBattle, pointsPerMember };
+    });
+
+    // Emit victory event (outside transaction)
+    if (isDefeated) {
       const io = fastify.io;
       if (io) {
         io.to(`household:${householdId}`).emit('boss:defeated', {
           battleId,
           bossName: battle.name,
           pointReward: battle.pointReward,
-          pointsPerMember,
+          pointsPerMember: awardedPoints,
           defeatedAt: updatedBattle.defeatedAt,
         });
       }
@@ -279,6 +263,103 @@ export async function bossBattleRoutes(fastify: FastifyInstance) {
       damageDealt: body.damage,
       isDefeated,
     });
+  });
+
+  // Get boss battle stats (party stats + contributor damage)
+  // IMPORTANT: Must be registered before /:battleId to avoid path collision
+  fastify.get('/current/stats', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    // Get current boss battle
+    const [currentBattle] = await db
+      .select()
+      .from(bossBattles)
+      .where(and(
+        eq(bossBattles.householdId, householdId),
+        isNull(bossBattles.defeatedAt),
+        sql`${bossBattles.endsAt} > NOW()`
+      ))
+      .limit(1);
+
+    // Get start of current week (Monday)
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + diff);
+    weekStart.setHours(0, 0, 0, 0);
+
+    // Count weekly completions
+    const [weeklyStats] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(choreCompletions)
+      .where(and(
+        eq(choreCompletions.householdId, householdId),
+        gte(choreCompletions.completedAt, weekStart)
+      ));
+
+    const weeklyProgress = Number(weeklyStats?.count || 0);
+
+    // Get active members
+    const activeMembers = await db
+      .select()
+      .from(members)
+      .where(and(
+        eq(members.householdId, householdId),
+        eq(members.isActive, true)
+      ));
+
+    // Weekly goal: 5 chores per active member
+    const weeklyGoal = activeMembers.length * 5;
+
+    // Get per-member contributions (completions during battle period if battle active)
+    const contributionPeriodStart = currentBattle?.createdAt || weekStart;
+    const contributorRows = await db
+      .select({
+        memberId: choreCompletions.memberId,
+        chores: sql<number>`count(*)`,
+        totalPoints: sql<number>`COALESCE(sum(${choreCompletions.pointsAwarded}), 0)`,
+      })
+      .from(choreCompletions)
+      .where(and(
+        eq(choreCompletions.householdId, householdId),
+        gte(choreCompletions.completedAt, contributionPeriodStart)
+      ))
+      .groupBy(choreCompletions.memberId);
+
+    const contributors = activeMembers.map(member => {
+      const stats = contributorRows.find(r => r.memberId === member.id);
+      return {
+        memberId: member.id,
+        memberName: member.name,
+        memberColor: member.color || '#3B82F6',
+        damage: Number(stats?.totalPoints || 0),
+        chores: Number(stats?.chores || 0),
+      };
+    }).sort((a, b) => b.damage - a.damage);
+
+    const party = {
+      householdId,
+      healthCurrent: currentBattle?.healthCurrent ?? 100,
+      healthMax: currentBattle?.healthMax ?? 100,
+      weeklyGoal,
+      weeklyProgress,
+      bossActive: !!currentBattle,
+      bossId: currentBattle?.id || null,
+    };
+
+    return reply.send({ party, contributors });
   });
 
   // Get a specific boss battle

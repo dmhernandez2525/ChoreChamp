@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@chorechamp/ui';
-import { useHousehold, useMembers, useChores } from '@chorechamp/api-client';
+import { useHousehold, useMembers, useChores, useUpdateChore } from '@chorechamp/api-client';
 import type { CreateChoreRequest } from '@chorechamp/types';
 import { ChoreForm } from '../components/chores/form';
 import { Skeleton } from '../components/common';
@@ -12,10 +12,12 @@ export default function EditChore() {
     choreId: string;
   }>();
   const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
 
   const { data: household, isLoading: loadingHousehold } = useHousehold(householdId!);
   const { data: members, isLoading: loadingMembers } = useMembers(householdId!);
   const { data: chores, isLoading: loadingChores } = useChores(householdId!);
+  const updateChore = useUpdateChore(householdId!);
 
   const chore = useMemo(() => {
     if (!chores || !choreId) return null;
@@ -25,10 +27,14 @@ export default function EditChore() {
   const isLoading = loadingHousehold || loadingMembers || loadingChores;
 
   const handleSubmit = async (data: CreateChoreRequest) => {
-    // TODO: Implement updateChore mutation
-    console.log('Update chore:', choreId, data);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    navigate(`/households/${householdId}`);
+    if (!choreId) return;
+    setError(null);
+    try {
+      await updateChore.mutateAsync({ choreId, data });
+      navigate(`/households/${householdId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update chore');
+    }
   };
 
   const handleCancel = () => {
@@ -117,12 +123,17 @@ export default function EditChore() {
       {/* Main Content */}
       <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
         <div className="rounded-lg bg-white p-4 sm:p-6 shadow">
+          {error && (
+            <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           <ChoreForm
             members={members}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             initialData={initialData}
-            isSubmitting={false}
+            isSubmitting={updateChore.isPending}
             mode="edit"
           />
         </div>

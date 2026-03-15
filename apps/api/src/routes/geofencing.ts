@@ -13,6 +13,8 @@ import {
   members,
 } from '@chorechamp/database/schema';
 import { GEOFENCE_PRESETS } from '@chorechamp/types';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Helper to calculate distance between two GPS coordinates (Haversine formula)
 function calculateDistance(
@@ -161,7 +163,13 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   /**
    * GET /location/presets - Get geofence presets
    */
-  fastify.get('/location/presets', async () => {
+  fastify.get('/location/presets', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return { presets: GEOFENCE_PRESETS };
   });
 
@@ -175,8 +183,13 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { type?: string; enabled?: string };
-  }>('/location/geofences', async (request) => {
-    const { householdId } = request.params;
+  }>('/location/geofences', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { type, enabled } = request.query;
 
     const conditions = [eq(geofences.householdId, householdId)];
@@ -203,8 +216,13 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createGeofenceSchema>;
-  }>('/location/geofences', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/location/geofences', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createGeofenceSchema.parse(request.body);
 
     const [fence] = await db
@@ -223,8 +241,14 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string; geofenceId: string };
-  }>('/location/geofences/:geofenceId', async (request, reply) => {
-    const { householdId, geofenceId } = request.params;
+  }>('/location/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { geofenceId } = request.params;
 
     const fence = await db.query.geofences.findFirst({
       where: and(
@@ -284,8 +308,14 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; geofenceId: string };
     Body: z.infer<typeof updateGeofenceSchema>;
-  }>('/location/geofences/:geofenceId', async (request, reply) => {
-    const { householdId, geofenceId } = request.params;
+  }>('/location/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { geofenceId } = request.params;
     const data = updateGeofenceSchema.parse(request.body);
 
     const existing = await db.query.geofences.findFirst({
@@ -316,8 +346,14 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{
     Params: { householdId: string; geofenceId: string };
-  }>('/location/geofences/:geofenceId', async (request, reply) => {
-    const { householdId, geofenceId } = request.params;
+  }>('/location/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { geofenceId } = request.params;
 
     const existing = await db.query.geofences.findFirst({
       where: and(
@@ -345,14 +381,16 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof reportLocationSchema>;
-  }>('/location/report', async (request, reply) => {
-    const { householdId } = request.params;
-    const memberId = request.headers['x-member-id'] as string;
-    const data = reportLocationSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
+  }>('/location/report', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    // Derive memberId from authenticated user's membership (not from untrusted header)
+    const memberId = membership.id;
+    const data = reportLocationSchema.parse(request.body);
 
     // Check location settings
     const settings = await db.query.locationSettings.findFirst({
@@ -554,14 +592,16 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof reportGeofenceEventSchema>;
-  }>('/location/events', async (request, reply) => {
-    const { householdId } = request.params;
-    const memberId = request.headers['x-member-id'] as string;
-    const data = reportGeofenceEventSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
+  }>('/location/events', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    // Derive memberId from authenticated user's membership
+    const memberId = membership.id;
+    const data = reportGeofenceEventSchema.parse(request.body);
 
     // Verify geofence exists
     const fence = await db.query.geofences.findFirst({
@@ -662,9 +702,15 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/members', async (request) => {
-    const { householdId } = request.params;
-    const requestingMemberId = request.headers['x-member-id'] as string;
+  }>('/location/members', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    // Derive requestingMemberId from authenticated user's membership
+    const requestingMemberId = membership.id;
 
     const locations = await db
       .select({
@@ -719,8 +765,13 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; from?: string; to?: string; limit?: string };
-  }>('/location/history', async (request) => {
-    const { householdId } = request.params;
+  }>('/location/history', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, from, to, limit = '100' } = request.query;
 
     const conditions = [eq(locationHistory.householdId, householdId)];
@@ -754,8 +805,13 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/automations', async (request) => {
-    const { householdId } = request.params;
+  }>('/location/automations', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const automations = await db
       .select({
@@ -784,8 +840,13 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createAutomationSchema>;
-  }>('/location/automations', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/location/automations', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createAutomationSchema.parse(request.body);
 
     // Verify geofence exists
@@ -816,8 +877,14 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{
     Params: { householdId: string; automationId: string };
-  }>('/location/automations/:automationId', async (request, reply) => {
-    const { householdId, automationId } = request.params;
+  }>('/location/automations/:automationId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { automationId } = request.params;
 
     const existing = await db.query.geofenceAutomations.findFirst({
       where: and(
@@ -844,9 +911,14 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/away-mode', async (request) => {
-    const { householdId } = request.params;
-    const memberId = request.headers['x-member-id'] as string;
+  }>('/location/away-mode', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const memberId = membership.id;
 
     const config = await db.query.awayModeConfigs.findFirst({
       where: and(
@@ -864,14 +936,15 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.put<{
     Params: { householdId: string };
     Body: z.infer<typeof updateAwayModeSchema>;
-  }>('/location/away-mode', async (request, reply) => {
-    const { householdId } = request.params;
-    const memberId = request.headers['x-member-id'] as string;
-    const data = updateAwayModeSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
+  }>('/location/away-mode', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    const memberId = membership.id;
+    const data = updateAwayModeSchema.parse(request.body);
 
     const existing = await db.query.awayModeConfigs.findFirst({
       where: eq(awayModeConfigs.memberId, memberId),
@@ -914,9 +987,14 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/settings', async (request) => {
-    const { householdId } = request.params;
-    const memberId = request.headers['x-member-id'] as string;
+  }>('/location/settings', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const memberId = membership.id;
 
     let settings = await db.query.locationSettings.findFirst({
       where: eq(locationSettings.memberId, memberId),
@@ -942,14 +1020,15 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string };
     Body: z.infer<typeof updateLocationSettingsSchema>;
-  }>('/location/settings', async (request, reply) => {
-    const { householdId } = request.params;
-    const memberId = request.headers['x-member-id'] as string;
-    const data = updateLocationSettingsSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
+  }>('/location/settings', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    const memberId = membership.id;
+    const data = updateLocationSettingsSchema.parse(request.body);
 
     const existing = await db.query.locationSettings.findFirst({
       where: eq(locationSettings.memberId, memberId),
@@ -987,8 +1066,13 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { days?: string };
-  }>('/location/analytics', async (request) => {
-    const { householdId } = request.params;
+  }>('/location/analytics', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const days = parseInt(request.query.days || '30');
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 

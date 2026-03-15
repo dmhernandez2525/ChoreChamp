@@ -26,7 +26,8 @@ import {
   getRarityInfo,
   getCardCategoryInfo,
 } from '@chorechamp/gamification';
-import type { CardRarity, RarityWeights, TradeCard } from '@chorechamp/types';
+import type { CardRarity, RarityWeights, TradeCard, PackOpenResult } from '@chorechamp/types';
+import { verifyMembership } from '../lib/membership';
 
 // Validation schemas
 const openPackSchema = z.object({
@@ -64,20 +65,6 @@ const wishlistSchema = z.object({
 });
 
 // Helper functions
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 async function getMemberOwnedCards(memberId: string): Promise<Map<string, number>> {
   const owned = await db
     .select()
@@ -397,10 +384,10 @@ export async function collectibleCardsRoutes(fastify: FastifyInstance) {
 
     const ownedCardIds = new Set(owned.map(o => o.cardId));
 
-    // Open packs
-    const results = [];
+    // Open packs atomically (cards + points deduction)
+    const results: PackOpenResult[] = [];
     for (let i = 0; i < body.quantity; i++) {
-      const result = openPack(
+      results.push(openPack(
         pack.id,
         pack.name,
         pack.cardCount,
@@ -408,53 +395,56 @@ export async function collectibleCardsRoutes(fastify: FastifyInstance) {
         pack.guaranteedRarity as CardRarity | null,
         availableCards as Parameters<typeof openPack>[5],
         ownedCardIds
-      );
-      results.push(result);
-
-      // Update owned cards
-      for (const packCard of result.cards) {
-        const existingOwned = owned.find(o => o.cardId === packCard.card.id);
-
-        if (existingOwned) {
-          await db
-            .update(ownedCards)
-            .set({
-              quantity: sql`${ownedCards.quantity} + 1`,
-              lastObtainedAt: new Date(),
-            })
-            .where(eq(ownedCards.id, existingOwned.id));
-        } else {
-          await db.insert(ownedCards).values({
-            cardId: packCard.card.id,
-            memberId: membership.id,
-            householdId,
-            quantity: 1,
-            isFavorite: false,
-            isNew: true,
-          });
-        }
-      }
-
-      // Record pack opening
-      await db.insert(packOpenings).values({
-        packId: pack.id,
-        memberId: membership.id,
-        householdId,
-        pointsSpent: pack.pointCost,
-        cardsReceived: result.cards.map(c => c.card.id),
-        newCardsCount: result.newCards,
-        duplicateCardsCount: result.duplicateCards,
-        highestRarity: getHighestRarity(result.cards.map(c => ({ rarity: c.card.rarity as CardRarity }))),
-      });
+      ));
     }
 
-    // Deduct points
-    await db
-      .update(members)
-      .set({
-        pointsCurrent: sql`${members.pointsCurrent} - ${totalCost}`,
-      })
-      .where(eq(members.id, membership.id));
+    await db.transaction(async (tx) => {
+      for (const result of results) {
+        // Update owned cards
+        for (const packCard of result.cards) {
+          const existingOwned = owned.find(o => o.cardId === packCard.card.id);
+
+          if (existingOwned) {
+            await tx
+              .update(ownedCards)
+              .set({
+                quantity: sql`${ownedCards.quantity} + 1`,
+                lastObtainedAt: new Date(),
+              })
+              .where(eq(ownedCards.id, existingOwned.id));
+          } else {
+            await tx.insert(ownedCards).values({
+              cardId: packCard.card.id,
+              memberId: membership.id,
+              householdId,
+              quantity: 1,
+              isFavorite: false,
+              isNew: true,
+            });
+          }
+        }
+
+        // Record pack opening
+        await tx.insert(packOpenings).values({
+          packId: pack.id,
+          memberId: membership.id,
+          householdId,
+          pointsSpent: pack.pointCost,
+          cardsReceived: result.cards.map(c => c.card.id),
+          newCardsCount: result.newCards,
+          duplicateCardsCount: result.duplicateCards,
+          highestRarity: getHighestRarity(result.cards.map(c => ({ rarity: c.card.rarity as CardRarity }))),
+        });
+      }
+
+      // Deduct points
+      await tx
+        .update(members)
+        .set({
+          pointsCurrent: sql`${members.pointsCurrent} - ${totalCost}`,
+        })
+        .where(eq(members.id, membership.id));
+    });
 
     // Emit pack opened event
     const io = fastify.io;
@@ -761,99 +751,103 @@ export async function collectibleCardsRoutes(fastify: FastifyInstance) {
       return reply.send(updated);
     }
 
-    // Accept trade - transfer cards
+    // Accept trade - transfer cards atomically
     const offeredCards = trade.offeredCards as TradeCard[];
     const requestedCards = trade.requestedCards as TradeCard[];
 
-    // Update initiator's cards (remove offered, add requested)
-    for (const { cardId, quantity } of offeredCards) {
-      await db
-        .update(ownedCards)
-        .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
-        .where(and(
-          eq(ownedCards.memberId, trade.initiatorMemberId),
-          eq(ownedCards.cardId, cardId)
-        ));
-    }
-
-    for (const { cardId, quantity } of requestedCards) {
-      const [existing] = await db
-        .select()
-        .from(ownedCards)
-        .where(and(
-          eq(ownedCards.memberId, trade.initiatorMemberId),
-          eq(ownedCards.cardId, cardId)
-        ));
-
-      if (existing) {
-        await db
+    const updated = await db.transaction(async (tx) => {
+      // Update initiator's cards (remove offered, add requested)
+      for (const { cardId, quantity } of offeredCards) {
+        await tx
           .update(ownedCards)
-          .set({
-            quantity: sql`${ownedCards.quantity} + ${quantity}`,
-            lastObtainedAt: new Date(),
-          })
-          .where(eq(ownedCards.id, existing.id));
-      } else {
-        await db.insert(ownedCards).values({
-          cardId,
-          memberId: trade.initiatorMemberId,
-          householdId,
-          quantity,
-          isFavorite: false,
-          isNew: true,
-        });
+          .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
+          .where(and(
+            eq(ownedCards.memberId, trade.initiatorMemberId),
+            eq(ownedCards.cardId, cardId)
+          ));
       }
-    }
 
-    // Update target's cards (add offered, remove requested)
-    for (const { cardId, quantity } of offeredCards) {
-      const [existing] = await db
-        .select()
-        .from(ownedCards)
-        .where(and(
-          eq(ownedCards.memberId, membership.id),
-          eq(ownedCards.cardId, cardId)
-        ));
+      for (const { cardId, quantity } of requestedCards) {
+        const [existing] = await tx
+          .select()
+          .from(ownedCards)
+          .where(and(
+            eq(ownedCards.memberId, trade.initiatorMemberId),
+            eq(ownedCards.cardId, cardId)
+          ));
 
-      if (existing) {
-        await db
+        if (existing) {
+          await tx
+            .update(ownedCards)
+            .set({
+              quantity: sql`${ownedCards.quantity} + ${quantity}`,
+              lastObtainedAt: new Date(),
+            })
+            .where(eq(ownedCards.id, existing.id));
+        } else {
+          await tx.insert(ownedCards).values({
+            cardId,
+            memberId: trade.initiatorMemberId,
+            householdId,
+            quantity,
+            isFavorite: false,
+            isNew: true,
+          });
+        }
+      }
+
+      // Update target's cards (add offered, remove requested)
+      for (const { cardId, quantity } of offeredCards) {
+        const [existing] = await tx
+          .select()
+          .from(ownedCards)
+          .where(and(
+            eq(ownedCards.memberId, membership.id),
+            eq(ownedCards.cardId, cardId)
+          ));
+
+        if (existing) {
+          await tx
+            .update(ownedCards)
+            .set({
+              quantity: sql`${ownedCards.quantity} + ${quantity}`,
+              lastObtainedAt: new Date(),
+            })
+            .where(eq(ownedCards.id, existing.id));
+        } else {
+          await tx.insert(ownedCards).values({
+            cardId,
+            memberId: membership.id,
+            householdId,
+            quantity,
+            isFavorite: false,
+            isNew: true,
+          });
+        }
+      }
+
+      for (const { cardId, quantity } of requestedCards) {
+        await tx
           .update(ownedCards)
-          .set({
-            quantity: sql`${ownedCards.quantity} + ${quantity}`,
-            lastObtainedAt: new Date(),
-          })
-          .where(eq(ownedCards.id, existing.id));
-      } else {
-        await db.insert(ownedCards).values({
-          cardId,
-          memberId: membership.id,
-          householdId,
-          quantity,
-          isFavorite: false,
-          isNew: true,
-        });
+          .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
+          .where(and(
+            eq(ownedCards.memberId, membership.id),
+            eq(ownedCards.cardId, cardId)
+          ));
       }
-    }
 
-    for (const { cardId, quantity } of requestedCards) {
-      await db
-        .update(ownedCards)
-        .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
-        .where(and(
-          eq(ownedCards.memberId, membership.id),
-          eq(ownedCards.cardId, cardId)
-        ));
-    }
+      // Update trade status
+      const [result] = await tx
+        .update(cardTrades)
+        .set({
+          status: 'accepted',
+          respondedAt: new Date(),
+        })
+        .where(eq(cardTrades.id, tradeId))
+        .returning();
 
-    // Update trade status
-    const [updated] = await db
-      .update(cardTrades)
-      .set({
-        status: 'accepted',
-        respondedAt: new Date(),
-      })
-      .where(eq(cardTrades.id, tradeId))
-      .returning();
+      return result;
+    });
 
     // Emit trade completed event
     const io = fastify.io;

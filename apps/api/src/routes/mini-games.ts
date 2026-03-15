@@ -26,6 +26,7 @@ import {
   getCategoryInfo,
 } from '@chorechamp/gamification';
 import type { GameDifficulty, UnlockType } from '@chorechamp/types';
+import { verifyMembership } from '../lib/membership';
 
 // Constants for pagination
 const MAX_LIMIT = 100;
@@ -53,20 +54,6 @@ const createFamilyNightSchema = z.object({
 });
 
 // Helper functions
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 async function getMemberStats(memberId: string): Promise<{
   choreCount: number;
   points: number;
@@ -353,6 +340,21 @@ export async function miniGamesRoutes(fastify: FastifyInstance) {
 
     // Validate player count for multiplayer
     const playerIds = body.playerIds || [membership.id];
+
+    // Verify all playerIds belong to this household
+    if (playerIds.length > 0) {
+      const validMembers = await db
+        .select({ id: members.id })
+        .from(members)
+        .where(and(
+          inArray(members.id, playerIds),
+          eq(members.householdId, householdId)
+        ));
+      if (validMembers.length !== playerIds.length) {
+        return reply.status(400).send({ error: 'Bad Request', message: 'One or more players are not members of this household' });
+      }
+    }
+
     if (playerIds.length < game.minPlayers || playerIds.length > game.maxPlayers) {
       return reply.status(400).send({
         error: 'Bad Request',

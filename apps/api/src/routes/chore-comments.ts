@@ -2,28 +2,15 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { choreComments, choreActivityLog, chores, members } from '@chorechamp/database';
+import { choreComments, choreActivityLog, chores } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { emitToHousehold } from '../lib/socket';
 import { Server } from 'socket.io';
+import { verifyMembership } from '../lib/membership';
 
 const addCommentSchema = z.object({
   comment: z.string().min(1).max(5000),
 });
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
 
 async function verifyChoreInHousehold(
   choreId: string,

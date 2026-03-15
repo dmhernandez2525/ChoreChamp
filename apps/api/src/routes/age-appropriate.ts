@@ -11,6 +11,7 @@ import type {
   AgeGroupConfig,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Age group data constants
 const AGE_GROUPS_DATA: AgeGroupConfig[] = [
@@ -172,23 +173,6 @@ function assessAgeSuitability(
     suitability: 'perfect',
     message: 'Perfect for this age',
   };
-}
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(
-      and(
-        eq(members.householdId, householdId),
-        eq(members.userId, userId)
-      )
-    );
-  return membership || null;
 }
 
 export async function ageAppropriateRoutes(fastify: FastifyInstance) {

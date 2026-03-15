@@ -3,21 +3,15 @@ import { z } from 'zod';
 import { and, eq, desc } from 'drizzle-orm';
 import { randomBytes, createHash } from 'crypto';
 import { db } from '../lib/db';
-import { apiKeys, members, households } from '@chorechamp/database';
+import { apiKeys, households } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
+import { verifyMembership } from '../lib/membership';
 
 const createKeySchema = z.object({
   name: z.string().min(1).max(120),
 });
 
-async function getMembership(userId: string, householdId: string) {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 async function ensurePremium(householdId: string) {
   const [household] = await db.select().from(households).where(eq(households.id, householdId));
@@ -39,7 +33,7 @@ export async function apiKeyRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage API keys' });
     }
@@ -73,7 +67,7 @@ export async function apiKeyRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = createKeySchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can create API keys' });
     }
@@ -116,7 +110,7 @@ export async function apiKeyRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, keyId } = request.params as { householdId: string; keyId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can revoke API keys' });
     }

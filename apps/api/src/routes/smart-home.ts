@@ -90,13 +90,43 @@ const PLATFORM_CONFIG: Record<SmartHomePlatform, {
   },
 };
 
-// Simple encryption for demo (use proper encryption in production)
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
+
+const ENCRYPTION_KEY = process.env.SMART_HOME_ENCRYPTION_KEY;
+const ALGORITHM = 'aes-256-gcm';
+
+if (!ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
+  throw new Error('SMART_HOME_ENCRYPTION_KEY environment variable is required in production');
+}
+
+function getKey(salt: string): Buffer {
+  return scryptSync(ENCRYPTION_KEY || 'dev-only-insecure-key-not-for-prod', salt, 32);
+}
+
 function encryptCredentials(config: HubConfiguration): string {
-  return Buffer.from(JSON.stringify(config)).toString('base64');
+  const iv = randomBytes(16);
+  const salt = randomBytes(16);
+  const key = getKey(salt.toString('hex'));
+  const cipher = createCipheriv(ALGORITHM, key, iv);
+  let encrypted = cipher.update(JSON.stringify(config), 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag().toString('hex');
+  return `${salt.toString('hex')}:${iv.toString('hex')}:${authTag}:${encrypted}`;
 }
 
 function decryptCredentials(encrypted: string): HubConfiguration {
-  return JSON.parse(Buffer.from(encrypted, 'base64').toString('utf-8'));
+  const [saltHex, ivHex, authTagHex, data] = encrypted.split(':');
+  if (!saltHex || !ivHex || !authTagHex || !data) {
+    throw new Error('Invalid encrypted credential format');
+  }
+  const key = getKey(saltHex);
+  const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, 'hex'));
+  decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+  let decrypted = decipher.update(data, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return JSON.parse(decrypted);
 }
 
 // Mock device sync (replace with actual API calls in production)
@@ -195,7 +225,13 @@ async function controlDevice(
 
 export async function smartHomeRoutes(app: FastifyInstance) {
   // Get supported platforms
-  app.get('/platforms', async (_request, reply) => {
+  app.get('/platforms', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const platforms = Object.entries(PLATFORM_CONFIG).map(([id, config]) => ({
       id,
       ...config,
@@ -204,9 +240,13 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Get all hubs for household
-  app.get('/hubs', async (request, reply) => {
-    const { householdId } = request.query as { householdId: string };
-
+  app.get('/hubs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const hubs = await db
       .select()
       .from(smartHomeHubs)
@@ -240,9 +280,14 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Connect a new hub
-  app.post('/hubs', async (request, reply) => {
-    const { householdId, platform, name, description, configuration } = request.body as {
-      householdId: string;
+  app.post('/hubs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { platform, name, description, configuration } = request.body as {
       platform: SmartHomePlatform;
       name: string;
       description?: string;
@@ -347,14 +392,20 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Sync devices from hub
-  app.post('/hubs/:hubId/sync', async (request, reply) => {
+  app.post('/hubs/:hubId/sync', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { hubId } = request.params as { hubId: string };
 
-    // Get hub
+    // Get hub scoped to household
     const [hub] = await db
       .select()
       .from(smartHomeHubs)
-      .where(eq(smartHomeHubs.id, hubId));
+      .where(and(eq(smartHomeHubs.id, hubId), eq(smartHomeHubs.householdId, householdId)));
 
     if (!hub) {
       return reply.status(404).send({ error: 'Hub not found' });
@@ -460,10 +511,16 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Disconnect/remove hub
-  app.delete('/hubs/:hubId', async (request, reply) => {
+  app.delete('/hubs/:hubId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { hubId } = request.params as { hubId: string };
 
-    // Soft delete hub and devices
+    // Soft delete hub and devices (scoped to household)
     await db
       .update(smartHomeHubs)
       .set({
@@ -471,20 +528,25 @@ export async function smartHomeRoutes(app: FastifyInstance) {
         status: 'disconnected',
         updatedAt: new Date(),
       })
-      .where(eq(smartHomeHubs.id, hubId));
+      .where(and(eq(smartHomeHubs.id, hubId), eq(smartHomeHubs.householdId, householdId)));
 
     await db
       .update(smartDevices)
       .set({ isActive: false })
-      .where(eq(smartDevices.hubId, hubId));
+      .where(and(eq(smartDevices.hubId, hubId), eq(smartDevices.householdId, householdId)));
 
     return reply.send({ success: true });
   });
 
   // Get all devices for household
-  app.get('/devices', async (request, reply) => {
-    const { householdId, category, zone, hubId } = request.query as {
-      householdId: string;
+  app.get('/devices', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { category, zone, hubId } = request.query as {
       category?: string;
       zone?: string;
       hubId?: string;
@@ -519,15 +581,21 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Control a device
-  app.post('/devices/:deviceId/control', async (request, reply) => {
+  app.post('/devices/:deviceId/control', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { deviceId } = request.params as { deviceId: string };
     const { command } = request.body as { command: DeviceCommand };
 
-    // Get device and hub
+    // Get device and hub (scoped to household)
     const [device] = await db
       .select()
       .from(smartDevices)
-      .where(eq(smartDevices.id, deviceId));
+      .where(and(eq(smartDevices.id, deviceId), eq(smartDevices.householdId, householdId)));
 
     if (!device) {
       return reply.status(404).send({ error: 'Device not found' });
@@ -536,7 +604,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     const [hub] = await db
       .select()
       .from(smartHomeHubs)
-      .where(eq(smartHomeHubs.id, device.hubId));
+      .where(and(eq(smartHomeHubs.id, device.hubId), eq(smartHomeHubs.householdId, householdId)));
 
     if (!hub) {
       return reply.status(404).send({ error: 'Hub not found' });
@@ -596,7 +664,13 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Update device zone mapping
-  app.patch('/devices/:deviceId', async (request, reply) => {
+  app.patch('/devices/:deviceId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { deviceId } = request.params as { deviceId: string };
     const updates = request.body as {
       name?: string;
@@ -610,8 +684,12 @@ export async function smartHomeRoutes(app: FastifyInstance) {
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(smartDevices.id, deviceId))
+      .where(and(eq(smartDevices.id, deviceId), eq(smartDevices.householdId, householdId)))
       .returning();
+
+    if (!updated) {
+      return reply.status(404).send({ error: 'Device not found' });
+    }
 
     return reply.send({ device: updated });
   });
@@ -619,8 +697,13 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   // --- Automations ---
 
   // Get all automations
-  app.get('/automations', async (request, reply) => {
-    const { householdId } = request.query as { householdId: string };
+  app.get('/automations', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const automations = await db
       .select()
@@ -632,9 +715,14 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Create automation
-  app.post('/automations', async (request, reply) => {
-    const { householdId, name, description, trigger, conditions, actions } = request.body as {
-      householdId: string;
+  app.post('/automations', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { name, description, trigger, conditions, actions } = request.body as {
       name: string;
       description?: string;
       trigger: AutomationTrigger;
@@ -658,7 +746,13 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Update automation
-  app.patch('/automations/:automationId', async (request, reply) => {
+  app.patch('/automations/:automationId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { automationId } = request.params as { automationId: string };
     const updates = request.body as {
       name?: string;
@@ -675,32 +769,48 @@ export async function smartHomeRoutes(app: FastifyInstance) {
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(smartHomeAutomations.id, automationId))
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)))
       .returning();
+
+    if (!updated) {
+      return reply.status(404).send({ error: 'Automation not found' });
+    }
 
     return reply.send({ automation: updated });
   });
 
   // Delete automation
-  app.delete('/automations/:automationId', async (request, reply) => {
+  app.delete('/automations/:automationId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { automationId } = request.params as { automationId: string };
 
     await db
       .delete(smartHomeAutomations)
-      .where(eq(smartHomeAutomations.id, automationId));
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)));
 
     return reply.send({ success: true });
   });
 
   // Test automation (dry run)
-  app.post('/automations/:automationId/test', async (request, reply) => {
+  app.post('/automations/:automationId/test', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { automationId } = request.params as { automationId: string };
     const { mockTriggerData } = request.body as { mockTriggerData?: Record<string, unknown> };
 
     const [automation] = await db
       .select()
       .from(smartHomeAutomations)
-      .where(eq(smartHomeAutomations.id, automationId));
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)));
 
     if (!automation) {
       return reply.status(404).send({ error: 'Automation not found' });
@@ -732,14 +842,20 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Manually trigger automation
-  app.post('/automations/:automationId/trigger', async (request, reply) => {
+  app.post('/automations/:automationId/trigger', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { automationId } = request.params as { automationId: string };
     const { triggerData } = request.body as { triggerData?: Record<string, unknown> };
 
     const [automation] = await db
       .select()
       .from(smartHomeAutomations)
-      .where(eq(smartHomeAutomations.id, automationId));
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)));
 
     if (!automation) {
       return reply.status(404).send({ error: 'Automation not found' });
@@ -811,7 +927,13 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Get automation logs
-  app.get('/automations/:automationId/logs', async (request, reply) => {
+  app.get('/automations/:automationId/logs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     try {
       const { automationId } = request.params as { automationId: string };
       const { limit } = request.query as { limit?: string };
@@ -827,7 +949,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
       const logs = await db
         .select()
         .from(automationLogs)
-        .where(eq(automationLogs.automationId, automationId))
+        .where(and(eq(automationLogs.automationId, automationId), eq(automationLogs.householdId, householdId)))
         .orderBy(desc(automationLogs.triggeredAt))
         .limit(limitNum);
 
@@ -844,8 +966,13 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   // --- Zone Management ---
 
   // Get chore zones
-  app.get('/zones', async (request, reply) => {
-    const { householdId } = request.query as { householdId: string };
+  app.get('/zones', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const zones = await db
       .select()
@@ -861,9 +988,14 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Create/update zone
-  app.post('/zones', async (request, reply) => {
-    const { householdId, zoneName, deviceIds, choreCategories } = request.body as {
-      householdId: string;
+  app.post('/zones', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { zoneName, deviceIds, choreCategories } = request.body as {
       zoneName: string;
       deviceIds: string[];
       choreCategories: string[];
@@ -909,13 +1041,19 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   });
 
   // Delete zone
-  app.delete('/zones/:zoneId', async (request, reply) => {
+  app.delete('/zones/:zoneId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { zoneId } = request.params as { zoneId: string };
 
     await db
       .update(choreZoneDevices)
       .set({ isActive: false })
-      .where(eq(choreZoneDevices.id, zoneId));
+      .where(and(eq(choreZoneDevices.id, zoneId), eq(choreZoneDevices.householdId, householdId)));
 
     return reply.send({ success: true });
   });
@@ -923,8 +1061,13 @@ export async function smartHomeRoutes(app: FastifyInstance) {
   // --- Overview ---
 
   // Get smart home overview
-  app.get('/overview', async (request, reply) => {
-    const { householdId } = request.query as { householdId: string };
+  app.get('/overview', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     // Get hubs
     const hubs = await db

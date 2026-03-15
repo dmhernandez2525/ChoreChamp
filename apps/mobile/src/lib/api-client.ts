@@ -247,6 +247,10 @@ class MobileApiClient {
     });
   }
 
+  async getPendingCompletions(householdId: string): Promise<ChoreCompletion[]> {
+    return this.request(`/households/${householdId}/pending-completions`);
+  }
+
   async approveCompletion(householdId: string, completionId: string): Promise<void> {
     return this.request(`/households/${householdId}/completions/${completionId}/approve`, {
       method: 'POST',

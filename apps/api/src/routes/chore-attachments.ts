@@ -2,10 +2,11 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { choreAttachments, choreActivityLog, chores, members } from '@chorechamp/database';
+import { choreAttachments, choreActivityLog, chores } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { emitToHousehold } from '../lib/socket';
 import { Server } from 'socket.io';
+import { verifyMembership } from '../lib/membership';
 
 const addAttachmentSchema = z.object({
   fileName: z.string().min(1).max(500),
@@ -14,20 +15,6 @@ const addAttachmentSchema = z.object({
   mimeType: z.string().max(100).optional(),
   isPhotoProof: z.boolean().default(false),
 });
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
 
 async function verifyChoreInHousehold(
   choreId: string,

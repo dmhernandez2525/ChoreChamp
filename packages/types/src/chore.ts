@@ -123,6 +123,13 @@ export interface ChoreSchedule {
   createdAt: Date;
 }
 
+export interface PendingCompletion extends ChoreCompletion {
+  choreName: string;
+  choreIcon: string;
+  memberName: string;
+  memberColor: string;
+}
+
 // API Request/Response types
 export interface CreateChoreRequest {
   title: string;
@@ -148,6 +155,8 @@ export interface CreateChoreRequest {
   steps?: string[];
   priority?: ChorePriority;
 }
+
+export type UpdateChoreRequest = Partial<CreateChoreRequest>;
 
 export interface CompleteChoreRequest {
   scheduledDate?: string;

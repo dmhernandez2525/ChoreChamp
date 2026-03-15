@@ -28,6 +28,7 @@ import {
   getEvolutionDisplay,
 } from '@chorechamp/gamification';
 import type { PetAction, PetStats } from '@chorechamp/types';
+import { verifyMembership } from '../lib/membership';
 
 // Constants for pagination
 const MAX_LIMIT = 100;
@@ -66,20 +67,6 @@ const createPlaydateSchema = z.object({
 });
 
 // Helper functions
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 async function getMemberById(
   memberId: string,
   householdId: string
@@ -210,7 +197,14 @@ export async function virtualPetRoutes(fastify: FastifyInstance) {
   // Get all pet species
   fastify.get('/species', {
     preHandler: [requireAuth],
-  }, async (_request, reply) => {
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+
     const species = await db
       .select()
       .from(petSpecies)
@@ -234,6 +228,13 @@ export async function virtualPetRoutes(fastify: FastifyInstance) {
   fastify.get('/accessories', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membershipCheck = await verifyMembership(user.id, householdId);
+    if (!membershipCheck) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+
     try {
       const { category } = request.query as { category?: string };
 

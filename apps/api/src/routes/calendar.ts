@@ -2,28 +2,16 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { chores, choreSchedules, choreCompletions, members } from '@chorechamp/database';
+import { chores, choreSchedules, choreCompletions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 const dateRangeSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   memberId: z.string().uuid().optional(),
 });
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
 
 export async function calendarRoutes(fastify: FastifyInstance) {
   // Get chores for a date range (calendar view)
@@ -32,6 +20,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const query = dateRangeSchema.parse(request.query);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -84,6 +73,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const query = dateRangeSchema.parse(request.query);
 
     const membership = await verifyMembership(user.id, householdId);

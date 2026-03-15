@@ -12,6 +12,8 @@ import {
   members,
 } from '@chorechamp/database/schema';
 import { DEVICE_CATEGORIES, PLATFORM_CONFIGS } from '@chorechamp/types';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Zod schemas
 const createDeviceSchema = z.object({
@@ -100,14 +102,26 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   /**
    * GET /screen-time/device-types - Get device type options
    */
-  fastify.get('/screen-time/device-types', async () => {
+  fastify.get('/screen-time/device-types', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return { deviceTypes: DEVICE_CATEGORIES };
   });
 
   /**
    * GET /screen-time/platforms - Get platform options
    */
-  fastify.get('/screen-time/platforms', async () => {
+  fastify.get('/screen-time/platforms', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return { platforms: PLATFORM_CONFIGS };
   });
 
@@ -121,8 +135,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string };
-  }>('/screen-time/devices', async (request) => {
-    const { householdId } = request.params;
+  }>('/screen-time/devices', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.query;
 
     const conditions = [eq(trackedDevices.householdId, householdId)];
@@ -157,8 +176,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createDeviceSchema>;
-  }>('/screen-time/devices', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/screen-time/devices', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createDeviceSchema.parse(request.body);
 
     const [device] = await db
@@ -177,8 +201,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{
     Params: { householdId: string; deviceId: string };
-  }>('/screen-time/devices/:deviceId', async (request, reply) => {
-    const { householdId, deviceId } = request.params;
+  }>('/screen-time/devices/:deviceId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { deviceId } = request.params;
 
     const existing = await db.query.trackedDevices.findFirst({
       where: and(
@@ -205,8 +235,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string; memberId: string };
-  }>('/screen-time/limits/:memberId', async (request) => {
-    const { householdId, memberId } = request.params;
+  }>('/screen-time/limits/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params;
 
     let limit = await db.query.screenTimeLimits.findFirst({
       where: and(
@@ -236,8 +272,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; memberId: string };
     Body: z.infer<typeof updateLimitSchema>;
-  }>('/screen-time/limits/:memberId', async (request, reply) => {
-    const { householdId, memberId } = request.params;
+  }>('/screen-time/limits/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params;
     const data = updateLimitSchema.parse(request.body);
 
     const existing = await db.query.screenTimeLimits.findFirst({
@@ -279,8 +321,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; from?: string; to?: string };
-  }>('/screen-time/usage', async (request) => {
-    const { householdId } = request.params;
+  }>('/screen-time/usage', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, from, to } = request.query;
 
     const conditions = [eq(screenTimeUsage.householdId, householdId)];
@@ -309,9 +356,24 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof recordUsageSchema>;
-  }>('/screen-time/usage', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/screen-time/usage', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = recordUsageSchema.parse(request.body);
+
+    // Verify target member belongs to this household
+    const [targetMember] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Member not found in this household' });
+    }
+
     const today = new Date().toISOString().split('T')[0];
 
     // Get or create today's usage record
@@ -417,8 +479,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string; memberId: string };
-  }>('/screen-time/usage/today/:memberId', async (request) => {
-    const { householdId, memberId } = request.params;
+  }>('/screen-time/usage/today/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params;
     const today = new Date().toISOString().split('T')[0];
 
     const usage = await db.query.screenTimeUsage.findFirst({
@@ -434,13 +502,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
       where: eq(screenTimeLimits.memberId, memberId),
     });
 
-    // Get unused rewards
+    // Get unused rewards (scoped to household)
     const rewards = await db
       .select()
       .from(screenTimeRewards)
       .where(
         and(
           eq(screenTimeRewards.memberId, memberId),
+          eq(screenTimeRewards.householdId, householdId),
           eq(screenTimeRewards.isUsed, false)
         )
       );
@@ -476,11 +545,20 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string; memberId: string };
     Querystring: { unused?: string };
-  }>('/screen-time/rewards/:memberId', async (request) => {
+  }>('/screen-time/rewards/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.params;
     const { unused } = request.query;
 
-    const conditions = [eq(screenTimeRewards.memberId, memberId)];
+    const conditions = [
+      eq(screenTimeRewards.memberId, memberId),
+      eq(screenTimeRewards.householdId, householdId),
+    ];
     if (unused === 'true') {
       conditions.push(eq(screenTimeRewards.isUsed, false));
     }
@@ -499,7 +577,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
    */
   fastify.post<{
     Params: { householdId: string; memberId: string; rewardId: string };
-  }>('/screen-time/rewards/:memberId/use/:rewardId', async (request, reply) => {
+  }>('/screen-time/rewards/:memberId/use/:rewardId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, rewardId } = request.params;
 
     const reward = await db.query.screenTimeRewards.findFirst({
@@ -560,8 +644,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { status?: string; memberId?: string };
-  }>('/screen-time/extensions', async (request) => {
-    const { householdId } = request.params;
+  }>('/screen-time/extensions', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { status, memberId } = request.query;
 
     const conditions = [eq(screenTimeExtensionRequests.householdId, householdId)];
@@ -599,14 +688,17 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof requestExtensionSchema>;
-  }>('/screen-time/extensions', async (request, reply) => {
-    const { householdId } = request.params;
-    const memberId = request.headers['x-member-id'] as string;
+  }>('/screen-time/extensions', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = requestExtensionSchema.parse(request.body);
 
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
+    // Derive memberId from authenticated user's membership (not from untrusted header)
+    const memberId = membership.id;
 
     const [extensionRequest] = await db
       .insert(screenTimeExtensionRequests)
@@ -627,9 +719,16 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string; requestId: string };
     Body: z.infer<typeof respondExtensionSchema>;
-  }>('/screen-time/extensions/:requestId/respond', async (request, reply) => {
-    const { householdId, requestId } = request.params;
-    const responderId = request.headers['x-member-id'] as string;
+  }>('/screen-time/extensions/:requestId/respond', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { requestId } = request.params;
+    // Derive responderId from authenticated user's membership (not from untrusted header)
+    const responderId = membership.id;
     const data = respondExtensionSchema.parse(request.body);
 
     const existing = await db.query.screenTimeExtensionRequests.findFirst({
@@ -681,8 +780,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/screen-time/chore-rewards', async (request) => {
-    const { householdId } = request.params;
+  }>('/screen-time/chore-rewards', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const rewards = await db
       .select()
@@ -699,8 +803,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createChoreRewardSchema>;
-  }>('/screen-time/chore-rewards', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/screen-time/chore-rewards', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createChoreRewardSchema.parse(request.body);
 
     const [reward] = await db
@@ -719,8 +828,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{
     Params: { householdId: string; rewardId: string };
-  }>('/screen-time/chore-rewards/:rewardId', async (request, reply) => {
-    const { householdId, rewardId } = request.params;
+  }>('/screen-time/chore-rewards/:rewardId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { rewardId } = request.params;
 
     const existing = await db.query.choreScreenTimeRewards.findFirst({
       where: and(
@@ -748,8 +863,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string; memberId: string };
     Querystring: { period?: string };
-  }>('/screen-time/analytics/:memberId', async (request) => {
-    const { householdId, memberId } = request.params;
+  }>('/screen-time/analytics/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params;
     const period = (request.query.period as 'week' | 'month') || 'week';
 
     const days = period === 'month' ? 30 : 7;
@@ -834,8 +955,13 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/screen-time/overview', async (request) => {
-    const { householdId } = request.params;
+  }>('/screen-time/overview', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const today = new Date().toISOString().split('T')[0];
 
     // Get all members with usage today

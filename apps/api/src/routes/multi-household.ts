@@ -86,7 +86,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         members,
         and(
           eq(members.householdId, households.id),
-          eq(members.userId, user.id)
+          eq(members.userId, user.id),
+          eq(members.isActive, true)
         )
       )
       .where(eq(userHouseholds.userId, user.id));
@@ -159,7 +160,7 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
       .select()
       .from(members)
       .where(
-        and(eq(members.householdId, body.householdId), eq(members.userId, user.id))
+        and(eq(members.householdId, body.householdId), eq(members.userId, user.id), eq(members.isActive, true))
       );
 
     if (!membership) {
@@ -219,7 +220,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -295,7 +297,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -345,7 +348,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, body.targetHouseholdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -353,39 +357,41 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
     const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-    const [targetMember] = await db
-      .insert(members)
-      .values({
-        householdId: body.targetHouseholdId,
-        userId: sourceMember.userId,
-        name: body.targetMemberName || sourceMember.name,
-        role: sourceMember.role,
-        color: randomColor,
-        avatarUrl: sourceMember.avatarUrl,
-        birthYear: sourceMember.birthYear,
-        requiresApproval: sourceMember.requiresApproval,
-      })
-      .returning();
+    // Create member and link atomically
+    const { targetMember, link } = await db.transaction(async (tx) => {
+      const [targetMember] = await tx
+        .insert(members)
+        .values({
+          householdId: body.targetHouseholdId,
+          userId: sourceMember.userId,
+          name: body.targetMemberName || sourceMember.name,
+          role: sourceMember.role,
+          color: randomColor,
+          avatarUrl: sourceMember.avatarUrl,
+          birthYear: sourceMember.birthYear,
+          requiresApproval: sourceMember.requiresApproval,
+        })
+        .returning();
 
-    // Create the member link
-    const [link] = await db
-      .insert(memberLinks)
-      .values({
-        primaryMemberId: body.sourceMemberId,
-        primaryHouseholdId: householdId,
-        linkedMemberId: targetMember.id,
-        linkedHouseholdId: body.targetHouseholdId,
-        sharePoints: body.shareSettings?.sharePoints ?? false,
-        shareStreaks: body.shareSettings?.shareStreaks ?? false,
-        shareBadges: body.shareSettings?.shareBadges ?? false,
-        shareChoreView: body.shareSettings?.shareChoreView ?? false,
-        // Auto-approve for source household
-        approvedByPrimaryHousehold: true,
-        // Auto-approve if user is parent in both households
-        approvedByLinkedHousehold: !!targetParentMembership,
-        isActive: !!targetParentMembership, // Only active if approved by both
-      })
-      .returning();
+      const [link] = await tx
+        .insert(memberLinks)
+        .values({
+          primaryMemberId: body.sourceMemberId,
+          primaryHouseholdId: householdId,
+          linkedMemberId: targetMember.id,
+          linkedHouseholdId: body.targetHouseholdId,
+          sharePoints: body.shareSettings?.sharePoints ?? false,
+          shareStreaks: body.shareSettings?.shareStreaks ?? false,
+          shareBadges: body.shareSettings?.shareBadges ?? false,
+          shareChoreView: body.shareSettings?.shareChoreView ?? false,
+          approvedByPrimaryHousehold: true,
+          approvedByLinkedHousehold: !!targetParentMembership,
+          isActive: !!targetParentMembership,
+        })
+        .returning();
+
+      return { targetMember, link };
+    });
 
     return reply.status(201).send({
       link,
@@ -410,7 +416,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -468,7 +475,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -518,7 +526,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -581,7 +590,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -640,7 +650,7 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
       .select()
       .from(members)
       .where(
-        and(eq(members.householdId, householdId), eq(members.userId, user.id))
+        and(eq(members.householdId, householdId), eq(members.userId, user.id), eq(members.isActive, true))
       );
 
     if (!membership) {

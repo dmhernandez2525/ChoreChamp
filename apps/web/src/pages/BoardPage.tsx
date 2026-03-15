@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { Settings2, Search } from 'lucide-react';
+import { Settings2, Search, Download, Upload, Printer } from 'lucide-react';
 import { Button } from '@chorechamp/ui';
 import {
   useHousehold,
@@ -8,9 +8,12 @@ import {
   useChores,
   useBoardPreferences,
   useBulkUpdateChores,
+  useUpdateChore,
 } from '@chorechamp/api-client';
 import { useBoardStore } from '../stores/board-store';
 import { useFilterStore } from '../stores/filter-store';
+import { usePresence } from '../hooks/usePresence';
+import { useAuth } from '../context/AuthContext';
 import {
   ViewSwitcher,
   KanbanBoard,
@@ -30,6 +33,24 @@ import {
   CardContextMenu,
   KeyboardShortcutsHelp,
   ColumnSettingsPanel,
+  KanbanSkeleton,
+  CalendarSkeleton,
+  ListSkeleton,
+  BoardHeaderSkeleton,
+  NoChoresEmpty,
+  NoFilterResultsEmpty,
+  NoSearchResultsEmpty,
+  SkipLinks,
+  BoardErrorBoundary,
+  PresenceAvatars,
+  ExportDialog,
+  ImportDialog,
+  PrintView,
+  MobileNavBar,
+  MobileBottomSheet,
+  MobileChoreCard,
+  PointsBadge,
+  StreakIndicator,
 } from '../components/board';
 import type { Chore, ChorePriority } from '@chorechamp/types';
 
@@ -37,9 +58,8 @@ export default function BoardPage() {
   const { householdId } = useParams<{ householdId: string }>();
   const navigate = useNavigate();
 
-  if (!householdId) return <Navigate to="/" />;
-
-  // Stores
+  // Auth & stores (all hooks must be called unconditionally)
+  const { user } = useAuth();
   const { viewMode, loadPreferences } = useBoardStore();
   const { activeFilters, searchQuery, setSearchQuery } = useFilterStore();
 
@@ -50,27 +70,25 @@ export default function BoardPage() {
   const [showBulkAssign, setShowBulkAssign] = useState(false);
   const [showBulkReschedule, setShowBulkReschedule] = useState(false);
   const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
   const [detailChoreId, setDetailChoreId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ choreId: string; choreTitle: string; x: number; y: number } | null>(null);
 
-  // Queries
+  // Queries (householdId may be undefined but hooks must be called unconditionally)
   const { data: household, isLoading: loadingHousehold } = useHousehold(householdId!);
   const { data: members = [], isLoading: loadingMembers } = useMembers(householdId!);
   const { data: boardPrefs } = useBoardPreferences(householdId!);
 
-  // Build chore query params from filter store
-  const queryParams: Record<string, string> = {};
-  if (searchQuery) queryParams.search = searchQuery;
-  for (const filter of activeFilters) {
-    if (filter.field && filter.value) {
-      queryParams[filter.field] = String(filter.value);
-    }
-  }
-
   const { data: chores = [], isLoading: loadingChores } = useChores(householdId!);
+
+  // Presence
+  const { onlineMembers } = usePresence({ householdId: householdId!, boardId: householdId! });
 
   // Mutations
   const bulkUpdate = useBulkUpdateChores(householdId!);
+  const updateChore = useUpdateChore(householdId!);
 
   // Load board preferences on mount
   useEffect(() => {
@@ -92,11 +110,22 @@ export default function BoardPage() {
   // Reschedule chore (from calendar drag)
   const handleReschedule = useCallback((choreId: string, newDate: string) => {
     bulkUpdate.mutate({ choreIds: [choreId], changes: { startDate: newDate } });
-  }, [bulkUpdate]);
+  }, [bulkUpdate.mutate]);
 
   const handleChangePriority = useCallback((choreId: string, priority: ChorePriority) => {
     bulkUpdate.mutate({ choreIds: [choreId], changes: { priority } });
-  }, [bulkUpdate]);
+  }, [bulkUpdate.mutate]);
+
+  // Inline edit from list view
+  const handleUpdateChoreField = useCallback((choreId: string, field: string, value: string) => {
+    updateChore.mutate({ choreId, data: { [field]: value } });
+  }, [updateChore.mutate]);
+
+  // Guard: redirect if no householdId (after all hooks)
+  if (!householdId) return <Navigate to="/" />;
+
+  // Current member for gamification display
+  const currentMember = members.find(m => m.userId === user?.id);
 
   // Detail chore data
   const detailChore = detailChoreId ? chores.find((c: Chore) => c.id === detailChoreId) ?? null : null;
@@ -105,26 +134,30 @@ export default function BoardPage() {
   if (loadingHousehold || loadingMembers) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 rounded bg-gray-200" />
-          <div className="h-10 w-full rounded bg-gray-200" />
-          <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-96 rounded-lg bg-gray-200" />
-            ))}
-          </div>
-        </div>
+        <BoardHeaderSkeleton />
+        <KanbanSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-4" data-testid="board-page">
+    <BoardErrorBoundary>
+    <SkipLinks />
+    <div className="mx-auto max-w-7xl px-4 py-4" id="main-content" data-testid="board-page">
       {/* Page header */}
       <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">{household?.name} Board</h1>
-          <p className="text-sm text-gray-500">{chores.length} chores</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{household?.name} Board</h1>
+            <p className="text-sm text-gray-500">{chores.length} chores</p>
+          </div>
+          {currentMember && (
+            <div className="hidden sm:flex items-center gap-2">
+              <StreakIndicator streak={currentMember.streakCurrent} />
+              <PointsBadge points={currentMember.pointsCurrent} variant="compact" />
+            </div>
+          )}
+          <PresenceAvatars members={onlineMembers} maxVisible={5} />
         </div>
         <div className="flex items-center gap-2">
           {/* Search */}
@@ -140,6 +173,33 @@ export default function BoardPage() {
           </div>
 
           <ViewSwitcher />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowExport(true)}
+            title="Export chores"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowImport(true)}
+            title="Import chores"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPrintView(true)}
+            title="Print view"
+          >
+            <Printer className="h-4 w-4" />
+          </Button>
 
           <Button
             variant="outline"
@@ -179,26 +239,23 @@ export default function BoardPage() {
         </div>
 
         {/* Main view area */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" id="board-content">
           {loadingChores ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-            </div>
+            <>
+              {viewMode === 'kanban' || viewMode === 'dashboard' ? <KanbanSkeleton /> : null}
+              {viewMode === 'calendar' ? <CalendarSkeleton /> : null}
+              {viewMode === 'list' ? <ListSkeleton /> : null}
+            </>
           ) : chores.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-gray-200 py-16 text-center">
-              <p className="text-lg font-medium text-gray-500">No chores found</p>
-              <p className="mt-1 text-sm text-gray-400">
-                {activeFilters.length > 0 || searchQuery
-                  ? 'Try adjusting your filters or search query.'
-                  : 'Create your first chore to get started.'}
-              </p>
-              <Button
-                className="mt-4"
-                onClick={() => navigate(`/household/${householdId}/chores/create`)}
-              >
-                Create Chore
-              </Button>
-            </div>
+            <>
+              {searchQuery ? (
+                <NoSearchResultsEmpty query={searchQuery} />
+              ) : activeFilters.length > 0 ? (
+                <NoFilterResultsEmpty />
+              ) : (
+                <NoChoresEmpty onCreateChore={() => navigate(`/household/${householdId}/chores/create`)} />
+              )}
+            </>
           ) : (
             <>
               {viewMode === 'kanban' && (
@@ -218,6 +275,7 @@ export default function BoardPage() {
                 <ListView
                   chores={chores}
                   onChoreClick={handleChoreClick}
+                  onUpdateChore={handleUpdateChoreField}
                 />
               )}
               {viewMode === 'dashboard' && (
@@ -301,6 +359,65 @@ export default function BoardPage() {
 
       <KeyboardShortcutsHelp />
       <UndoToast />
+
+      {/* Export/Import dialogs */}
+      <ExportDialog
+        householdId={householdId!}
+        open={showExport}
+        onOpenChange={setShowExport}
+      />
+      <ImportDialog
+        householdId={householdId!}
+        open={showImport}
+        onOpenChange={setShowImport}
+      />
+
+      {/* Mobile navigation bar */}
+      <div className="md:hidden">
+        <MobileNavBar
+          activeTab={viewMode === 'calendar' ? 'calendar' : 'board'}
+          onViewChange={(view) => {
+            const store = useBoardStore.getState();
+            store.setViewMode(view === 'calendar' ? 'calendar' : 'kanban');
+          }}
+          onShowFilters={() => setShowFilterBuilder(true)}
+          onCreateChore={() => navigate(`/household/${householdId}/chores/create`)}
+        />
+      </div>
+
+      {/* Mobile chore detail bottom sheet */}
+      <MobileBottomSheet
+        open={!!detailChoreId}
+        onClose={() => setDetailChoreId(null)}
+        title={detailChore?.title}
+      >
+        {detailChore && (
+          <MobileChoreCard chore={detailChore} />
+        )}
+      </MobileBottomSheet>
+
+      {/* Print view */}
+      {showPrintView && (
+        <div className="fixed inset-0 z-50 bg-white overflow-auto print:static">
+          <div className="p-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPrintView(false)}
+              className="mb-4 print:hidden"
+            >
+              Close Print View
+            </Button>
+            <PrintView
+              chores={chores}
+              householdName={household?.name || ''}
+              viewMode={viewMode === 'dashboard' ? 'kanban' : viewMode as 'list' | 'kanban' | 'calendar'}
+              members={members}
+            />
+          </div>
+        </div>
+      )}
     </div>
+    </BoardErrorBoundary>
   );
 }

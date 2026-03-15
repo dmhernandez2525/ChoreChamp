@@ -1,9 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { db } from '../lib/db';
-import { households, members, webhookEvents } from '@chorechamp/database/schema';
+import { households, webhookEvents } from '@chorechamp/database/schema';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { createLogger } from '../lib/logger';
 import { requireStripe, getStripeWebhookSecret } from '../lib/stripe';
@@ -23,6 +23,7 @@ import type {
   CreatePortalSessionRequest,
   SubscriptionTier,
 } from '@chorechamp/types';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
 
 const logger = createLogger('subscription');
 
@@ -41,26 +42,6 @@ const revenuecatSchema = z.object({
   appUserId: z.string().min(1),
   householdId: z.string().uuid(),
 });
-
-async function verifyMembership(userId: string, householdId: string) {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
-
-async function verifyParentMembership(userId: string, householdId: string) {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId),
-      eq(members.role, 'parent')
-    ));
-  return membership || null;
-}
 
 function resolveStripePriceId(
   tier: SubscriptionTier,

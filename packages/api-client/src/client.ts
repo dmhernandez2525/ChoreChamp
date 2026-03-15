@@ -14,6 +14,8 @@ import type {
   CreateInviteCodeRequest,
   Chore,
   CreateChoreRequest,
+  UpdateChoreRequest,
+  PendingCompletion,
   ChoreCompletion,
   CompleteChoreRequest,
   TodayChore,
@@ -26,6 +28,7 @@ import type {
   CreateRewardRequest,
   RewardRedemption,
   BossBattle,
+  BossBattleStats,
   CreateBossBattleRequest,
   DamageBossResponse,
   ActivityFeedResponse,
@@ -347,6 +350,16 @@ import type {
   AddAttachmentRequest,
   ReportExportData,
   AuditLogSummary,
+  SchoolSchedule,
+  CreateSchoolScheduleInput,
+  ExtracurricularActivity,
+  CreateActivityInput,
+  ActivityEvent,
+  CreateEventInput,
+  VolunteerLog,
+  LogVolunteerInput,
+  CollegePrepActivity,
+  CreateCollegePrepInput,
 } from '@chorechamp/types';
 
 interface ApiError {
@@ -582,6 +595,21 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  async updateChore(
+    householdId: string,
+    choreId: string,
+    data: UpdateChoreRequest
+  ): Promise<Chore> {
+    return this.request(`/households/${householdId}/chores/${choreId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPendingCompletions(householdId: string): Promise<PendingCompletion[]> {
+    return this.request(`/households/${householdId}/chores/pending-completions`);
   }
 
   async completeChore(
@@ -1454,6 +1482,10 @@ class ApiClient {
 
   async getBossBattle(householdId: string, battleId: string): Promise<BossBattle> {
     return this.request(`/households/${householdId}/boss-battles/${battleId}`);
+  }
+
+  async getBossBattleStats(householdId: string): Promise<BossBattleStats> {
+    return this.request(`/households/${householdId}/boss-battles/current/stats`);
   }
 
   // ===== Activity Feed =====
@@ -3622,6 +3654,41 @@ class ApiClient {
 
   async importChores(householdId: string, data: { content: string; format?: string }): Promise<{ imported: number; skipped: number; errors: string[] }> {
     return this.request(`/households/${householdId}/chores/import`, { method: 'POST', body: JSON.stringify(data) });
+  }
+  // ===== School & Extracurricular =====
+  async createSchoolSchedule(householdId: string, data: CreateSchoolScheduleInput): Promise<SchoolSchedule> {
+    return this.request(`/households/${householdId}/school/school-schedules`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createActivity(householdId: string, data: CreateActivityInput): Promise<ExtracurricularActivity> {
+    return this.request(`/households/${householdId}/school/activities`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createEvent(householdId: string, data: CreateEventInput): Promise<ActivityEvent> {
+    return this.request(`/households/${householdId}/school/events`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createVolunteerLog(householdId: string, data: LogVolunteerInput): Promise<VolunteerLog> {
+    return this.request(`/households/${householdId}/school/volunteer-logs`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createCollegePrepActivity(householdId: string, data: CreateCollegePrepInput): Promise<CollegePrepActivity> {
+    return this.request(`/households/${householdId}/school/college-prep`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 }
 

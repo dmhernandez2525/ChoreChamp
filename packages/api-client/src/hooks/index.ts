@@ -7,6 +7,7 @@ import type {
   AddMemberRequest,
   UpdateMemberRequest,
   CreateChoreRequest,
+  UpdateChoreRequest,
   CompleteChoreRequest,
   JoinHouseholdRequest,
   CreateRewardRequest,
@@ -88,6 +89,11 @@ import type {
   ClassifyChoreRequest,
   CreateMarketplaceListingRequest,
   UpdateMarketplaceConfigRequest,
+  CreateSchoolScheduleInput,
+  CreateActivityInput,
+  CreateEventInput,
+  LogVolunteerInput,
+  CreateCollegePrepInput,
 } from '@chorechamp/types';
 
 // Query parameter types for React Query keys
@@ -303,6 +309,19 @@ export const queryKeys = {
   marketplaceListings: (householdId: string) => ['marketplaceListings', householdId] as const,
   marketplaceStats: (householdId: string) => ['marketplaceStats', householdId] as const,
   marketplaceConfig: (householdId: string) => ['marketplaceConfig', householdId] as const,
+
+  // Tags, Time Tracking, Dependencies
+  householdTags: (householdId: string) => ['householdTags', householdId] as const,
+  choreTags: (householdId: string, choreId: string) => ['choreTags', householdId, choreId] as const,
+  timeLogs: (householdId: string, choreId: string) => ['timeLogs', householdId, choreId] as const,
+  choreDependencies: (householdId: string, choreId: string) => ['choreDependencies', householdId, choreId] as const,
+
+  // School & Extracurricular
+  schoolSchedules: (householdId: string) => ['schoolSchedules', householdId] as const,
+  schoolActivities: (householdId: string) => ['schoolActivities', householdId] as const,
+  schoolEvents: (householdId: string) => ['schoolEvents', householdId] as const,
+  volunteerLogs: (householdId: string) => ['volunteerLogs', householdId] as const,
+  collegePrepActivities: (householdId: string) => ['collegePrepActivities', householdId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -576,6 +595,19 @@ export function useCreateChore(householdId: string) {
 
   return useMutation({
     mutationFn: (data: CreateChoreRequest) => apiClient.createChore(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.chores(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.todaysChores(householdId) });
+    },
+  });
+}
+
+export function useUpdateChore(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ choreId, data }: { choreId: string; data: UpdateChoreRequest }) =>
+      apiClient.updateChore(householdId, choreId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.chores(householdId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.todaysChores(householdId) });
@@ -1806,6 +1838,15 @@ export function useBossBattle(householdId: string, battleId: string) {
     queryKey: queryKeys.bossBattle(householdId, battleId),
     queryFn: () => apiClient.getBossBattle(householdId, battleId),
     enabled: !!householdId && !!battleId,
+  });
+}
+
+export function useBossBattleStats(householdId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.bossBattle(householdId, 'stats'), 'stats'],
+    queryFn: () => apiClient.getBossBattleStats(householdId),
+    enabled: !!householdId,
+    staleTime: 1000 * 60, // 1 minute
   });
 }
 
@@ -3367,3 +3408,55 @@ export function useUpdateMarketplaceConfig(householdId: string) {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceConfig(householdId) }); },
   });
 }
+
+// ===== School & Extracurricular Hooks =====
+export function useCreateSchoolSchedule(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateSchoolScheduleInput) => apiClient.createSchoolSchedule(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schoolSchedules(householdId) });
+    },
+  });
+}
+
+export function useCreateActivity(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateActivityInput) => apiClient.createActivity(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schoolActivities(householdId) });
+    },
+  });
+}
+
+export function useCreateEvent(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateEventInput) => apiClient.createEvent(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schoolEvents(householdId) });
+    },
+  });
+}
+
+export function useCreateVolunteerLog(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: LogVolunteerInput) => apiClient.createVolunteerLog(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.volunteerLogs(householdId) });
+    },
+  });
+}
+
+export function useCreateCollegePrepActivity(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateCollegePrepInput) => apiClient.createCollegePrepActivity(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.collegePrepActivities(householdId) });
+    },
+  });
+}
+

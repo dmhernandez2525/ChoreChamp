@@ -2,8 +2,10 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { choreBoardPreferences, members } from '@chorechamp/database';
+import { choreBoardPreferences } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 const updateBoardPreferencesSchema = z.object({
   viewMode: z.enum(['kanban', 'calendar', 'list', 'dashboard']).optional(),
@@ -20,20 +22,6 @@ const updateBoardPreferencesSchema = z.object({
   }).optional(),
 });
 
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
 export async function boardRoutes(fastify: FastifyInstance) {
   // Get board preferences for current member
   fastify.get('/preferences', {
@@ -41,6 +29,7 @@ export async function boardRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -77,6 +66,7 @@ export async function boardRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = updateBoardPreferencesSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);

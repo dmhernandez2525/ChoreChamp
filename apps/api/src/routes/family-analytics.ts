@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { db } from '@chorechamp/database';
 import { members, households } from '@chorechamp/database/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type {
   FamilyAnalytics,
   AnalyticsPeriod,
@@ -18,20 +18,9 @@ import {
   ComparePeriodsRequestSchema,
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 import { randomUUID } from 'crypto';
 import { getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
-
-// Helper to verify membership
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 async function verifyPremiumAccess(householdId: string): Promise<boolean> {
   const [household] = await db.select().from(households).where(eq(households.id, householdId));

@@ -1,12 +1,19 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 export async function smartAutomationRoutes(fastify: FastifyInstance) {
   // F17.1 Smart Scheduling
 
   // GET /schedule/config - Get smart schedule configuration
-  fastify.get('/schedule/config', async (request, reply) => {
+  fastify.get('/schedule/config', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     return reply.send({
       id: 'config-1',
@@ -23,7 +30,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // PUT /schedule/config - Update smart schedule configuration
-  fastify.put('/schedule/config', async (request, reply) => {
+  fastify.put('/schedule/config', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         strategy: z.enum(['balanced', 'efficiency', 'fairness', 'preference']).optional(),
@@ -43,8 +56,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // POST /schedule/optimize - Run schedule optimization
-  fastify.post('/schedule/optimize', async (request, reply) => {
+  fastify.post('/schedule/optimize', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     return reply.send({
       id: 'opt-1',
@@ -60,12 +78,24 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // GET /schedule/conflicts - Get schedule conflicts
-  fastify.get('/schedule/conflicts', async (_request, reply) => {
+  fastify.get('/schedule/conflicts', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({ conflicts: [], total: 0 });
   });
 
   // POST /schedule/resolve-conflict - Resolve a schedule conflict
-  fastify.post('/schedule/resolve-conflict', async (request, reply) => {
+  fastify.post('/schedule/resolve-conflict', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         conflictId: z.string(),
@@ -79,13 +109,24 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   // F17.2 AI Chore Suggestions
 
   // GET /suggestions - Get AI chore suggestions
-  fastify.get('/suggestions', async (_request, reply) => {
+  fastify.get('/suggestions', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({ suggestions: [], total: 0 });
   });
 
   // POST /suggestions/:suggestionId/feedback - Provide feedback on a suggestion
-  fastify.post('/suggestions/:suggestionId/feedback', async (request, reply) => {
-    const { suggestionId } = request.params as { suggestionId: string };
+  fastify.post('/suggestions/:suggestionId/feedback', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, suggestionId } = request.params as { householdId: string; suggestionId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         accepted: z.boolean(),
@@ -101,8 +142,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // GET /suggestions/preferences - Get suggestion preferences
-  fastify.get('/suggestions/preferences', async (request, reply) => {
+  fastify.get('/suggestions/preferences', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     return reply.send({
       id: 'pref-1',
@@ -117,7 +163,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // PUT /suggestions/preferences - Update suggestion preferences
-  fastify.put('/suggestions/preferences', async (request, reply) => {
+  fastify.put('/suggestions/preferences', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         enableSuggestions: z.boolean().optional(),
@@ -139,7 +191,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // POST /suggestions/generate - Trigger suggestion generation
-  fastify.post('/suggestions/generate', async (_request, reply) => {
+  fastify.post('/suggestions/generate', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({
       generated: 0,
       message: 'Suggestion generation triggered',
@@ -149,12 +207,24 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   // F17.3 Automation Rules
 
   // GET /automation/rules - List automation rules
-  fastify.get('/automation/rules', async (_request, reply) => {
+  fastify.get('/automation/rules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({ rules: [], total: 0 });
   });
 
   // POST /automation/rules - Create an automation rule
-  fastify.post('/automation/rules', async (request, reply) => {
+  fastify.post('/automation/rules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         name: z.string().min(1).max(100),
@@ -200,8 +270,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // GET /automation/rules/:ruleId - Get a specific automation rule
-  fastify.get('/automation/rules/:ruleId', async (request, reply) => {
-    const { ruleId } = request.params as { ruleId: string };
+  fastify.get('/automation/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     return reply.send({
       id: ruleId,
@@ -218,8 +293,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // PUT /automation/rules/:ruleId - Update an automation rule
-  fastify.put('/automation/rules/:ruleId', async (request, reply) => {
-    const { ruleId } = request.params as { ruleId: string };
+  fastify.put('/automation/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         name: z.string().min(1).max(100).optional(),
@@ -266,18 +346,35 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // DELETE /automation/rules/:ruleId - Delete an automation rule
-  fastify.delete('/automation/rules/:ruleId', async (_request, reply) => {
+  fastify.delete('/automation/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 
   // GET /automation/rules/:ruleId/logs - Get execution logs for a rule
-  fastify.get('/automation/rules/:ruleId/logs', async (_request, reply) => {
+  fastify.get('/automation/rules/:ruleId/logs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({ logs: [], total: 0 });
   });
 
   // POST /automation/rules/:ruleId/test - Test an automation rule
-  fastify.post('/automation/rules/:ruleId/test', async (request, reply) => {
-    const { ruleId } = request.params as { ruleId: string };
+  fastify.post('/automation/rules/:ruleId/test', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     return reply.send({
       ruleId,
@@ -290,25 +387,47 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   // F17.4 Predictive Analytics
 
   // GET /predictions - Get predictions
-  fastify.get('/predictions', async (_request, reply) => {
+  fastify.get('/predictions', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({ predictions: [], total: 0 });
   });
 
   // GET /predictions/insights - Get predictive insights
-  fastify.get('/predictions/insights', async (_request, reply) => {
+  fastify.get('/predictions/insights', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({ insights: [], total: 0 });
   });
 
   // PUT /predictions/insights/:insightId/read - Mark insight as read
-  fastify.put('/predictions/insights/:insightId/read', async (request, reply) => {
-    const { insightId } = request.params as { insightId: string };
+  fastify.put('/predictions/insights/:insightId/read', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, insightId } = request.params as { householdId: string; insightId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     return reply.send({ id: insightId, isRead: true });
   });
 
   // GET /predictions/config - Get predictive analytics config
-  fastify.get('/predictions/config', async (request, reply) => {
+  fastify.get('/predictions/config', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     return reply.send({
       id: 'pa-config-1',
@@ -323,7 +442,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // PUT /predictions/config - Update predictive analytics config
-  fastify.put('/predictions/config', async (request, reply) => {
+  fastify.put('/predictions/config', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         enablePredictions: z.boolean().optional(),
@@ -351,7 +476,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // POST /predictions/generate - Trigger prediction generation
-  fastify.post('/predictions/generate', async (_request, reply) => {
+  fastify.post('/predictions/generate', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({
       generated: 0,
       message: 'Prediction generation triggered',
@@ -361,7 +492,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   // F17.5 Natural Language Commands
 
   // POST /commands - Execute a natural language command
-  fastify.post('/commands', async (request, reply) => {
+  fastify.post('/commands', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = z
       .object({
         input: z.string().min(1).max(500),
@@ -379,7 +516,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // GET /commands/history - Get command history
-  fastify.get('/commands/history', async (_request, reply) => {
+  fastify.get('/commands/history', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({
       commands: [],
       total: 0,
@@ -389,7 +532,13 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // GET /commands/capabilities - Get available command capabilities
-  fastify.get('/commands/capabilities', async (_request, reply) => {
+  fastify.get('/commands/capabilities', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.send({
       capabilities: [
         {

@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { requireAuth } from '../middleware/auth';
 import { authRoutes } from './auth';
 import { householdRoutes } from './households';
 import { memberRoutes } from './members';
@@ -77,6 +78,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       // Nested member routes under households
       api.register(async (householdApi) => {
+        // Enforce auth on ALL household-scoped routes
+        householdApi.addHook('preHandler', requireAuth);
+
         householdApi.register(memberRoutes, { prefix: '/:householdId/members' });
         householdApi.register(choreRoutes, { prefix: '/:householdId/chores' });
         householdApi.register(scheduleRoutes, { prefix: '/:householdId/schedule' });

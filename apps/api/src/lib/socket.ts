@@ -1,14 +1,44 @@
 import { Server, Socket } from 'socket.io';
 import { createLogger } from './logger';
+import { verifyMembership } from './membership';
+import { auth } from './auth';
 
 const logger = createLogger('socket');
 
 export function initializeSocket(io: Server) {
-  io.on('connection', (socket: Socket) => {
-    logger.info({ socketId: socket.id }, 'Client connected');
+  io.on('connection', async (socket: Socket) => {
+    // Verify session server-side using better-auth instead of trusting client-supplied userId
+    let userId: string | undefined;
 
-    // Join household room
-    socket.on('join:household', (householdId: string) => {
+    try {
+      const headers = socket.handshake.headers as Record<string, string>;
+      const session = await auth.api.getSession({ headers });
+
+      if (!session) {
+        logger.warn({ socketId: socket.id }, 'Socket connected without valid session, disconnecting');
+        socket.disconnect(true);
+        return;
+      }
+
+      userId = session.user.id;
+    } catch {
+      logger.warn({ socketId: socket.id }, 'Socket session verification failed, disconnecting');
+      socket.disconnect(true);
+      return;
+    }
+
+    logger.info({ socketId: socket.id, userId }, 'Client connected');
+
+    socket.data.userId = userId;
+    socket.join(`user:${userId}`);
+
+    // Join household room (with membership verification)
+    socket.on('join:household', async (householdId: string) => {
+      const membership = await verifyMembership(userId, householdId);
+      if (!membership) {
+        socket.emit('error', { message: 'Not a member of this household' });
+        return;
+      }
       socket.join(`household:${householdId}`);
       logger.info({ socketId: socket.id, householdId }, 'Joined household room');
     });
