@@ -4,6 +4,7 @@ import { eq, and, isNull, desc, sql, gte } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { bossBattles, members, choreCompletions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
 
 // Pagination constants
 const MAX_LIMIT = 50;
@@ -22,35 +23,6 @@ const createBossBattleSchema = z.object({
 const damageBossSchema = z.object({
   damage: z.number().int().min(1),
 });
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
-async function verifyParentMembership(
-  userId: string,
-  householdId: string
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId),
-      eq(members.role, 'parent')
-    ));
-  return !!membership;
-}
 
 export async function bossBattleRoutes(fastify: FastifyInstance) {
   // Get current active boss battle
@@ -248,7 +220,14 @@ export async function bossBattleRoutes(fastify: FastifyInstance) {
           eq(members.isActive, true)
         ));
 
-      // Award points to each member
+      // Award points to each member (guard against empty list)
+      if (activeMembers.length === 0) {
+        return reply.send({
+          battle: updatedBattle,
+          damageDealt: body.damage,
+          isDefeated,
+        });
+      }
       const pointsPerMember = Math.floor(battle.pointReward / activeMembers.length);
 
       for (const member of activeMembers) {
@@ -281,40 +260,8 @@ export async function bossBattleRoutes(fastify: FastifyInstance) {
     });
   });
 
-  // Get a specific boss battle
-  fastify.get('/:battleId', {
-    preHandler: [requireAuth],
-  }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId, battleId } = request.params as { householdId: string; battleId: string };
-
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'You are not a member of this household',
-      });
-    }
-
-    const [battle] = await db
-      .select()
-      .from(bossBattles)
-      .where(and(
-        eq(bossBattles.id, battleId),
-        eq(bossBattles.householdId, householdId)
-      ));
-
-    if (!battle) {
-      return reply.status(404).send({
-        error: 'Not Found',
-        message: 'Boss battle not found',
-      });
-    }
-
-    return reply.send(battle);
-  });
-
   // Get boss battle stats (party stats + contributor damage)
+  // IMPORTANT: Must be registered before /:battleId to avoid path collision
   fastify.get('/current/stats', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -408,5 +355,38 @@ export async function bossBattleRoutes(fastify: FastifyInstance) {
     };
 
     return reply.send({ party, contributors });
+  });
+
+  // Get a specific boss battle
+  fastify.get('/:battleId', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, battleId } = request.params as { householdId: string; battleId: string };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
+
+    const [battle] = await db
+      .select()
+      .from(bossBattles)
+      .where(and(
+        eq(bossBattles.id, battleId),
+        eq(bossBattles.householdId, householdId)
+      ));
+
+    if (!battle) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Boss battle not found',
+      });
+    }
+
+    return reply.send(battle);
   });
 }

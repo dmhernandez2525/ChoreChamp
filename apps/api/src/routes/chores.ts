@@ -8,6 +8,7 @@ import { calculateChorePoints, getStreakBonus } from '@chorechamp/gamification';
 import type { Difficulty } from '@chorechamp/gamification';
 import { Server } from 'socket.io';
 import { emitToHousehold } from '../lib/socket';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
 
 // Validation schemas
 const createChoreSchema = z.object({
@@ -67,35 +68,6 @@ function mapDifficulty(choreDifficulty: string | null): Difficulty {
     'epic': 'hard',
   };
   return map[choreDifficulty || 'medium'] || 'medium';
-}
-
-async function verifyMembership(
-  userId: string,
-  householdId: string
-): Promise<typeof members.$inferSelect | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId)
-    ));
-  return membership || null;
-}
-
-async function verifyParentMembership(
-  userId: string,
-  householdId: string
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(
-      eq(members.householdId, householdId),
-      eq(members.userId, userId),
-      eq(members.role, 'parent')
-    ));
-  return !!membership;
 }
 
 export async function choreRoutes(fastify: FastifyInstance) {
@@ -169,7 +141,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
     ];
 
     if (query.search) {
-      conditions.push(ilike(chores.title, `%${query.search}%`));
+      const escapedSearch = query.search.replace(/[%_\\]/g, '\\$&');
+      conditions.push(ilike(chores.title, `%${escapedSearch}%`));
     }
     if (query.category) {
       conditions.push(eq(chores.category, query.category));
@@ -553,6 +526,12 @@ export async function choreRoutes(fastify: FastifyInstance) {
     }
 
     const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
 
     // Get the completion
     const [completion] = await db
@@ -577,11 +556,25 @@ export async function choreRoutes(fastify: FastifyInstance) {
       .from(chores)
       .where(eq(chores.id, completion.choreId));
 
+    if (!chore) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Chore not found',
+      });
+    }
+
     // Get the member who completed it
     const [completingMember] = await db
       .select()
       .from(members)
       .where(eq(members.id, completion.memberId));
+
+    if (!completingMember) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Completing member not found',
+      });
+    }
 
     // Extract member stats with null handling
     const currentStreak = completingMember.streakCurrent || 0;
@@ -602,7 +595,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
       .update(choreCompletions)
       .set({
         status: 'approved',
-        approvedBy: membership!.id,
+        approvedBy: membership.id,
         approvedAt: new Date(),
         pointsAwarded: totalPoints,
       })
@@ -679,12 +672,18 @@ export async function choreRoutes(fastify: FastifyInstance) {
     }
 
     const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'You are not a member of this household',
+      });
+    }
 
     const [completion] = await db
       .update(choreCompletions)
       .set({
         status: 'rejected',
-        approvedBy: membership!.id,
+        approvedBy: membership.id,
         approvedAt: new Date(),
         rejectionReason: reason,
       })
