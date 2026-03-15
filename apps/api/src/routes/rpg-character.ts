@@ -116,7 +116,14 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
   // Get all character classes
   fastify.get('/classes', {
     preHandler: [requireAuth],
-  }, async (_request, reply) => {
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+
     const classes = await db
       .select()
       .from(characterClasses)
@@ -140,6 +147,13 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
   fastify.get('/avatar-items', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membershipCheck = await verifyMembership(user.id, householdId);
+    if (!membershipCheck) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+
     try {
       const { category } = request.query as { category?: string };
 

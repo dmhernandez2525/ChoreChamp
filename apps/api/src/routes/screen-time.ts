@@ -364,6 +364,16 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const data = recordUsageSchema.parse(request.body);
+
+    // Verify target member belongs to this household
+    const [targetMember] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(and(eq(members.id, data.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Member not found in this household' });
+    }
+
     const today = new Date().toISOString().split('T')[0];
 
     // Get or create today's usage record
@@ -492,13 +502,14 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
       where: eq(screenTimeLimits.memberId, memberId),
     });
 
-    // Get unused rewards
+    // Get unused rewards (scoped to household)
     const rewards = await db
       .select()
       .from(screenTimeRewards)
       .where(
         and(
           eq(screenTimeRewards.memberId, memberId),
+          eq(screenTimeRewards.householdId, householdId),
           eq(screenTimeRewards.isUsed, false)
         )
       );
@@ -544,7 +555,10 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
     const { memberId } = request.params;
     const { unused } = request.query;
 
-    const conditions = [eq(screenTimeRewards.memberId, memberId)];
+    const conditions = [
+      eq(screenTimeRewards.memberId, memberId),
+      eq(screenTimeRewards.householdId, householdId),
+    ];
     if (unused === 'true') {
       conditions.push(eq(screenTimeRewards.isUsed, false));
     }

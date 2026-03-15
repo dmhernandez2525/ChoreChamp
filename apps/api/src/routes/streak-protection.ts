@@ -418,6 +418,11 @@ export async function streakProtectionRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Member not found' });
     }
 
+    // Only allow using your own freeze, or a parent can use a child's freeze
+    if (membership.id !== body.memberId && membership.role !== 'parent') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can use another member\'s streak freeze' });
+    }
+
     const freezesAvailable = member.streakFreezesAvailable || 0;
     if (freezesAvailable <= 0) {
       return reply.status(400).send({

@@ -748,99 +748,103 @@ export async function collectibleCardsRoutes(fastify: FastifyInstance) {
       return reply.send(updated);
     }
 
-    // Accept trade - transfer cards
+    // Accept trade - transfer cards atomically
     const offeredCards = trade.offeredCards as TradeCard[];
     const requestedCards = trade.requestedCards as TradeCard[];
 
-    // Update initiator's cards (remove offered, add requested)
-    for (const { cardId, quantity } of offeredCards) {
-      await db
-        .update(ownedCards)
-        .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
-        .where(and(
-          eq(ownedCards.memberId, trade.initiatorMemberId),
-          eq(ownedCards.cardId, cardId)
-        ));
-    }
-
-    for (const { cardId, quantity } of requestedCards) {
-      const [existing] = await db
-        .select()
-        .from(ownedCards)
-        .where(and(
-          eq(ownedCards.memberId, trade.initiatorMemberId),
-          eq(ownedCards.cardId, cardId)
-        ));
-
-      if (existing) {
-        await db
+    const updated = await db.transaction(async (tx) => {
+      // Update initiator's cards (remove offered, add requested)
+      for (const { cardId, quantity } of offeredCards) {
+        await tx
           .update(ownedCards)
-          .set({
-            quantity: sql`${ownedCards.quantity} + ${quantity}`,
-            lastObtainedAt: new Date(),
-          })
-          .where(eq(ownedCards.id, existing.id));
-      } else {
-        await db.insert(ownedCards).values({
-          cardId,
-          memberId: trade.initiatorMemberId,
-          householdId,
-          quantity,
-          isFavorite: false,
-          isNew: true,
-        });
+          .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
+          .where(and(
+            eq(ownedCards.memberId, trade.initiatorMemberId),
+            eq(ownedCards.cardId, cardId)
+          ));
       }
-    }
 
-    // Update target's cards (add offered, remove requested)
-    for (const { cardId, quantity } of offeredCards) {
-      const [existing] = await db
-        .select()
-        .from(ownedCards)
-        .where(and(
-          eq(ownedCards.memberId, membership.id),
-          eq(ownedCards.cardId, cardId)
-        ));
+      for (const { cardId, quantity } of requestedCards) {
+        const [existing] = await tx
+          .select()
+          .from(ownedCards)
+          .where(and(
+            eq(ownedCards.memberId, trade.initiatorMemberId),
+            eq(ownedCards.cardId, cardId)
+          ));
 
-      if (existing) {
-        await db
+        if (existing) {
+          await tx
+            .update(ownedCards)
+            .set({
+              quantity: sql`${ownedCards.quantity} + ${quantity}`,
+              lastObtainedAt: new Date(),
+            })
+            .where(eq(ownedCards.id, existing.id));
+        } else {
+          await tx.insert(ownedCards).values({
+            cardId,
+            memberId: trade.initiatorMemberId,
+            householdId,
+            quantity,
+            isFavorite: false,
+            isNew: true,
+          });
+        }
+      }
+
+      // Update target's cards (add offered, remove requested)
+      for (const { cardId, quantity } of offeredCards) {
+        const [existing] = await tx
+          .select()
+          .from(ownedCards)
+          .where(and(
+            eq(ownedCards.memberId, membership.id),
+            eq(ownedCards.cardId, cardId)
+          ));
+
+        if (existing) {
+          await tx
+            .update(ownedCards)
+            .set({
+              quantity: sql`${ownedCards.quantity} + ${quantity}`,
+              lastObtainedAt: new Date(),
+            })
+            .where(eq(ownedCards.id, existing.id));
+        } else {
+          await tx.insert(ownedCards).values({
+            cardId,
+            memberId: membership.id,
+            householdId,
+            quantity,
+            isFavorite: false,
+            isNew: true,
+          });
+        }
+      }
+
+      for (const { cardId, quantity } of requestedCards) {
+        await tx
           .update(ownedCards)
-          .set({
-            quantity: sql`${ownedCards.quantity} + ${quantity}`,
-            lastObtainedAt: new Date(),
-          })
-          .where(eq(ownedCards.id, existing.id));
-      } else {
-        await db.insert(ownedCards).values({
-          cardId,
-          memberId: membership.id,
-          householdId,
-          quantity,
-          isFavorite: false,
-          isNew: true,
-        });
+          .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
+          .where(and(
+            eq(ownedCards.memberId, membership.id),
+            eq(ownedCards.cardId, cardId)
+          ));
       }
-    }
 
-    for (const { cardId, quantity } of requestedCards) {
-      await db
-        .update(ownedCards)
-        .set({ quantity: sql`${ownedCards.quantity} - ${quantity}` })
-        .where(and(
-          eq(ownedCards.memberId, membership.id),
-          eq(ownedCards.cardId, cardId)
-        ));
-    }
+      // Update trade status
+      const [result] = await tx
+        .update(cardTrades)
+        .set({
+          status: 'accepted',
+          respondedAt: new Date(),
+        })
+        .where(eq(cardTrades.id, tradeId))
+        .returning();
 
-    // Update trade status
-    const [updated] = await db
-      .update(cardTrades)
-      .set({
-        status: 'accepted',
-        respondedAt: new Date(),
-      })
-      .where(eq(cardTrades.id, tradeId))
-      .returning();
+      return result;
+    });
 
     // Emit trade completed event
     const io = fastify.io;

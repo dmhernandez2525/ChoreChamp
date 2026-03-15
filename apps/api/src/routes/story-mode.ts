@@ -245,6 +245,15 @@ export async function storyModeRoutes(app: FastifyInstance) {
     }
     const { memberId } = request.query as { memberId: string };
 
+    // Verify target member belongs to this household
+    const [targetMember] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(and(eq(members.id, memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Member not found in this household' });
+    }
+
     // Ensure story progress exists
     await getOrCreateStoryProgress(memberId, householdId);
 
@@ -287,6 +296,15 @@ export async function storyModeRoutes(app: FastifyInstance) {
     }
     const { chapterId } = request.params as { chapterId: string };
     const { memberId } = request.query as { memberId: string };
+
+    // Verify target member belongs to this household
+    const [targetMember] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(and(eq(members.id, memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Member not found in this household' });
+    }
 
     // Ensure story progress exists
     await getOrCreateStoryProgress(memberId, householdId);
@@ -1149,6 +1167,15 @@ export async function storyModeRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const { memberId } = request.query as { memberId: string };
+
+    // Verify target member belongs to this household
+    const [targetMember] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(and(eq(members.id, memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Member not found in this household' });
+    }
 
     // Get all characters
     const allCharacters = await db
