@@ -291,6 +291,17 @@ export interface LogVolunteerInput {
   notes?: string;
 }
 
+export interface CreateCollegePrepInput {
+  memberId: string;
+  activityType: 'test_prep' | 'college_visit' | 'application' | 'essay' | 'recommendation' | 'interview' | 'scholarship' | 'other';
+  title: string;
+  description?: string;
+  dueDate?: string;
+  priority: 'low' | 'medium' | 'high';
+  relatedCollege?: string;
+  notes?: string;
+}
+
 // Constants
 export const ACTIVITY_CATEGORIES: Record<ActivityCategory, { label: string; icon: string; color: string }> = {
   sports: { label: 'Sports', icon: '\u26BD', color: '#22c55e' },
