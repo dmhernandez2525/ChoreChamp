@@ -1,38 +1,88 @@
 import { expect, Page } from '@playwright/test';
+import { TEST_CONFIG } from '../config';
+
+type AccountRole = keyof typeof TEST_CONFIG.accounts;
 
 /**
- * Login helper for E2E tests.
- * Supports both real auth and demo mode.
+ * Sign in as a specific account role.
+ * Handles rate limiting by waiting and retrying.
  */
-export async function login(page: Page, role: 'parent' | 'child' = 'parent') {
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
+export async function login(page: Page, role: AccountRole = 'parent') {
+  const account = TEST_CONFIG.accounts[role];
+  const maxRetries = 3;
 
-  // Check if demo mode is active
-  const isDemoMode = await page.evaluate(() => {
-    const meta = document.querySelector('meta[name="demo-mode"]');
-    return meta?.getAttribute('content') === 'true';
-  });
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
 
-  if (isDemoMode) {
-    // Demo mode: select role
-    const roleButton = page.getByRole('button', { name: new RegExp(role, 'i') });
-    await roleButton.click();
-  } else {
-    // Real auth: fill login form
-    await page.getByPlaceholder('Email').fill(
-      role === 'parent' ? 'parent@test.example' : 'child@test.example'
-    );
-    await page.getByPlaceholder('Password').fill('testpassword123');
+    // Check for rate limit message before attempting
+    const rateLimited = await page.getByText(/too many request/i).isVisible().catch(() => false);
+    if (rateLimited) {
+      // Wait for rate limit window to reset (15 seconds)
+      await page.waitForTimeout(15000);
+      continue;
+    }
+
+    await page.getByLabel(/email/i).fill(account.email);
+    await page.getByLabel(/password/i).fill(account.password);
     await page.getByRole('button', { name: /sign in/i }).click();
-  }
 
-  // Wait for dashboard to load
-  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: 20000 });
+    // Wait for redirect or rate limit error
+    try {
+      await page.waitForURL('**/dashboard', { timeout: 30000 });
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+      return; // Success
+    } catch {
+      if (attempt < maxRetries - 1) {
+        // Wait for rate limit window to reset before retrying
+        await page.waitForTimeout(15000);
+        continue;
+      }
+      throw new Error(`Login failed after ${maxRetries} attempts`);
+    }
+  }
 }
 
+/**
+ * Sign out the current user.
+ */
 export async function logout(page: Page) {
-  await page.getByTestId('user-menu').click();
-  await page.getByRole('menuitem', { name: /sign out/i }).click();
-  await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+  await page.getByRole('button', { name: /sign out/i }).click();
+  await page.waitForURL('**/login', { timeout: 10000 });
+}
+
+/**
+ * Navigate to the Hernandez Family household dashboard.
+ */
+export async function openHousehold(page: Page) {
+  const householdLink = page.getByRole('link', { name: /open/i }).first();
+  await householdLink.click();
+  await page.waitForLoadState('networkidle');
+}
+
+/**
+ * Ensure the page is authenticated. If the session expired and we see
+ * the login page, re-authenticate and navigate back to the intended URL.
+ * Also handles delayed client-side auth redirects.
+ */
+export async function ensureAuthenticated(page: Page, role: AccountRole = 'parent') {
+  // Wait briefly for client-side auth check to potentially redirect
+  await page.waitForTimeout(1500);
+
+  const currentUrl = page.url();
+  const onLogin = currentUrl.includes('/login');
+  const hasLoginForm = await page.getByLabel(/email/i).isVisible().catch(() => false);
+
+  if (onLogin || hasLoginForm) {
+    const intendedPath = new URL(currentUrl).pathname;
+
+    await login(page, role);
+
+    if (intendedPath && !intendedPath.includes('/login') && !intendedPath.includes('/dashboard')) {
+      await page.goto(intendedPath);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+    }
+  }
 }
