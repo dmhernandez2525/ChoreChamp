@@ -1,17 +1,45 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const TOKEN_KEY = 'chorechamp_session_token';
+
+function getStoredToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setStoredToken(token: string | null) {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  } catch {
+    // localStorage unavailable
+  }
+}
 
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
+  const token = getStoredToken();
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     credentials: 'include',
   });
 
@@ -29,23 +57,29 @@ export async function fetchApi<T>(
 // Auth API
 export const authApi = {
   async signUp(email: string, password: string, name: string) {
-    return fetchApi('/api/auth/sign-up/email', {
+    const result = await fetchApi<{ token?: string; user?: unknown }>('/api/auth/sign-up/email', {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     });
+    if (result.token) setStoredToken(result.token);
+    return result;
   },
 
   async signIn(email: string, password: string) {
-    return fetchApi('/api/auth/sign-in/email', {
+    const result = await fetchApi<{ token?: string; user?: unknown }>('/api/auth/sign-in/email', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    if (result.token) setStoredToken(result.token);
+    return result;
   },
 
   async signOut() {
-    return fetchApi('/api/auth/sign-out', {
-      method: 'POST',
-    });
+    try {
+      await fetchApi('/api/auth/sign-out', { method: 'POST' });
+    } finally {
+      setStoredToken(null);
+    }
   },
 
   async getSession() {

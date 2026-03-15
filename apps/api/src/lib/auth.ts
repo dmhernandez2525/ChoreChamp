@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from './db';
 import { users, accounts, sessions } from '@chorechamp/database/schema';
@@ -6,6 +7,7 @@ import { users, accounts, sessions } from '@chorechamp/database/schema';
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3001',
   basePath: '/api/auth',
+  plugins: [bearer()],
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
