@@ -41,3 +41,26 @@ export async function openHousehold(page: Page) {
   await householdLink.click();
   await page.waitForLoadState('networkidle');
 }
+
+/**
+ * Ensure the page is authenticated. If the session expired and we see
+ * the login page, re-authenticate and navigate back to the intended URL.
+ */
+export async function ensureAuthenticated(page: Page, role: AccountRole = 'parent') {
+  // Check if we landed on the login page (session expired)
+  const currentUrl = page.url();
+  const onLogin = currentUrl.includes('/login');
+  const hasLoginForm = await page.getByLabel(/email/i).isVisible().catch(() => false);
+
+  if (onLogin || hasLoginForm) {
+    // Save the intended destination before re-authenticating
+    const intendedPath = new URL(currentUrl).pathname;
+    await login(page, role);
+
+    // If we were trying to go somewhere other than dashboard, navigate there
+    if (intendedPath && !intendedPath.includes('/login') && !intendedPath.includes('/dashboard')) {
+      await page.goto(intendedPath);
+      await page.waitForLoadState('networkidle');
+    }
+  }
+}
