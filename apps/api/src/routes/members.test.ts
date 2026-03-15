@@ -198,7 +198,7 @@ describe('member route logic', () => {
       const canEditMember = (
         requestingMember: { id: string; role: string; userId: string },
         targetMember: { id: string; userId: string | null },
-        fieldsBeingChanged: { role?: string; canRedeemRewards?: boolean; requiresApproval?: boolean }
+        fieldsBeingChanged: { role?: string; canRedeemRewards?: boolean; requiresApproval?: boolean; name?: string }
       ): { allowed: boolean; error?: string } => {
         const isSelf = targetMember.userId === requestingMember.userId;
         const isParent = requestingMember.role === 'parent';
@@ -223,7 +223,7 @@ describe('member route logic', () => {
       expect(canEditMember(
         { id: 'm1', role: 'parent', userId: 'u1' },
         { id: 'm2', userId: 'u2' },
-        { name: 'New Name' } as any,
+        { name: 'New Name' },
       )).toEqual({ allowed: true });
 
       // Parent changing child role
@@ -237,7 +237,7 @@ describe('member route logic', () => {
       expect(canEditMember(
         { id: 'm2', role: 'child', userId: 'u2' },
         { id: 'm2', userId: 'u2' },
-        {} as any,
+        {},
       )).toEqual({ allowed: true });
 
       // Child trying to change their own role
@@ -251,7 +251,7 @@ describe('member route logic', () => {
       expect(canEditMember(
         { id: 'm2', role: 'child', userId: 'u2' },
         { id: 'm3', userId: 'u3' },
-        {} as any,
+        {},
       )).toEqual({ allowed: false, error: 'You can only edit your own profile' });
 
       // Child trying to change canRedeemRewards
