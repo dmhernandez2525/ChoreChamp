@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useGuestStore, getDemoTodayChores } from '../guest-store';
 
 describe('useGuestStore', () => {

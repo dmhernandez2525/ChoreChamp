@@ -10,14 +10,49 @@ import type {
   SeasonType,
   EventType,
 } from '@chorechamp/types';
+import {
+  useCreateSchoolSchedule,
+  useCreateActivity,
+  useCreateEvent,
+  useCreateVolunteerLog,
+  useCreateCollegePrepActivity,
+} from '@chorechamp/api-client';
 
 // ─── Shared types & helpers ─────────────────────────────────────────────────
 
-interface DialogProps {
+interface SchoolDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   householdId: string;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: SchoolSchedule) => void;
+}
+
+interface ActivityDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  householdId: string;
+  onSubmit: (data: ExtracurricularActivity) => void;
+}
+
+interface EventDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  householdId: string;
+  onSubmit: (data: ActivityEvent) => void;
+}
+
+interface VolunteerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  householdId: string;
+  onSubmit: (data: VolunteerLog) => void;
+}
+
+interface CollegePrepDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  householdId: string;
+  onSubmit: (data: CollegePrepActivity) => void;
 }
 
 const ALL_DAYS: { value: DayOfWeek; label: string }[] = [
@@ -148,10 +183,20 @@ function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
   );
 }
 
+function ErrorMessage({ error }: { error: string | null }) {
+  if (!error) return null;
+  return (
+    <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+      {error}
+    </div>
+  );
+}
+
 // ─── 1. AddSchoolDialog ─────────────────────────────────────────────────────
 
-export function AddSchoolDialog({ open, onOpenChange, householdId, onSubmit }: DialogProps) {
-  const [loading, setLoading] = useState(false);
+export function AddSchoolDialog({ open, onOpenChange, householdId, onSubmit }: SchoolDialogProps) {
+  const mutation = useCreateSchoolSchedule(householdId);
+  const [error, setError] = useState<string | null>(null);
   const [memberId, setMemberId] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [schoolYear, setSchoolYear] = useState('');
@@ -170,6 +215,7 @@ export function AddSchoolDialog({ open, onOpenChange, householdId, onSubmit }: D
     setEndTime('15:00');
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
     setSchoolDays(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+    setError(null);
   };
 
   const toggleDay = (day: DayOfWeek) => {
@@ -178,42 +224,29 @@ export function AddSchoolDialog({ open, onOpenChange, householdId, onSubmit }: D
     );
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(null);
 
-    try {
-      const res = await fetch(`/api/households/${householdId}/school/school-schedules`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          memberId,
-          schoolName,
-          schoolYear,
-          gradeLevel,
-          startTime,
-          endTime,
-          timezone,
-          schoolDays,
-        }),
-      });
-
-      if (res.ok) {
-        const data: SchoolSchedule = await res.json();
-        onSubmit(data);
-        onOpenChange(false);
-        resetForm();
-      }
-    } catch (err) {
-      console.error('Failed to create school schedule:', err);
-    } finally {
-      setLoading(false);
-    }
+    mutation.mutate(
+      { memberId, schoolName, schoolYear, gradeLevel, startTime, endTime, timezone, schoolDays },
+      {
+        onSuccess: (data) => {
+          onSubmit(data);
+          onOpenChange(false);
+          resetForm();
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Failed to create school schedule');
+        },
+      },
+    );
   };
 
   return (
     <ModalWrapper open={open} onOpenChange={onOpenChange} title="Add School Schedule">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <ErrorMessage error={error} />
         <div>
           <label className={labelClass}>Member ID *</label>
           <input
@@ -316,7 +349,7 @@ export function AddSchoolDialog({ open, onOpenChange, householdId, onSubmit }: D
           </div>
         </div>
 
-        <SubmitButton loading={loading} label="Add School" />
+        <SubmitButton loading={mutation.isPending} label="Add School" />
       </form>
     </ModalWrapper>
   );
@@ -324,8 +357,9 @@ export function AddSchoolDialog({ open, onOpenChange, householdId, onSubmit }: D
 
 // ─── 2. AddActivityDialog ───────────────────────────────────────────────────
 
-export function AddActivityDialog({ open, onOpenChange, householdId, onSubmit }: DialogProps) {
-  const [loading, setLoading] = useState(false);
+export function AddActivityDialog({ open, onOpenChange, householdId, onSubmit }: ActivityDialogProps) {
+  const mutation = useCreateActivity(householdId);
+  const [error, setError] = useState<string | null>(null);
   const [memberId, setMemberId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -346,47 +380,42 @@ export function AddActivityDialog({ open, onOpenChange, householdId, onSubmit }:
     setCommitmentLevel('medium');
     setWeeklyHours(4);
     setCost('');
+    setError(null);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(null);
 
-    try {
-      const body: Record<string, any> = {
+    mutation.mutate(
+      {
         memberId,
         name,
         category,
         season,
         commitmentLevel,
         weeklyHours,
-      };
-      if (description) body.description = description;
-      if (organization) body.organization = organization;
-      if (cost) body.cost = parseFloat(cost);
-
-      const res = await fetch(`/api/households/${householdId}/school/activities`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (res.ok) {
-        const data: ExtracurricularActivity = await res.json();
-        onSubmit(data);
-        onOpenChange(false);
-        resetForm();
-      }
-    } catch (err) {
-      console.error('Failed to create activity:', err);
-    } finally {
-      setLoading(false);
-    }
+        ...(description ? { description } : {}),
+        ...(organization ? { organization } : {}),
+        ...(cost ? { cost: parseFloat(cost) } : {}),
+      },
+      {
+        onSuccess: (data) => {
+          onSubmit(data);
+          onOpenChange(false);
+          resetForm();
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Failed to create activity');
+        },
+      },
+    );
   };
 
   return (
     <ModalWrapper open={open} onOpenChange={onOpenChange} title="Add Extracurricular Activity">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <ErrorMessage error={error} />
         <div>
           <label className={labelClass}>Member ID *</label>
           <input
@@ -503,7 +532,7 @@ export function AddActivityDialog({ open, onOpenChange, householdId, onSubmit }:
           />
         </div>
 
-        <SubmitButton loading={loading} label="Add Activity" />
+        <SubmitButton loading={mutation.isPending} label="Add Activity" />
       </form>
     </ModalWrapper>
   );
@@ -511,8 +540,9 @@ export function AddActivityDialog({ open, onOpenChange, householdId, onSubmit }:
 
 // ─── 3. AddEventDialog ──────────────────────────────────────────────────────
 
-export function AddEventDialog({ open, onOpenChange, householdId, onSubmit }: DialogProps) {
-  const [loading, setLoading] = useState(false);
+export function AddEventDialog({ open, onOpenChange, householdId, onSubmit }: EventDialogProps) {
+  const mutation = useCreateEvent(householdId);
+  const [error, setError] = useState<string | null>(null);
   const [memberId, setMemberId] = useState('');
   const [activityId, setActivityId] = useState('');
   const [title, setTitle] = useState('');
@@ -535,14 +565,15 @@ export function AddEventDialog({ open, onOpenChange, householdId, onSubmit }: Di
     setLocation('');
     setAttendanceRequired(true);
     setChoreExemption(false);
+    setError(null);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(null);
 
-    try {
-      const body: Record<string, any> = {
+    mutation.mutate(
+      {
         activityId,
         memberId,
         title,
@@ -551,32 +582,26 @@ export function AddEventDialog({ open, onOpenChange, householdId, onSubmit }: Di
         startTime,
         attendanceRequired,
         choreExemption,
-      };
-      if (endTime) body.endTime = endTime;
-      if (location) body.location = location;
-
-      const res = await fetch(`/api/households/${householdId}/school/events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (res.ok) {
-        const data: ActivityEvent = await res.json();
-        onSubmit(data);
-        onOpenChange(false);
-        resetForm();
-      }
-    } catch (err) {
-      console.error('Failed to create event:', err);
-    } finally {
-      setLoading(false);
-    }
+        ...(endTime ? { endTime } : {}),
+        ...(location ? { location } : {}),
+      },
+      {
+        onSuccess: (data) => {
+          onSubmit(data);
+          onOpenChange(false);
+          resetForm();
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Failed to create event');
+        },
+      },
+    );
   };
 
   return (
     <ModalWrapper open={open} onOpenChange={onOpenChange} title="Add Event">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <ErrorMessage error={error} />
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Member ID *</label>
@@ -694,7 +719,7 @@ export function AddEventDialog({ open, onOpenChange, householdId, onSubmit }: Di
           </label>
         </div>
 
-        <SubmitButton loading={loading} label="Add Event" />
+        <SubmitButton loading={mutation.isPending} label="Add Event" />
       </form>
     </ModalWrapper>
   );
@@ -702,8 +727,9 @@ export function AddEventDialog({ open, onOpenChange, householdId, onSubmit }: Di
 
 // ─── 4. AddVolunteerDialog ──────────────────────────────────────────────────
 
-export function AddVolunteerDialog({ open, onOpenChange, householdId, onSubmit }: DialogProps) {
-  const [loading, setLoading] = useState(false);
+export function AddVolunteerDialog({ open, onOpenChange, householdId, onSubmit }: VolunteerDialogProps) {
+  const mutation = useCreateVolunteerLog(householdId);
+  const [error, setError] = useState<string | null>(null);
   const [memberId, setMemberId] = useState('');
   const [organizationName, setOrganizationName] = useState('');
   const [activityDescription, setActivityDescription] = useState('');
@@ -718,44 +744,39 @@ export function AddVolunteerDialog({ open, onOpenChange, householdId, onSubmit }
     setVolunteerDate('');
     setHoursCompleted(1);
     setSupervisorName('');
+    setError(null);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(null);
 
-    try {
-      const body: Record<string, any> = {
+    mutation.mutate(
+      {
         memberId,
         organizationName,
         activityDescription,
         volunteerDate,
         hoursCompleted,
-      };
-      if (supervisorName) body.supervisorName = supervisorName;
-
-      const res = await fetch(`/api/households/${householdId}/school/volunteer-logs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (res.ok) {
-        const data: VolunteerLog = await res.json();
-        onSubmit(data);
-        onOpenChange(false);
-        resetForm();
-      }
-    } catch (err) {
-      console.error('Failed to log volunteer hours:', err);
-    } finally {
-      setLoading(false);
-    }
+        ...(supervisorName ? { supervisorName } : {}),
+      },
+      {
+        onSuccess: (data) => {
+          onSubmit(data);
+          onOpenChange(false);
+          resetForm();
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Failed to log volunteer hours');
+        },
+      },
+    );
   };
 
   return (
     <ModalWrapper open={open} onOpenChange={onOpenChange} title="Log Volunteer Hours">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <ErrorMessage error={error} />
         <div>
           <label className={labelClass}>Member ID *</label>
           <input
@@ -828,7 +849,7 @@ export function AddVolunteerDialog({ open, onOpenChange, householdId, onSubmit }
           />
         </div>
 
-        <SubmitButton loading={loading} label="Log Hours" />
+        <SubmitButton loading={mutation.isPending} label="Log Hours" />
       </form>
     </ModalWrapper>
   );
@@ -836,8 +857,9 @@ export function AddVolunteerDialog({ open, onOpenChange, householdId, onSubmit }
 
 // ─── 5. AddCollegePrepDialog ────────────────────────────────────────────────
 
-export function AddCollegePrepDialog({ open, onOpenChange, householdId, onSubmit }: DialogProps) {
-  const [loading, setLoading] = useState(false);
+export function AddCollegePrepDialog({ open, onOpenChange, householdId, onSubmit }: CollegePrepDialogProps) {
+  const mutation = useCreateCollegePrepActivity(householdId);
+  const [error, setError] = useState<string | null>(null);
   const [memberId, setMemberId] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -854,45 +876,39 @@ export function AddCollegePrepDialog({ open, onOpenChange, householdId, onSubmit
     setDueDate('');
     setStatus('not_started');
     setPriority('medium');
+    setError(null);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(null);
 
-    try {
-      const body: Record<string, any> = {
+    mutation.mutate(
+      {
         memberId,
         title,
         activityType,
-        status,
         priority,
-      };
-      if (description) body.description = description;
-      if (dueDate) body.dueDate = dueDate;
-
-      const res = await fetch(`/api/households/${householdId}/school/college-prep`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (res.ok) {
-        const data: CollegePrepActivity = await res.json();
-        onSubmit(data);
-        onOpenChange(false);
-        resetForm();
-      }
-    } catch (err) {
-      console.error('Failed to create college prep task:', err);
-    } finally {
-      setLoading(false);
-    }
+        ...(description ? { description } : {}),
+        ...(dueDate ? { dueDate } : {}),
+      },
+      {
+        onSuccess: (data) => {
+          onSubmit(data);
+          onOpenChange(false);
+          resetForm();
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Failed to create college prep task');
+        },
+      },
+    );
   };
 
   return (
     <ModalWrapper open={open} onOpenChange={onOpenChange} title="Add College Prep Task">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <ErrorMessage error={error} />
         <div>
           <label className={labelClass}>Member ID *</label>
           <input
@@ -982,7 +998,7 @@ export function AddCollegePrepDialog({ open, onOpenChange, householdId, onSubmit
           </div>
         </div>
 
-        <SubmitButton loading={loading} label="Add Task" />
+        <SubmitButton loading={mutation.isPending} label="Add Task" />
       </form>
     </ModalWrapper>
   );

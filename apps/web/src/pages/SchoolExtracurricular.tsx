@@ -701,25 +701,25 @@ export default function SchoolExtracurricular() {
         open={showActivityForm}
         onOpenChange={setShowActivityForm}
         householdId={householdId!}
-        onSubmit={(data) => setActivities((prev) => [...prev, data])}
+        onSubmit={(data: ExtracurricularActivity) => setActivities((prev) => [...prev, data])}
       />
       <AddEventDialog
         open={showEventForm}
         onOpenChange={setShowEventForm}
         householdId={householdId!}
-        onSubmit={(data) => setEvents((prev) => [...prev, data])}
+        onSubmit={(data: ActivityEvent) => setEvents((prev) => [...prev, data])}
       />
       <AddVolunteerDialog
         open={showVolunteerForm}
         onOpenChange={setShowVolunteerForm}
         householdId={householdId!}
-        onSubmit={(data) => setVolunteerLogs((prev) => [...prev, data])}
+        onSubmit={(data: VolunteerLog) => setVolunteerLogs((prev) => [...prev, data])}
       />
       <AddCollegePrepDialog
         open={showCollegePrepForm}
         onOpenChange={setShowCollegePrepForm}
         householdId={householdId!}
-        onSubmit={(data) => setCollegePrepActivities((prev) => [...prev, data])}
+        onSubmit={(data: CollegePrepActivity) => setCollegePrepActivities((prev) => [...prev, data])}
       />
     </div>
   );

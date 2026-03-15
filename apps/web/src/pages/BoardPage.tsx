@@ -83,15 +83,6 @@ export default function BoardPage() {
   const { data: members = [], isLoading: loadingMembers } = useMembers(householdId!);
   const { data: boardPrefs } = useBoardPreferences(householdId!);
 
-  // Build chore query params from filter store
-  const queryParams: Record<string, string> = {};
-  if (searchQuery) queryParams.search = searchQuery;
-  for (const filter of activeFilters) {
-    if (filter.field && filter.value) {
-      queryParams[filter.field] = String(filter.value);
-    }
-  }
-
   const { data: chores = [], isLoading: loadingChores } = useChores(householdId!);
 
   // Presence

@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Button, cn } from '@chorechamp/ui';
 import { useBoardStore } from '@/stores/board-store';
 import { useUpdateBoardPreferences, useAutomationRules, useCreateAutomationRule, useUpdateAutomationRule, useDeleteAutomationRule } from '@chorechamp/api-client';
+import type { AutomationRule as ApiAutomationRule } from '@chorechamp/types';
 import { AutomationRuleBuilder } from './AutomationRuleBuilder';
 import { AutomationRuleList } from './AutomationRuleList';
 import type { AutomationRule } from '../../lib/api';
@@ -47,16 +48,16 @@ export function ColumnSettingsPanel({ householdId, open, onOpenChange }: ColumnS
   const { data: automationData } = useAutomationRules(householdId);
   const automationRulesRaw = Array.isArray(automationData) ? automationData : (automationData?.rules ?? []);
   // Map API rules to the format AutomationRuleList expects
-  const automationRules: AutomationRule[] = automationRulesRaw.map((r: any) => ({
+  const automationRules: AutomationRule[] = automationRulesRaw.map((r: ApiAutomationRule) => ({
     id: r.id,
     householdId: r.householdId,
     name: r.name,
     description: r.description ?? '',
-    trigger: r.trigger?.type ?? r.trigger ?? '',
-    triggerConfig: r.trigger?.config ?? r.triggerConfig ?? {},
-    action: r.actions?.[0]?.type ?? r.action ?? '',
-    actionConfig: r.actions?.[0]?.config ?? r.actionConfig ?? {},
-    enabled: r.status === 'active' || r.enabled === true,
+    trigger: typeof r.trigger === 'object' ? r.trigger.type : String(r.trigger),
+    triggerConfig: typeof r.trigger === 'object' ? (r.trigger.conditions ?? {}) : {},
+    action: Array.isArray(r.actions) && r.actions[0] ? r.actions[0].type : '',
+    actionConfig: Array.isArray(r.actions) && r.actions[0] ? (r.actions[0].parameters ?? {}) : {},
+    enabled: r.status === 'active',
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   }));
@@ -92,13 +93,20 @@ export function ColumnSettingsPanel({ householdId, open, onOpenChange }: ColumnS
     ));
   };
 
-  const handleSaveRule = (data: any) => {
+  const handleSaveRule = (data: { name: string; description: string; trigger: string; triggerConfig: Record<string, unknown>; action: string; actionConfig: Record<string, unknown>; enabled: boolean }) => {
+    const apiPayload = {
+      name: data.name,
+      description: data.description,
+      trigger: { type: data.trigger, conditions: data.triggerConfig },
+      actions: [{ type: data.action, parameters: data.actionConfig }],
+      status: data.enabled ? 'active' as const : 'inactive' as const,
+    };
     if (editingRule) {
-      updateRule.mutate({ ruleId: editingRule.id, data }, {
+      updateRule.mutate({ ruleId: editingRule.id, data: apiPayload } as Parameters<typeof updateRule.mutate>[0], {
         onSuccess: () => { setShowRuleBuilder(false); setEditingRule(null); },
       });
     } else {
-      createRule.mutate(data, {
+      createRule.mutate(apiPayload as Parameters<typeof createRule.mutate>[0], {
         onSuccess: () => { setShowRuleBuilder(false); },
       });
     }

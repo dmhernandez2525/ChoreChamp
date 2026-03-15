@@ -13,7 +13,7 @@ import {
   useChoreDependencies, useAddChoreDependency, useRemoveChoreDependency,
   useChores,
 } from '@chorechamp/api-client';
-import type { Chore, ChoreCompletion, Member } from '@chorechamp/types';
+import type { Chore, ChoreCompletion, Member, Tag, ChoreTag, TimeLog, ChoreDependency } from '@chorechamp/types';
 import { TagPicker } from './TagPicker';
 import { TimeTracker } from './TimeTracker';
 import { DependencyPicker } from './DependencyPicker';
@@ -133,23 +133,23 @@ export function ChoreDetailPanel({
   if (!chore) return null;
 
   // Compute time tracking state from logs
-  const activeTimeLog = timeLogs.find((log: any) => log.endedAt === null);
-  const totalTrackedSeconds = timeLogs.reduce((sum: number, log: any) => {
-    if (log.endedAt) {
-      return sum + Math.round((new Date(log.endedAt).getTime() - new Date(log.startedAt).getTime()) / 1000);
+  const activeTimeLog = (timeLogs as TimeLog[]).find((log) => log.stoppedAt === null);
+  const totalTrackedSeconds = (timeLogs as TimeLog[]).reduce((sum: number, log) => {
+    if (log.stoppedAt) {
+      return sum + Math.round((new Date(log.stoppedAt).getTime() - new Date(log.startedAt).getTime()) / 1000);
     }
     return sum;
   }, 0);
 
   // Map tags to TagPicker format
-  const availableTagItems = householdTags.map((t: any) => ({ id: t.id, name: t.name, color: t.color || '#6b7280' }));
-  const selectedTagItems = choreTags.map((ct: any) => {
-    const tag = householdTags.find((t: any) => t.id === ct.tagId);
-    return { id: ct.tagId || ct.id, name: tag?.name || ct.name || 'Tag', color: tag?.color || ct.color || '#6b7280' };
+  const availableTagItems = (householdTags as Tag[]).map((t) => ({ id: t.id, name: t.name, color: t.color || '#6b7280' }));
+  const selectedTagItems = (choreTags as ChoreTag[]).map((ct) => {
+    const tag = (householdTags as Tag[]).find((t) => t.id === ct.tagId);
+    return { id: ct.tagId || ct.id, name: tag?.name || 'Tag', color: tag?.color || '#6b7280' };
   });
 
   // Map dependencies to DependencyPicker format
-  const dependencyItems = rawDependencies.map((dep: any) => {
+  const dependencyItems = (rawDependencies as ChoreDependency[]).map((dep) => {
     const relatedId = dep.choreId === choreId ? dep.dependsOnChoreId : dep.choreId;
     const relatedChore = allChores.find((c: Chore) => c.id === relatedId);
     return {
