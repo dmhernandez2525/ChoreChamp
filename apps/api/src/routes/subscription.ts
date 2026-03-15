@@ -677,4 +677,38 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
 
     return reply.send({ received: true });
   });
+
+  // Admin: override subscription tier (protected by BETTER_AUTH_SECRET)
+  fastify.post<{
+    Body: { householdId: string; tier: string; secret: string };
+  }>('/admin/override-tier', async (request, reply) => {
+    const { householdId, tier, secret } = request.body;
+    const adminSecret = process.env.BETTER_AUTH_SECRET;
+
+    if (!adminSecret || secret !== adminSecret) {
+      return reply.status(403).send({ error: 'Forbidden' });
+    }
+
+    const validTiers = ['free', 'family', 'premium'];
+    if (!validTiers.includes(tier)) {
+      return reply.status(400).send({ error: 'Invalid tier' });
+    }
+
+    const memberLimit = tier === 'premium' ? 999 : tier === 'family' ? 6 : 5;
+    const [updated] = await db
+      .update(households)
+      .set({
+        subscriptionTier: tier as SubscriptionTier,
+        subscriptionStatus: tier === 'free' ? 'free' : 'active',
+        subscriptionMemberLimit: memberLimit,
+      })
+      .where(eq(households.id, householdId))
+      .returning();
+
+    if (!updated) {
+      return reply.status(404).send({ error: 'Household not found' });
+    }
+
+    return reply.send({ success: true, household: { id: updated.id, name: updated.name, tier: updated.subscriptionTier } });
+  });
 }

@@ -492,7 +492,7 @@ class ApiClient {
   }
 
   async leaveHousehold(householdId: string): Promise<void> {
-    return this.request(`/households/${householdId}/leave`, {
+    return this.request(`/${householdId}/leave`, {
       method: 'POST',
     });
   }
@@ -551,11 +551,11 @@ class ApiClient {
 
   // ===== Members =====
   async getMembers(householdId: string): Promise<Member[]> {
-    return this.request(`/households/${householdId}/members`);
+    return this.request(`/${householdId}/members`);
   }
 
   async addMember(householdId: string, data: AddMemberRequest): Promise<Member> {
-    return this.request(`/households/${householdId}/members`, {
+    return this.request(`/${householdId}/members`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -566,25 +566,25 @@ class ApiClient {
     memberId: string,
     data: UpdateMemberRequest
   ): Promise<Member> {
-    return this.request(`/households/${householdId}/members/${memberId}`, {
+    return this.request(`/${householdId}/members/${memberId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteMember(householdId: string, memberId: string): Promise<void> {
-    return this.request(`/households/${householdId}/members/${memberId}`, {
+    return this.request(`/${householdId}/members/${memberId}`, {
       method: 'DELETE',
     });
   }
 
   // ===== Invite Codes =====
   async getInviteCodes(householdId: string): Promise<InviteCode[]> {
-    return this.request(`/households/${householdId}/invites`);
+    return this.request(`/${householdId}/invites`);
   }
 
   async createInviteCode(householdId: string, data: CreateInviteCodeRequest): Promise<InviteCode> {
-    return this.request(`/households/${householdId}/invites`, {
+    return this.request(`/${householdId}/invites`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -592,16 +592,16 @@ class ApiClient {
 
   // ===== Chores =====
   async getChores(householdId: string): Promise<Chore[]> {
-    return this.request(`/households/${householdId}/chores`);
+    return this.request(`/${householdId}/chores`);
   }
 
   async getTodaysChores(householdId: string, memberId?: string): Promise<TodayChore[]> {
     const query = memberId ? `?memberId=${memberId}` : '';
-    return this.request(`/households/${householdId}/chores/today${query}`);
+    return this.request(`/${householdId}/chores/today${query}`);
   }
 
   async createChore(householdId: string, data: CreateChoreRequest): Promise<Chore> {
-    return this.request(`/households/${householdId}/chores`, {
+    return this.request(`/${householdId}/chores`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -612,14 +612,14 @@ class ApiClient {
     choreId: string,
     data: UpdateChoreRequest
   ): Promise<Chore> {
-    return this.request(`/households/${householdId}/chores/${choreId}`, {
+    return this.request(`/${householdId}/chores/${choreId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async getPendingCompletions(householdId: string): Promise<PendingCompletion[]> {
-    return this.request(`/households/${householdId}/chores/pending-completions`);
+    return this.request(`/${householdId}/chores/pending-completions`);
   }
 
   async completeChore(
@@ -627,20 +627,20 @@ class ApiClient {
     choreId: string,
     data: CompleteChoreRequest
   ): Promise<ChoreCompletion> {
-    return this.request(`/households/${householdId}/chores/${choreId}/complete`, {
+    return this.request(`/${householdId}/chores/${choreId}/complete`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async approveCompletion(householdId: string, completionId: string): Promise<void> {
-    return this.request(`/households/${householdId}/completions/${completionId}/approve`, {
+    return this.request(`/${householdId}/completions/${completionId}/approve`, {
       method: 'POST',
     });
   }
 
   async rejectCompletion(householdId: string, completionId: string, reason: string): Promise<void> {
-    return this.request(`/households/${householdId}/completions/${completionId}/reject`, {
+    return this.request(`/${householdId}/completions/${completionId}/reject`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
@@ -648,7 +648,7 @@ class ApiClient {
 
   // ===== Gamification =====
   async getGamificationStats(householdId: string, memberId: string): Promise<GamificationStats> {
-    return this.request(`/households/${householdId}/members/${memberId}/stats`);
+    return this.request(`/${householdId}/members/${memberId}/stats`);
   }
 
   async getPointTransactions(
@@ -660,15 +660,15 @@ class ApiClient {
     if (options?.limit) params.set('limit', options.limit.toString());
     if (options?.offset) params.set('offset', options.offset.toString());
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/members/${memberId}/transactions${query}`);
+    return this.request(`/${householdId}/members/${memberId}/transactions${query}`);
   }
 
   async getMemberStreak(householdId: string, memberId: string): Promise<StreakData> {
-    return this.request(`/households/${householdId}/members/${memberId}/streak`);
+    return this.request(`/${householdId}/members/${memberId}/streak`);
   }
 
   async getMemberBadges(householdId: string, memberId: string): Promise<Badge[]> {
-    return this.request(`/households/${householdId}/members/${memberId}/badges`);
+    return this.request(`/${householdId}/members/${memberId}/badges`);
   }
 
   async getLeaderboard(
@@ -676,20 +676,20 @@ class ApiClient {
     period?: 'week' | 'month' | 'all'
   ): Promise<LeaderboardEntry[]> {
     const query = period ? `?period=${period}` : '';
-    return this.request(`/households/${householdId}/leaderboard${query}`);
+    return this.request(`/${householdId}/leaderboard${query}`);
   }
 
   // ===== Rewards =====
   async getRewards(householdId: string): Promise<Reward[]> {
-    return this.request(`/households/${householdId}/rewards`);
+    return this.request(`/${householdId}/rewards`);
   }
 
   async getReward(householdId: string, rewardId: string): Promise<Reward> {
-    return this.request(`/households/${householdId}/rewards/${rewardId}`);
+    return this.request(`/${householdId}/rewards/${rewardId}`);
   }
 
   async createReward(householdId: string, data: CreateRewardRequest): Promise<Reward> {
-    return this.request(`/households/${householdId}/rewards`, {
+    return this.request(`/${householdId}/rewards`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -700,14 +700,14 @@ class ApiClient {
     rewardId: string,
     data: Partial<CreateRewardRequest>
   ): Promise<Reward> {
-    return this.request(`/households/${householdId}/rewards/${rewardId}`, {
+    return this.request(`/${householdId}/rewards/${rewardId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteReward(householdId: string, rewardId: string): Promise<void> {
-    return this.request(`/households/${householdId}/rewards/${rewardId}`, {
+    return this.request(`/${householdId}/rewards/${rewardId}`, {
       method: 'DELETE',
     });
   }
@@ -718,24 +718,24 @@ class ApiClient {
     memberId: string,
     notes?: string
   ): Promise<RewardRedemption> {
-    return this.request(`/households/${householdId}/rewards/${rewardId}/redeem`, {
+    return this.request(`/${householdId}/rewards/${rewardId}/redeem`, {
       method: 'POST',
       body: JSON.stringify({ memberId, notes }),
     });
   }
 
   async getPendingRedemptions(householdId: string): Promise<RewardRedemption[]> {
-    return this.request(`/households/${householdId}/redemptions/pending`);
+    return this.request(`/${householdId}/redemptions/pending`);
   }
 
   async approveRedemption(householdId: string, redemptionId: string): Promise<RewardRedemption> {
-    return this.request(`/households/${householdId}/redemptions/${redemptionId}/approve`, {
+    return this.request(`/${householdId}/redemptions/${redemptionId}/approve`, {
       method: 'POST',
     });
   }
 
   async fulfillRedemption(householdId: string, redemptionId: string): Promise<RewardRedemption> {
-    return this.request(`/households/${householdId}/redemptions/${redemptionId}/fulfill`, {
+    return this.request(`/${householdId}/redemptions/${redemptionId}/fulfill`, {
       method: 'POST',
     });
   }
@@ -745,7 +745,7 @@ class ApiClient {
     redemptionId: string,
     reason: string
   ): Promise<RewardRedemption> {
-    return this.request(`/households/${householdId}/redemptions/${redemptionId}/reject`, {
+    return this.request(`/${householdId}/redemptions/${redemptionId}/reject`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
@@ -753,21 +753,21 @@ class ApiClient {
 
   // ===== Support =====
   async getSupportThreads(householdId: string): Promise<SupportThread[]> {
-    return this.request(`/households/${householdId}/support/threads`);
+    return this.request(`/${householdId}/support/threads`);
   }
 
   async getSupportThread(
     householdId: string,
     threadId: string
   ): Promise<SupportThreadWithMessages> {
-    return this.request(`/households/${householdId}/support/threads/${threadId}`);
+    return this.request(`/${householdId}/support/threads/${threadId}`);
   }
 
   async createSupportThread(
     householdId: string,
     data: CreateSupportThreadRequest
   ): Promise<{ thread: SupportThread; message: SupportMessage }> {
-    return this.request(`/households/${householdId}/support/threads`, {
+    return this.request(`/${householdId}/support/threads`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -778,7 +778,7 @@ class ApiClient {
     threadId: string,
     data: CreateSupportMessageRequest
   ): Promise<SupportMessage> {
-    return this.request(`/households/${householdId}/support/threads/${threadId}/messages`, {
+    return this.request(`/${householdId}/support/threads/${threadId}/messages`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -789,7 +789,7 @@ class ApiClient {
     threadId: string,
     status: 'open' | 'pending' | 'closed'
   ): Promise<SupportThread> {
-    return this.request(`/households/${householdId}/support/threads/${threadId}/status`, {
+    return this.request(`/${householdId}/support/threads/${threadId}/status`, {
       method: 'POST',
       body: JSON.stringify({ status }),
     });
@@ -797,38 +797,38 @@ class ApiClient {
 
   // ===== API Keys =====
   async getApiKeys(householdId: string): Promise<ApiKey[]> {
-    return this.request(`/households/${householdId}/api-keys`);
+    return this.request(`/${householdId}/api-keys`);
   }
 
   async createApiKey(
     householdId: string,
     data: CreateApiKeyRequest
   ): Promise<CreateApiKeyResponse> {
-    return this.request(`/households/${householdId}/api-keys`, {
+    return this.request(`/${householdId}/api-keys`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async revokeApiKey(householdId: string, keyId: string): Promise<ApiKey> {
-    return this.request(`/households/${householdId}/api-keys/${keyId}/revoke`, {
+    return this.request(`/${householdId}/api-keys/${keyId}/revoke`, {
       method: 'POST',
     });
   }
 
   // ===== API Platform & Integrations =====
   async getApiPlatformOverview(householdId: string): Promise<ApiPlatformDeveloperOverview> {
-    return this.request(`/households/${householdId}/developer/overview`);
+    return this.request(`/${householdId}/developer/overview`);
   }
 
   async getApiPlatformOpenApi(householdId: string): Promise<ApiPlatformOpenApiDocument> {
-    return this.request(`/households/${householdId}/developer/openapi`);
+    return this.request(`/${householdId}/developer/openapi`);
   }
 
   async getApiPlatformDeveloperApiKeys(
     householdId: string
   ): Promise<{ keys: Array<ApiKey & { settings: ApiPlatformKeySettings | null }> }> {
-    return this.request(`/households/${householdId}/developer/api-keys`);
+    return this.request(`/${householdId}/developer/api-keys`);
   }
 
   async updateApiPlatformKeySettings(
@@ -836,7 +836,7 @@ class ApiClient {
     keyId: string,
     data: UpdateApiPlatformKeySettingsRequest
   ): Promise<ApiPlatformKeySettings> {
-    return this.request(`/households/${householdId}/developer/api-keys/${keyId}/settings`, {
+    return this.request(`/${householdId}/developer/api-keys/${keyId}/settings`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -846,20 +846,20 @@ class ApiClient {
     householdId: string,
     keyId: string
   ): Promise<{ usage: ApiPlatformUsageEvent[] }> {
-    return this.request(`/households/${householdId}/developer/api-keys/${keyId}/usage`);
+    return this.request(`/${householdId}/developer/api-keys/${keyId}/usage`);
   }
 
   async getApiPlatformWebhooks(
     householdId: string
   ): Promise<{ subscriptions: ApiPlatformWebhookSubscription[] }> {
-    return this.request(`/households/${householdId}/developer/webhooks`);
+    return this.request(`/${householdId}/developer/webhooks`);
   }
 
   async createApiPlatformWebhook(
     householdId: string,
     data: CreateApiPlatformWebhookSubscriptionRequest
   ): Promise<ApiPlatformWebhookSubscription> {
-    return this.request(`/households/${householdId}/developer/webhooks`, {
+    return this.request(`/${householdId}/developer/webhooks`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -870,7 +870,7 @@ class ApiClient {
     subscriptionId: string,
     data: UpdateApiPlatformWebhookSubscriptionRequest
   ): Promise<ApiPlatformWebhookSubscription> {
-    return this.request(`/households/${householdId}/developer/webhooks/${subscriptionId}`, {
+    return this.request(`/${householdId}/developer/webhooks/${subscriptionId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -880,7 +880,7 @@ class ApiClient {
     householdId: string,
     data: EmitApiPlatformWebhookEventRequest
   ): Promise<{ dispatchedCount: number }> {
-    return this.request(`/households/${householdId}/developer/webhooks/emit`, {
+    return this.request(`/${householdId}/developer/webhooks/emit`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -889,26 +889,26 @@ class ApiClient {
   async getApiPlatformWebhookDeliveries(
     householdId: string
   ): Promise<{ deliveries: ApiPlatformWebhookDelivery[] }> {
-    return this.request(`/households/${householdId}/developer/webhooks/deliveries`);
+    return this.request(`/${householdId}/developer/webhooks/deliveries`);
   }
 
   async getApiPlatformMarketplaceApps(
     householdId: string
   ): Promise<{ apps: ApiPlatformMarketplaceApp[] }> {
-    return this.request(`/households/${householdId}/developer/marketplace/apps`);
+    return this.request(`/${householdId}/developer/marketplace/apps`);
   }
 
   async getApiPlatformMarketplaceRequests(
     householdId: string
   ): Promise<{ requests: ApiPlatformAppRequest[] }> {
-    return this.request(`/households/${householdId}/developer/marketplace/requests`);
+    return this.request(`/${householdId}/developer/marketplace/requests`);
   }
 
   async requestApiPlatformMarketplaceApp(
     householdId: string,
     data: RequestApiPlatformMarketplaceAppRequest
   ): Promise<ApiPlatformAppRequest> {
-    return this.request(`/households/${householdId}/developer/marketplace/requests`, {
+    return this.request(`/${householdId}/developer/marketplace/requests`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -919,7 +919,7 @@ class ApiClient {
     requestId: string,
     data: ReviewApiPlatformMarketplaceRequest
   ): Promise<ApiPlatformAppRequest> {
-    return this.request(`/households/${householdId}/developer/marketplace/requests/${requestId}/review`, {
+    return this.request(`/${householdId}/developer/marketplace/requests/${requestId}/review`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -928,14 +928,14 @@ class ApiClient {
   async getApiPlatformOAuthClients(
     householdId: string
   ): Promise<{ clients: ApiPlatformOAuthClient[] }> {
-    return this.request(`/households/${householdId}/developer/oauth/clients`);
+    return this.request(`/${householdId}/developer/oauth/clients`);
   }
 
   async createApiPlatformOAuthClient(
     householdId: string,
     data: CreateApiPlatformOAuthClientRequest
   ): Promise<CreateApiPlatformOAuthClientResponse> {
-    return this.request(`/households/${householdId}/developer/oauth/clients`, {
+    return this.request(`/${householdId}/developer/oauth/clients`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -944,21 +944,21 @@ class ApiClient {
   async getApiPlatformSdkPackages(
     householdId: string
   ): Promise<{ sdkPackages: ApiPlatformSdkPackage[] }> {
-    return this.request(`/households/${householdId}/developer/sdk-packages`);
+    return this.request(`/${householdId}/developer/sdk-packages`);
   }
 
   async upsertApiPlatformSdkPackage(
     householdId: string,
     data: CreateApiPlatformSdkPackageRequest
   ): Promise<ApiPlatformSdkPackage> {
-    return this.request(`/households/${householdId}/developer/sdk-packages`, {
+    return this.request(`/${householdId}/developer/sdk-packages`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async getApiPlatformAnalytics(householdId: string): Promise<ApiPlatformAnalyticsResponse> {
-    return this.request(`/households/${householdId}/developer/analytics`);
+    return this.request(`/${householdId}/developer/analytics`);
   }
 
   async getPublicApiPlatformOpenApi(): Promise<ApiPlatformOpenApiDocument> {
@@ -1021,32 +1021,32 @@ class ApiClient {
 
   // ===== Enterprise School Edition =====
   async getEnterpriseOverview(householdId: string): Promise<EnterpriseOverviewResponse> {
-    return this.request(`/households/${householdId}/enterprise/overview`);
+    return this.request(`/${householdId}/enterprise/overview`);
   }
 
   async getEnterpriseDistricts(householdId: string): Promise<{ districts: EnterpriseDistrict[] }> {
-    return this.request(`/households/${householdId}/enterprise/districts`);
+    return this.request(`/${householdId}/enterprise/districts`);
   }
 
   async createEnterpriseDistrict(
     householdId: string,
     data: CreateEnterpriseDistrictRequest
   ): Promise<EnterpriseDistrict> {
-    return this.request(`/households/${householdId}/enterprise/districts`, {
+    return this.request(`/${householdId}/enterprise/districts`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async getEnterpriseSchools(householdId: string): Promise<{ schools: EnterpriseSchool[] }> {
-    return this.request(`/households/${householdId}/enterprise/schools`);
+    return this.request(`/${householdId}/enterprise/schools`);
   }
 
   async createEnterpriseSchool(
     householdId: string,
     data: CreateEnterpriseSchoolRequest
   ): Promise<EnterpriseSchool> {
-    return this.request(`/households/${householdId}/enterprise/schools`, {
+    return this.request(`/${householdId}/enterprise/schools`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1057,7 +1057,7 @@ class ApiClient {
     schoolId: string,
     data: UpdateEnterpriseSchoolRequest
   ): Promise<EnterpriseSchool> {
-    return this.request(`/households/${householdId}/enterprise/schools/${schoolId}`, {
+    return this.request(`/${householdId}/enterprise/schools/${schoolId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -1067,7 +1067,7 @@ class ApiClient {
     householdId: string,
     schoolId: string
   ): Promise<{ classrooms: EnterpriseClassroom[] }> {
-    return this.request(`/households/${householdId}/enterprise/schools/${schoolId}/classrooms`);
+    return this.request(`/${householdId}/enterprise/schools/${schoolId}/classrooms`);
   }
 
   async createEnterpriseClassroom(
@@ -1075,7 +1075,7 @@ class ApiClient {
     schoolId: string,
     data: CreateEnterpriseClassroomRequest
   ): Promise<EnterpriseClassroom> {
-    return this.request(`/households/${householdId}/enterprise/schools/${schoolId}/classrooms`, {
+    return this.request(`/${householdId}/enterprise/schools/${schoolId}/classrooms`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1085,7 +1085,7 @@ class ApiClient {
     householdId: string,
     classroomId: string
   ): Promise<{ students: EnterpriseStudentWithProfile[] }> {
-    return this.request(`/households/${householdId}/enterprise/classrooms/${classroomId}/students`);
+    return this.request(`/${householdId}/enterprise/classrooms/${classroomId}/students`);
   }
 
   async addEnterpriseStudent(
@@ -1094,7 +1094,7 @@ class ApiClient {
     data: AddEnterpriseStudentRequest
   ): Promise<EnterpriseClassroomStudent> {
     return this.request(
-      `/households/${householdId}/enterprise/classrooms/${classroomId}/students`,
+      `/${householdId}/enterprise/classrooms/${classroomId}/students`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1108,7 +1108,7 @@ class ApiClient {
     data: BulkImportEnterpriseStudentsRequest
   ): Promise<EnterpriseBulkImportResult> {
     return this.request(
-      `/households/${householdId}/enterprise/classrooms/${classroomId}/students/import`,
+      `/${householdId}/enterprise/classrooms/${classroomId}/students/import`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1121,7 +1121,7 @@ class ApiClient {
     classroomId: string
   ): Promise<EnterpriseReportFile> {
     return this.request(
-      `/households/${householdId}/enterprise/classrooms/${classroomId}/students/export`
+      `/${householdId}/enterprise/classrooms/${classroomId}/students/export`
     );
   }
 
@@ -1130,7 +1130,7 @@ class ApiClient {
     classroomId: string
   ): Promise<{ assignments: EnterpriseAssignmentWithSubmissions[] }> {
     return this.request(
-      `/households/${householdId}/enterprise/classrooms/${classroomId}/assignments`
+      `/${householdId}/enterprise/classrooms/${classroomId}/assignments`
     );
   }
 
@@ -1140,7 +1140,7 @@ class ApiClient {
     data: CreateEnterpriseAssignmentRequest
   ): Promise<EnterpriseAssignment> {
     return this.request(
-      `/households/${householdId}/enterprise/classrooms/${classroomId}/assignments`,
+      `/${householdId}/enterprise/classrooms/${classroomId}/assignments`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1154,7 +1154,7 @@ class ApiClient {
     data: SubmitEnterpriseAssignmentRequest
   ): Promise<EnterpriseAssignmentSubmission> {
     return this.request(
-      `/households/${householdId}/enterprise/assignments/${assignmentId}/submit`,
+      `/${householdId}/enterprise/assignments/${assignmentId}/submit`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1168,7 +1168,7 @@ class ApiClient {
     data: ReviewEnterpriseSubmissionRequest
   ): Promise<EnterpriseAssignmentSubmission> {
     return this.request(
-      `/households/${householdId}/enterprise/submissions/${submissionId}/review`,
+      `/${householdId}/enterprise/submissions/${submissionId}/review`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1181,7 +1181,7 @@ class ApiClient {
     classroomId: string
   ): Promise<EnterpriseClassroomDashboard> {
     return this.request(
-      `/households/${householdId}/enterprise/classrooms/${classroomId}/dashboard`
+      `/${householdId}/enterprise/classrooms/${classroomId}/dashboard`
     );
   }
 
@@ -1189,7 +1189,7 @@ class ApiClient {
     householdId: string,
     schoolId: string
   ): Promise<{ challenges: EnterpriseChallenge[] }> {
-    return this.request(`/households/${householdId}/enterprise/schools/${schoolId}/challenges`);
+    return this.request(`/${householdId}/enterprise/schools/${schoolId}/challenges`);
   }
 
   async createEnterpriseChallenge(
@@ -1197,7 +1197,7 @@ class ApiClient {
     schoolId: string,
     data: CreateEnterpriseChallengeRequest
   ): Promise<EnterpriseChallenge> {
-    return this.request(`/households/${householdId}/enterprise/schools/${schoolId}/challenges`, {
+    return this.request(`/${householdId}/enterprise/schools/${schoolId}/challenges`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1214,7 +1214,7 @@ class ApiClient {
     }
   ): Promise<EnterpriseChallengeParticipation> {
     return this.request(
-      `/households/${householdId}/enterprise/challenges/${challengeId}/participations`,
+      `/${householdId}/enterprise/challenges/${challengeId}/participations`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1226,7 +1226,7 @@ class ApiClient {
     householdId: string,
     schoolId: string
   ): Promise<{ integrations: EnterpriseLmsIntegration[] }> {
-    return this.request(`/households/${householdId}/enterprise/schools/${schoolId}/lms`);
+    return this.request(`/${householdId}/enterprise/schools/${schoolId}/lms`);
   }
 
   async configureEnterpriseLms(
@@ -1236,7 +1236,7 @@ class ApiClient {
     data: ConfigureEnterpriseLmsRequest
   ): Promise<EnterpriseLmsIntegration> {
     return this.request(
-      `/households/${householdId}/enterprise/schools/${schoolId}/lms/${provider}`,
+      `/${householdId}/enterprise/schools/${schoolId}/lms/${provider}`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1250,7 +1250,7 @@ class ApiClient {
     provider: EnterpriseLmsProvider
   ): Promise<EnterpriseLmsSyncResult> {
     return this.request(
-      `/households/${householdId}/enterprise/schools/${schoolId}/lms/${provider}/sync`,
+      `/${householdId}/enterprise/schools/${schoolId}/lms/${provider}/sync`,
       {
         method: 'POST',
       }
@@ -1262,7 +1262,7 @@ class ApiClient {
     schoolId: string
   ): Promise<{ visibility: EnterpriseParentVisibility[] }> {
     return this.request(
-      `/households/${householdId}/enterprise/schools/${schoolId}/parent-visibility`
+      `/${householdId}/enterprise/schools/${schoolId}/parent-visibility`
     );
   }
 
@@ -1273,7 +1273,7 @@ class ApiClient {
     data: SetEnterpriseParentVisibilityRequest
   ): Promise<EnterpriseParentVisibility> {
     return this.request(
-      `/households/${householdId}/enterprise/schools/${schoolId}/parent-visibility/${studentMemberId}`,
+      `/${householdId}/enterprise/schools/${schoolId}/parent-visibility/${studentMemberId}`,
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1285,7 +1285,7 @@ class ApiClient {
     householdId: string,
     schoolId: string
   ): Promise<EnterpriseSchoolAdminAnalytics> {
-    return this.request(`/households/${householdId}/enterprise/schools/${schoolId}/analytics`);
+    return this.request(`/${householdId}/enterprise/schools/${schoolId}/analytics`);
   }
 
   async generateEnterpriseSchoolReport(
@@ -1294,16 +1294,16 @@ class ApiClient {
     format: 'pdf' | 'excel'
   ): Promise<EnterpriseReportFile> {
     return this.request(
-      `/households/${householdId}/enterprise/schools/${schoolId}/reports?format=${format}`
+      `/${householdId}/enterprise/schools/${schoolId}/reports?format=${format}`
     );
   }
 
   async getEnterpriseImports(householdId: string): Promise<{ imports: EnterpriseBulkImport[] }> {
-    return this.request(`/households/${householdId}/enterprise/imports`);
+    return this.request(`/${householdId}/enterprise/imports`);
   }
 
   async getEnterpriseAudits(householdId: string): Promise<{ audits: EnterpriseAdminAuditEvent[] }> {
-    return this.request(`/households/${householdId}/enterprise/audits`);
+    return this.request(`/${householdId}/enterprise/audits`);
   }
 
   // ===== In-App Store =====
@@ -1316,23 +1316,23 @@ class ApiClient {
     if (options?.type) params.set('type', options.type);
     if (options?.includeInactive) params.set('includeInactive', 'true');
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/store/catalog${query}`);
+    return this.request(`/${householdId}/store/catalog${query}`);
   }
 
   async getStoreOffers(householdId: string): Promise<{ offers: StoreCatalogItem[]; now: string }> {
-    return this.request(`/households/${householdId}/store/offers`);
+    return this.request(`/${householdId}/store/offers`);
   }
 
   async getStoreWallet(householdId: string): Promise<StoreWallet> {
-    return this.request(`/households/${householdId}/store/wallet`);
+    return this.request(`/${householdId}/store/wallet`);
   }
 
   async getStoreWalletForMember(householdId: string, memberId: string): Promise<StoreWallet> {
-    return this.request(`/households/${householdId}/store/wallet/${memberId}`);
+    return this.request(`/${householdId}/store/wallet/${memberId}`);
   }
 
   async getStoreEntitlements(householdId: string): Promise<StoreEntitlement[]> {
-    return this.request(`/households/${householdId}/store/entitlements`);
+    return this.request(`/${householdId}/store/entitlements`);
   }
 
   async createStorePurchase(
@@ -1345,7 +1345,7 @@ class ApiClient {
     pointsAfter?: number;
     message?: string;
   }> {
-    return this.request(`/households/${householdId}/store/purchases`, {
+    return this.request(`/${householdId}/store/purchases`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -1356,14 +1356,14 @@ class ApiClient {
     purchaseId: string,
     request?: ApproveStorePurchaseRequest
   ): Promise<{ purchaseId: string; walletAfter: number; pointsAfter: number }> {
-    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/approve`, {
+    return this.request(`/${householdId}/store/purchases/${purchaseId}/approve`, {
       method: 'POST',
       body: JSON.stringify(request ?? {}),
     });
   }
 
   async declineStorePurchase(householdId: string, purchaseId: string): Promise<StorePurchase> {
-    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/decline`, {
+    return this.request(`/${householdId}/store/purchases/${purchaseId}/decline`, {
       method: 'POST',
     });
   }
@@ -1371,11 +1371,11 @@ class ApiClient {
   async getStorePurchases(
     householdId: string
   ): Promise<Array<{ purchase: StorePurchase; item: StoreCatalogItem | null }>> {
-    return this.request(`/households/${householdId}/store/purchases`);
+    return this.request(`/${householdId}/store/purchases`);
   }
 
   async getStoreReceipt(householdId: string, purchaseId: string): Promise<StoreReceipt> {
-    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/receipt`);
+    return this.request(`/${householdId}/store/purchases/${purchaseId}/receipt`);
   }
 
   async requestStoreRefund(
@@ -1383,7 +1383,7 @@ class ApiClient {
     purchaseId: string,
     request: RequestStoreRefundRequest
   ): Promise<StoreRefundRequest> {
-    return this.request(`/households/${householdId}/store/purchases/${purchaseId}/refund-request`, {
+    return this.request(`/${householdId}/store/purchases/${purchaseId}/refund-request`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -1394,7 +1394,7 @@ class ApiClient {
   ): Promise<
     Array<{ refund: StoreRefundRequest; purchase: StorePurchase; item: StoreCatalogItem | null }>
   > {
-    return this.request(`/households/${householdId}/store/refunds`);
+    return this.request(`/${householdId}/store/refunds`);
   }
 
   async resolveStoreRefund(
@@ -1402,21 +1402,21 @@ class ApiClient {
     refundId: string,
     request: ResolveStoreRefundRequest
   ): Promise<{ approved: boolean }> {
-    return this.request(`/households/${householdId}/store/refunds/${refundId}/resolve`, {
+    return this.request(`/${householdId}/store/refunds/${refundId}/resolve`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
   async getStorePurchaseControls(householdId: string): Promise<StorePurchaseControls> {
-    return this.request(`/households/${householdId}/store/controls`);
+    return this.request(`/${householdId}/store/controls`);
   }
 
   async getStorePurchaseControlsForMember(
     householdId: string,
     memberId: string
   ): Promise<StorePurchaseControls> {
-    return this.request(`/households/${householdId}/store/controls/${memberId}`);
+    return this.request(`/${householdId}/store/controls/${memberId}`);
   }
 
   async updateStorePurchaseControls(
@@ -1424,7 +1424,7 @@ class ApiClient {
     memberId: string,
     request: UpdateStorePurchaseControlsRequest
   ): Promise<StorePurchaseControls> {
-    return this.request(`/households/${householdId}/store/controls/${memberId}`, {
+    return this.request(`/${householdId}/store/controls/${memberId}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
@@ -1434,14 +1434,14 @@ class ApiClient {
     householdId: string,
     request: CreateStoreGiftCardRequest
   ): Promise<{ giftCard: StoreGiftCard; purchase: StorePurchase; wallet: StoreWallet }> {
-    return this.request(`/households/${householdId}/store/gift-cards`, {
+    return this.request(`/${householdId}/store/gift-cards`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
   async getStoreGiftCards(householdId: string): Promise<StoreGiftCard[]> {
-    return this.request(`/households/${householdId}/store/gift-cards`);
+    return this.request(`/${householdId}/store/gift-cards`);
   }
 
   async redeemStoreGiftCard(
@@ -1456,7 +1456,7 @@ class ApiClient {
       currentPeriodEnd: string;
     };
   }> {
-    return this.request(`/households/${householdId}/store/gift-cards/redeem`, {
+    return this.request(`/${householdId}/store/gift-cards/redeem`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -1464,16 +1464,16 @@ class ApiClient {
 
   // ===== Boss Battles =====
   async getCurrentBossBattle(householdId: string): Promise<BossBattle | null> {
-    return this.request(`/households/${householdId}/boss-battles/current`);
+    return this.request(`/${householdId}/boss-battles/current`);
   }
 
   async getBossBattleHistory(householdId: string, limit?: number): Promise<BossBattle[]> {
     const query = limit ? `?limit=${limit}` : '';
-    return this.request(`/households/${householdId}/boss-battles/history${query}`);
+    return this.request(`/${householdId}/boss-battles/history${query}`);
   }
 
   async createBossBattle(householdId: string, data: CreateBossBattleRequest): Promise<BossBattle> {
-    return this.request(`/households/${householdId}/boss-battles`, {
+    return this.request(`/${householdId}/boss-battles`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1484,18 +1484,18 @@ class ApiClient {
     battleId: string,
     damage: number
   ): Promise<DamageBossResponse> {
-    return this.request(`/households/${householdId}/boss-battles/${battleId}/damage`, {
+    return this.request(`/${householdId}/boss-battles/${battleId}/damage`, {
       method: 'POST',
       body: JSON.stringify({ damage }),
     });
   }
 
   async getBossBattle(householdId: string, battleId: string): Promise<BossBattle> {
-    return this.request(`/households/${householdId}/boss-battles/${battleId}`);
+    return this.request(`/${householdId}/boss-battles/${battleId}`);
   }
 
   async getBossBattleStats(householdId: string): Promise<BossBattleStats> {
-    return this.request(`/households/${householdId}/boss-battles/current/stats`);
+    return this.request(`/${householdId}/boss-battles/current/stats`);
   }
 
   // ===== Activity Feed =====
@@ -1516,7 +1516,7 @@ class ApiClient {
     if (options?.type) params.set('type', options.type);
     if (options?.since) params.set('since', options.since);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/activity${query}`);
+    return this.request(`/${householdId}/activity${query}`);
   }
 
   async getActivityStats(
@@ -1524,7 +1524,7 @@ class ApiClient {
     period?: 'day' | 'week' | 'month'
   ): Promise<ActivityStats> {
     const query = period ? `?period=${period}` : '';
-    return this.request(`/households/${householdId}/activity/stats${query}`);
+    return this.request(`/${householdId}/activity/stats${query}`);
   }
 
   // ===== Reports =====
@@ -1539,7 +1539,7 @@ class ApiClient {
     if (options?.startDate) params.set('startDate', options.startDate);
     if (options?.endDate) params.set('endDate', options.endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/reports/summary${query}`);
+    return this.request(`/${householdId}/reports/summary${query}`);
   }
 
   async getReportTrend(
@@ -1555,7 +1555,7 @@ class ApiClient {
     if (options?.endDate) params.set('endDate', options.endDate);
     if (options?.memberId) params.set('memberId', options.memberId);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/reports/trend${query}`);
+    return this.request(`/${householdId}/reports/trend${query}`);
   }
 
   async getReportCategories(
@@ -1569,7 +1569,7 @@ class ApiClient {
     if (options?.startDate) params.set('startDate', options.startDate);
     if (options?.endDate) params.set('endDate', options.endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/reports/categories${query}`);
+    return this.request(`/${householdId}/reports/categories${query}`);
   }
 
   async exportReport(
@@ -1585,7 +1585,7 @@ class ApiClient {
     if (options?.endDate) params.set('endDate', options.endDate);
     if (options?.format) params.set('format', options.format);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/reports/export${query}`);
+    return this.request(`/${householdId}/reports/export${query}`);
   }
 
   // ===== Notifications =====
@@ -1800,15 +1800,15 @@ class ApiClient {
 
   // ===== Chore Trades =====
   async getTrades(householdId: string): Promise<TradeListResponse> {
-    return this.request(`/households/${householdId}/trades`);
+    return this.request(`/${householdId}/trades`);
   }
 
   async getTrade(householdId: string, tradeId: string): Promise<TradeWithDetails> {
-    return this.request(`/households/${householdId}/trades/${tradeId}`);
+    return this.request(`/${householdId}/trades/${tradeId}`);
   }
 
   async createTrade(householdId: string, data: CreateTradeRequest): Promise<TradeWithDetails> {
-    return this.request(`/households/${householdId}/trades`, {
+    return this.request(`/${householdId}/trades`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1819,7 +1819,7 @@ class ApiClient {
     tradeId: string,
     data: RespondToTradeRequest
   ): Promise<TradeWithDetails> {
-    return this.request(`/households/${householdId}/trades/${tradeId}/respond`, {
+    return this.request(`/${householdId}/trades/${tradeId}/respond`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1830,39 +1830,39 @@ class ApiClient {
     tradeId: string,
     data: ApproveTradeRequest
   ): Promise<TradeWithDetails> {
-    return this.request(`/households/${householdId}/trades/${tradeId}/approve`, {
+    return this.request(`/${householdId}/trades/${tradeId}/approve`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async cancelTrade(householdId: string, tradeId: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/trades/${tradeId}`, {
+    return this.request(`/${householdId}/trades/${tradeId}`, {
       method: 'DELETE',
     });
   }
 
   async getTradeStats(householdId: string): Promise<TradeStatsResponse> {
-    return this.request(`/households/${householdId}/trades/stats`);
+    return this.request(`/${householdId}/trades/stats`);
   }
 
   // ===== Allowance Management =====
   async getHouseholdAllowanceSummary(householdId: string): Promise<HouseholdAllowanceSummary> {
-    return this.request(`/households/${householdId}/allowance`);
+    return this.request(`/${householdId}/allowance`);
   }
 
   async getMemberAllowanceSummary(
     householdId: string,
     memberId: string
   ): Promise<AllowanceSummary> {
-    return this.request(`/households/${householdId}/allowance/${memberId}`);
+    return this.request(`/${householdId}/allowance/${memberId}`);
   }
 
   async createAllowanceSettings(
     householdId: string,
     data: CreateAllowanceSettingsRequest
   ): Promise<AllowanceSettings> {
-    return this.request(`/households/${householdId}/allowance`, {
+    return this.request(`/${householdId}/allowance`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1873,14 +1873,14 @@ class ApiClient {
     memberId: string,
     data: UpdateAllowanceSettingsRequest
   ): Promise<AllowanceSettings> {
-    return this.request(`/households/${householdId}/allowance/${memberId}`, {
+    return this.request(`/${householdId}/allowance/${memberId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async generatePayout(householdId: string, memberId: string): Promise<AllowancePayout> {
-    return this.request(`/households/${householdId}/allowance/${memberId}/generate-payout`, {
+    return this.request(`/${householdId}/allowance/${memberId}/generate-payout`, {
       method: 'POST',
     });
   }
@@ -1890,14 +1890,14 @@ class ApiClient {
     payoutId: string,
     data?: MarkPayoutPaidRequest
   ): Promise<AllowancePayout> {
-    return this.request(`/households/${householdId}/allowance/payouts/${payoutId}/pay`, {
+    return this.request(`/${householdId}/allowance/payouts/${payoutId}/pay`, {
       method: 'POST',
       body: JSON.stringify(data || {}),
     });
   }
 
   async cancelPayout(householdId: string, payoutId: string): Promise<AllowancePayout> {
-    return this.request(`/households/${householdId}/allowance/payouts/${payoutId}/cancel`, {
+    return this.request(`/${householdId}/allowance/payouts/${payoutId}/cancel`, {
       method: 'POST',
     });
   }
@@ -1911,7 +1911,7 @@ class ApiClient {
     if (options?.memberId) params.set('memberId', options.memberId);
     if (options?.limit) params.set('limit', options.limit.toString());
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request(`/households/${householdId}/allowance/payouts${query}`);
+    return this.request(`/${householdId}/allowance/payouts${query}`);
   }
 
   // ===== Parent Dashboard =====
@@ -1924,7 +1924,7 @@ class ApiClient {
     if (params?.startDate) queryParams.set('startDate', params.startDate);
     if (params?.endDate) queryParams.set('endDate', params.endDate);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.request(`/households/${householdId}/dashboard${query}`);
+    return this.request(`/${householdId}/dashboard${query}`);
   }
 
   async getMemberDashboard(
@@ -1937,13 +1937,13 @@ class ApiClient {
     if (params?.startDate) queryParams.set('startDate', params.startDate);
     if (params?.endDate) queryParams.set('endDate', params.endDate);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.request(`/households/${householdId}/dashboard/member/${memberId}${query}`);
+    return this.request(`/${householdId}/dashboard/member/${memberId}${query}`);
   }
 
   // ==================== Age-Appropriate Chore Engine ====================
 
   async getAgeGuidelines(householdId: string): Promise<AgeGuideline[]> {
-    return this.request(`/households/${householdId}/age-appropriate/guidelines`);
+    return this.request(`/${householdId}/age-appropriate/guidelines`);
   }
 
   async getAgeRecommendations(
@@ -1952,7 +1952,7 @@ class ApiClient {
     includeExisting?: boolean
   ): Promise<AgeRecommendations> {
     const query = includeExisting ? '?includeExisting=true' : '';
-    return this.request(`/households/${householdId}/age-appropriate/member/${memberId}${query}`);
+    return this.request(`/${householdId}/age-appropriate/member/${memberId}${query}`);
   }
 
   async assessChoreForMember(
@@ -1970,7 +1970,7 @@ class ApiClient {
     ageGroup: string | null;
     inferredFromDifficulty?: boolean;
   }> {
-    return this.request(`/households/${householdId}/age-appropriate/assess/${choreId}/${memberId}`);
+    return this.request(`/${householdId}/age-appropriate/assess/${choreId}/${memberId}`);
   }
 
   async bulkAssessChoresForMember(
@@ -1998,7 +1998,7 @@ class ApiClient {
       tooEasy: number;
     };
   }> {
-    return this.request(`/households/${householdId}/age-appropriate/bulk-assess/${memberId}`);
+    return this.request(`/${householdId}/age-appropriate/bulk-assess/${memberId}`);
   }
 
   // ==================== AI Scheduling ====================
@@ -2007,7 +2007,7 @@ class ApiClient {
     householdId: string,
     params?: GenerateScheduleRequest
   ): Promise<AISchedule> {
-    return this.request(`/households/${householdId}/ai-schedule/generate`, {
+    return this.request(`/${householdId}/ai-schedule/generate`, {
       method: 'POST',
       body: JSON.stringify(params || {}),
     });
@@ -2019,7 +2019,7 @@ class ApiClient {
     suggestionIds: string[],
     suggestions: ScheduleSuggestion[]
   ): Promise<ApplyScheduleResult> {
-    return this.request(`/households/${householdId}/ai-schedule/apply`, {
+    return this.request(`/${householdId}/ai-schedule/apply`, {
       method: 'POST',
       body: JSON.stringify({
         scheduleId,
@@ -2040,11 +2040,11 @@ class ApiClient {
     if (params?.period) queryParams.set('period', params.period);
     if (params?.startDate) queryParams.set('startDate', params.startDate);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.request(`/households/${householdId}/ai-schedule/workload${query}`);
+    return this.request(`/${householdId}/ai-schedule/workload${query}`);
   }
 
   async getMemberPatterns(householdId: string, memberId: string): Promise<CompletionPattern> {
-    return this.request(`/households/${householdId}/ai-schedule/patterns/${memberId}`);
+    return this.request(`/${householdId}/ai-schedule/patterns/${memberId}`);
   }
 
   async getScheduleAnalytics(
@@ -2055,7 +2055,7 @@ class ApiClient {
     if (params?.period) queryParams.set('period', params.period);
     if (params?.startDate) queryParams.set('startDate', params.startDate);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.request(`/households/${householdId}/ai-schedule/analytics${query}`);
+    return this.request(`/${householdId}/ai-schedule/analytics${query}`);
   }
 
   // ==================== Smart Reminders ====================
@@ -2064,7 +2064,7 @@ class ApiClient {
     householdId: string,
     memberId: string
   ): Promise<ReminderPreferences> {
-    return this.request(`/households/${householdId}/reminders/preferences/${memberId}`);
+    return this.request(`/${householdId}/reminders/preferences/${memberId}`);
   }
 
   async updateReminderPreferences(
@@ -2072,36 +2072,36 @@ class ApiClient {
     memberId: string,
     data: UpdateReminderPreferencesRequest
   ): Promise<ReminderPreferences> {
-    return this.request(`/households/${householdId}/reminders/preferences/${memberId}`, {
+    return this.request(`/${householdId}/reminders/preferences/${memberId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async getReminderSuggestions(householdId: string): Promise<ReminderSuggestion[]> {
-    return this.request(`/households/${householdId}/reminders/suggestions`);
+    return this.request(`/${householdId}/reminders/suggestions`);
   }
 
   async getSmartTimingAnalysis(
     householdId: string,
     memberId: string
   ): Promise<SmartTimingAnalysis> {
-    return this.request(`/households/${householdId}/reminders/smart-timing/${memberId}`);
+    return this.request(`/${householdId}/reminders/smart-timing/${memberId}`);
   }
 
   async getReminderEffectiveness(householdId: string): Promise<ReminderEffectiveness[]> {
-    return this.request(`/households/${householdId}/reminders/effectiveness`);
+    return this.request(`/${householdId}/reminders/effectiveness`);
   }
 
   async getReminderQueueStatus(householdId: string): Promise<ReminderQueueStatus> {
-    return this.request(`/households/${householdId}/reminders/queue-status`);
+    return this.request(`/${householdId}/reminders/queue-status`);
   }
 
   async createReminderConfig(
     householdId: string,
     data: CreateReminderConfigRequest
   ): Promise<ReminderConfig> {
-    return this.request(`/households/${householdId}/reminders/configs`, {
+    return this.request(`/${householdId}/reminders/configs`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2109,11 +2109,11 @@ class ApiClient {
 
   async getReminderConfigs(householdId: string, memberId?: string): Promise<ReminderConfig[]> {
     const query = memberId ? `?memberId=${memberId}` : '';
-    return this.request(`/households/${householdId}/reminders/configs${query}`);
+    return this.request(`/${householdId}/reminders/configs${query}`);
   }
 
   async deleteReminderConfig(householdId: string, configId: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/reminders/configs/${configId}`, {
+    return this.request(`/${householdId}/reminders/configs/${configId}`, {
       method: 'DELETE',
     });
   }
@@ -2123,7 +2123,7 @@ class ApiClient {
     memberId: string,
     channel: ReminderChannel
   ): Promise<{ success: boolean; message: string; sentAt: string }> {
-    return this.request(`/households/${householdId}/reminders/test`, {
+    return this.request(`/${householdId}/reminders/test`, {
       method: 'POST',
       body: JSON.stringify({ memberId, channel }),
     });
@@ -2140,7 +2140,7 @@ class ApiClient {
     command: VoiceCommand;
     response: VoiceResponse;
   }> {
-    return this.request(`/households/${householdId}/voice/process`, {
+    return this.request(`/${householdId}/voice/process`, {
       method: 'POST',
       body: JSON.stringify({ text, sessionId }),
     });
@@ -2151,29 +2151,29 @@ class ApiClient {
     byCategory: Record<string, VoiceCommandSample[]>;
     totalCommands: number;
   }> {
-    return this.request(`/households/${householdId}/voice/commands`);
+    return this.request(`/${householdId}/voice/commands`);
   }
 
   async getVoiceSettings(householdId: string): Promise<VoiceSettings> {
-    return this.request(`/households/${householdId}/voice/settings`);
+    return this.request(`/${householdId}/voice/settings`);
   }
 
   async updateVoiceSettings(
     householdId: string,
     settings: Partial<VoiceSettings>
   ): Promise<VoiceSettings> {
-    return this.request(`/households/${householdId}/voice/settings`, {
+    return this.request(`/${householdId}/voice/settings`, {
       method: 'PUT',
       body: JSON.stringify(settings),
     });
   }
 
   async getVoiceSession(householdId: string, sessionId: string): Promise<VoiceSession> {
-    return this.request(`/households/${householdId}/voice/session/${sessionId}`);
+    return this.request(`/${householdId}/voice/session/${sessionId}`);
   }
 
   async endVoiceSession(householdId: string, sessionId: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/voice/session/${sessionId}`, {
+    return this.request(`/${householdId}/voice/session/${sessionId}`, {
       method: 'DELETE',
     });
   }
@@ -2181,18 +2181,18 @@ class ApiClient {
   // ==================== Difficulty Calibration ====================
 
   async getCalibrationSummary(householdId: string): Promise<HouseholdCalibrationSummary> {
-    return this.request(`/households/${householdId}/calibration`);
+    return this.request(`/${householdId}/calibration`);
   }
 
   async getCalibrationSettings(householdId: string): Promise<CalibrationSettings> {
-    return this.request(`/households/${householdId}/calibration/settings`);
+    return this.request(`/${householdId}/calibration/settings`);
   }
 
   async updateCalibrationSettings(
     householdId: string,
     settings: UpdateCalibrationSettingsRequest
   ): Promise<CalibrationSettings> {
-    return this.request(`/households/${householdId}/calibration/settings`, {
+    return this.request(`/${householdId}/calibration/settings`, {
       method: 'PUT',
       body: JSON.stringify(settings),
     });
@@ -2202,7 +2202,7 @@ class ApiClient {
     householdId: string,
     choreId: string
   ): Promise<ChoreCalibrationAnalysis> {
-    return this.request(`/households/${householdId}/calibration/chore/${choreId}`);
+    return this.request(`/${householdId}/calibration/chore/${choreId}`);
   }
 
   async applyCalibration(
@@ -2213,7 +2213,7 @@ class ApiClient {
     chore: Chore;
     historyEntry: CalibrationHistoryEntry;
   }> {
-    return this.request(`/households/${householdId}/calibration/apply`, {
+    return this.request(`/${householdId}/calibration/apply`, {
       method: 'POST',
       body: JSON.stringify(calibration),
     });
@@ -2227,7 +2227,7 @@ class ApiClient {
     failed: number;
     results: Array<{ choreId: string; success: boolean; error?: string }>;
   }> {
-    return this.request(`/households/${householdId}/calibration/bulk-apply`, {
+    return this.request(`/${householdId}/calibration/bulk-apply`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -2238,28 +2238,28 @@ class ApiClient {
     limit?: number
   ): Promise<CalibrationHistoryEntry[]> {
     const query = limit ? `?limit=${limit}` : '';
-    return this.request(`/households/${householdId}/calibration/history${query}`);
+    return this.request(`/${householdId}/calibration/history${query}`);
   }
 
   // ==================== Streak Protection ====================
 
   async getStreakProtectionSummary(householdId: string): Promise<HouseholdStreakSummary> {
-    return this.request(`/households/${householdId}/streak-protection`);
+    return this.request(`/${householdId}/streak-protection`);
   }
 
   async getStreakPrediction(householdId: string, memberId: string): Promise<StreakPrediction> {
-    return this.request(`/households/${householdId}/streak-protection/member/${memberId}`);
+    return this.request(`/${householdId}/streak-protection/member/${memberId}`);
   }
 
   async getStreakProtectionSettings(householdId: string): Promise<StreakProtectionSettings> {
-    return this.request(`/households/${householdId}/streak-protection/settings`);
+    return this.request(`/${householdId}/streak-protection/settings`);
   }
 
   async updateStreakProtectionSettings(
     householdId: string,
     settings: UpdateProtectionSettingsRequest
   ): Promise<StreakProtectionSettings> {
-    return this.request(`/households/${householdId}/streak-protection/settings`, {
+    return this.request(`/${householdId}/streak-protection/settings`, {
       method: 'PUT',
       body: JSON.stringify(settings),
     });
@@ -2275,45 +2275,45 @@ class ApiClient {
     freezesRemaining: number;
     message: string;
   }> {
-    return this.request(`/households/${householdId}/streak-protection/use-freeze`, {
+    return this.request(`/${householdId}/streak-protection/use-freeze`, {
       method: 'POST',
       body: JSON.stringify({ memberId, reason }),
     });
   }
 
   async dismissStreakAlert(householdId: string, alertId: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/streak-protection/dismiss-alert`, {
+    return this.request(`/${householdId}/streak-protection/dismiss-alert`, {
       method: 'POST',
       body: JSON.stringify({ alertId }),
     });
   }
 
   async getStreakAnalytics(householdId: string, memberId: string): Promise<StreakAnalytics> {
-    return this.request(`/households/${householdId}/streak-protection/analytics/${memberId}`);
+    return this.request(`/${householdId}/streak-protection/analytics/${memberId}`);
   }
 
   // ==================== Family Challenges ====================
 
   async getChallengesOverview(householdId: string): Promise<HouseholdChallengesOverview> {
-    return this.request(`/households/${householdId}/challenges`);
+    return this.request(`/${householdId}/challenges`);
   }
 
   async getChallengeTemplates(householdId: string): Promise<{ templates: ChallengeTemplate[] }> {
-    return this.request(`/households/${householdId}/challenges/templates`);
+    return this.request(`/${householdId}/challenges/templates`);
   }
 
   async createChallenge(
     householdId: string,
     challenge: CreateChallengeRequest
   ): Promise<FamilyChallenge> {
-    return this.request(`/households/${householdId}/challenges`, {
+    return this.request(`/${householdId}/challenges`, {
       method: 'POST',
       body: JSON.stringify(challenge),
     });
   }
 
   async getChallenge(householdId: string, challengeId: string): Promise<ChallengeSummary> {
-    return this.request(`/households/${householdId}/challenges/${challengeId}`);
+    return this.request(`/${householdId}/challenges/${challengeId}`);
   }
 
   async updateChallenge(
@@ -2321,7 +2321,7 @@ class ApiClient {
     challengeId: string,
     updates: UpdateChallengeRequest
   ): Promise<FamilyChallenge> {
-    return this.request(`/households/${householdId}/challenges/${challengeId}`, {
+    return this.request(`/${householdId}/challenges/${challengeId}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     });
@@ -2333,7 +2333,7 @@ class ApiClient {
     memberId: string,
     teamId?: string
   ): Promise<{ success: boolean; challenge: FamilyChallenge }> {
-    return this.request(`/households/${householdId}/challenges/${challengeId}/join`, {
+    return this.request(`/${householdId}/challenges/${challengeId}/join`, {
       method: 'POST',
       body: JSON.stringify({ memberId, teamId }),
     });
@@ -2345,14 +2345,14 @@ class ApiClient {
     memberId: string,
     contribution: number
   ): Promise<{ success: boolean; challenge: FamilyChallenge; progressPercentage: number }> {
-    return this.request(`/households/${householdId}/challenges/${challengeId}/progress`, {
+    return this.request(`/${householdId}/challenges/${challengeId}/progress`, {
       method: 'POST',
       body: JSON.stringify({ memberId, contribution }),
     });
   }
 
   async deleteChallenge(householdId: string, challengeId: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/challenges/${challengeId}`, {
+    return this.request(`/${householdId}/challenges/${challengeId}`, {
       method: 'DELETE',
     });
   }
@@ -2504,7 +2504,7 @@ class ApiClient {
     if (params?.memberId) queryParams.set('memberId', params.memberId);
     if (params?.category) queryParams.set('category', params.category);
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/achievements${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/achievements${query ? `?${query}` : ''}`);
   }
 
   async getAchievementShowcase(
@@ -2514,14 +2514,14 @@ class ApiClient {
     showcase: AchievementShowcase;
     levelProgress: { level: number; progress: number; pointsToNext: number };
   }> {
-    return this.request(`/households/${householdId}/achievements/showcase/${memberId}`);
+    return this.request(`/${householdId}/achievements/showcase/${memberId}`);
   }
 
   async updateAchievementShowcase(
     householdId: string,
     updates: UpdateShowcaseRequest
   ): Promise<{ success: boolean; settings: { featuredIds: string[]; title?: string } }> {
-    return this.request(`/households/${householdId}/achievements/showcase`, {
+    return this.request(`/${householdId}/achievements/showcase`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     });
@@ -2535,7 +2535,7 @@ class ApiClient {
     if (timeframe) queryParams.set('timeframe', timeframe);
     const query = queryParams.toString();
     return this.request(
-      `/households/${householdId}/achievements/leaderboard${query ? `?${query}` : ''}`
+      `/${householdId}/achievements/leaderboard${query ? `?${query}` : ''}`
     );
   }
 
@@ -2547,14 +2547,14 @@ class ApiClient {
     if (params?.cursor) queryParams.set('cursor', params.cursor);
     if (params?.limit) queryParams.set('limit', String(params.limit));
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/achievements/feed${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/achievements/feed${query ? `?${query}` : ''}`);
   }
 
   async shareAchievement(
     householdId: string,
     data: ShareAchievementRequest
   ): Promise<{ success: boolean; share: AchievementShare }> {
-    return this.request(`/households/${householdId}/achievements/share`, {
+    return this.request(`/${householdId}/achievements/share`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2565,7 +2565,7 @@ class ApiClient {
     shareId: string,
     emoji: string
   ): Promise<{ success: boolean; reactions: AchievementShare['reactions'] }> {
-    return this.request(`/households/${householdId}/achievements/share/${shareId}/react`, {
+    return this.request(`/${householdId}/achievements/share/${shareId}/react`, {
       method: 'POST',
       body: JSON.stringify({ emoji }),
     });
@@ -2574,24 +2574,24 @@ class ApiClient {
   async getAchievementShares(
     householdId: string
   ): Promise<{ shares: (AchievementShare & { achievement?: Achievement })[] }> {
-    return this.request(`/households/${householdId}/achievements/shares`);
+    return this.request(`/${householdId}/achievements/shares`);
   }
 
   // ===== Seasonal Events =====
 
   async getEventCalendar(householdId: string): Promise<EventCalendar> {
-    return this.request(`/households/${householdId}/events`);
+    return this.request(`/${householdId}/events`);
   }
 
   async getEvent(householdId: string, eventId: string): Promise<{ event: SeasonalEvent }> {
-    return this.request(`/households/${householdId}/events/${eventId}`);
+    return this.request(`/${householdId}/events/${eventId}`);
   }
 
   async joinEvent(
     householdId: string,
     eventId: string
   ): Promise<{ success: boolean; participation: EventParticipation }> {
-    return this.request(`/households/${householdId}/events/${eventId}/join`, {
+    return this.request(`/${householdId}/events/${eventId}/join`, {
       method: 'POST',
     });
   }
@@ -2607,7 +2607,7 @@ class ApiClient {
     challengeCompleted: boolean;
     totalProgress: EventParticipation['progress'];
   }> {
-    return this.request(`/households/${householdId}/events/${eventId}/progress`, {
+    return this.request(`/${householdId}/events/${eventId}/progress`, {
       method: 'POST',
       body: JSON.stringify({ challengeId, increment }),
     });
@@ -2618,14 +2618,14 @@ class ApiClient {
     eventId: string,
     rewardId: string
   ): Promise<{ success: boolean; rewardId: string }> {
-    return this.request(`/households/${householdId}/events/${eventId}/claim`, {
+    return this.request(`/${householdId}/events/${eventId}/claim`, {
       method: 'POST',
       body: JSON.stringify({ rewardId }),
     });
   }
 
   async getEventLeaderboard(householdId: string, eventId: string): Promise<HouseholdEventStats> {
-    return this.request(`/households/${householdId}/events/${eventId}/leaderboard`);
+    return this.request(`/${householdId}/events/${eventId}/leaderboard`);
   }
 
   // ===== Family Analytics =====
@@ -2640,7 +2640,7 @@ class ApiClient {
     if (params?.includeRecommendations !== undefined)
       queryParams.set('includeRecommendations', String(params.includeRecommendations));
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/analytics${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/analytics${query ? `?${query}` : ''}`);
   }
 
   async getMemberAnalytics(
@@ -2652,7 +2652,7 @@ class ApiClient {
     if (period) queryParams.set('period', period);
     const query = queryParams.toString();
     return this.request(
-      `/households/${householdId}/analytics/member/${memberId}${query ? `?${query}` : ''}`
+      `/${householdId}/analytics/member/${memberId}${query ? `?${query}` : ''}`
     );
   }
 
@@ -2662,7 +2662,7 @@ class ApiClient {
     period2: AnalyticsPeriod
   ): Promise<PeriodComparison> {
     return this.request(
-      `/households/${householdId}/analytics/compare?period1=${period1}&period2=${period2}`
+      `/${householdId}/analytics/compare?period1=${period1}&period2=${period2}`
     );
   }
 
@@ -2674,7 +2674,7 @@ class ApiClient {
       sections: ('overview' | 'members' | 'trends' | 'chores' | 'engagement')[];
     }
   ): Promise<{ success: boolean; export: AnalyticsExport }> {
-    return this.request(`/households/${householdId}/analytics/export`, {
+    return this.request(`/${householdId}/analytics/export`, {
       method: 'POST',
       body: JSON.stringify(options),
     });
@@ -2683,7 +2683,7 @@ class ApiClient {
   async getAnalyticsRecommendations(
     householdId: string
   ): Promise<{ recommendations: InsightRecommendation[] }> {
-    return this.request(`/households/${householdId}/analytics/recommendations`);
+    return this.request(`/${householdId}/analytics/recommendations`);
   }
 
   // ==================== Health & Wellness (F14.1-F14.5) ====================
@@ -2697,14 +2697,14 @@ class ApiClient {
     if (params?.startDate) queryParams.set('startDate', params.startDate);
     if (params?.endDate) queryParams.set('endDate', params.endDate);
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/wellness/activity-logs${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/activity-logs${query ? `?${query}` : ''}`);
   }
 
   async createWellnessActivityLog(
     householdId: string,
     data: CreateActivityLogRequest
   ): Promise<ActivityLog> {
-    return this.request(`/households/${householdId}/wellness/activity-logs`, {
+    return this.request(`/${householdId}/wellness/activity-logs`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2715,20 +2715,20 @@ class ApiClient {
     memberId?: string
   ): Promise<HouseholdActivityStats> {
     const query = memberId ? `?memberId=${memberId}` : '';
-    return this.request(`/households/${householdId}/wellness/activity-stats${query}`);
+    return this.request(`/${householdId}/wellness/activity-stats${query}`);
   }
 
   async getWellnessActivityGoals(
     householdId: string
   ): Promise<{ goals: ActivityGoal[] }> {
-    return this.request(`/households/${householdId}/wellness/activity-goals`);
+    return this.request(`/${householdId}/wellness/activity-goals`);
   }
 
   async createWellnessActivityGoal(
     householdId: string,
     data: UpdateActivityGoalRequest
   ): Promise<ActivityGoal> {
-    return this.request(`/households/${householdId}/wellness/activity-goals`, {
+    return this.request(`/${householdId}/wellness/activity-goals`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2739,7 +2739,7 @@ class ApiClient {
     goalId: string,
     data: UpdateActivityGoalRequest
   ): Promise<ActivityGoal> {
-    return this.request(`/households/${householdId}/wellness/activity-goals/${goalId}`, {
+    return this.request(`/${householdId}/wellness/activity-goals/${goalId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -2753,14 +2753,14 @@ class ApiClient {
     if (params?.memberId) queryParams.set('memberId', params.memberId);
     if (params?.limit) queryParams.set('limit', String(params.limit));
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/wellness/wellness/check-ins${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/wellness/check-ins${query ? `?${query}` : ''}`);
   }
 
   async createWellnessCheckIn(
     householdId: string,
     data: CreateCheckInRequest
   ): Promise<WellnessCheckIn> {
-    return this.request(`/households/${householdId}/wellness/wellness/check-ins`, {
+    return this.request(`/${householdId}/wellness/wellness/check-ins`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2774,7 +2774,7 @@ class ApiClient {
     if (params?.memberId) queryParams.set('memberId', params.memberId);
     if (params?.days) queryParams.set('days', String(params.days));
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/wellness/wellness/trends${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/wellness/trends${query ? `?${query}` : ''}`);
   }
 
   async getSleepLogs(
@@ -2782,14 +2782,14 @@ class ApiClient {
     memberId?: string
   ): Promise<{ logs: SleepLog[]; total: number }> {
     const query = memberId ? `?memberId=${memberId}` : '';
-    return this.request(`/households/${householdId}/wellness/sleep-logs${query}`);
+    return this.request(`/${householdId}/wellness/sleep-logs${query}`);
   }
 
   async createSleepLog(
     householdId: string,
     data: CreateSleepLogRequest
   ): Promise<SleepLog> {
-    return this.request(`/households/${householdId}/wellness/sleep-logs`, {
+    return this.request(`/${householdId}/wellness/sleep-logs`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2803,7 +2803,7 @@ class ApiClient {
     if (params?.memberId) queryParams.set('memberId', params.memberId);
     if (params?.days) queryParams.set('days', String(params.days));
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/wellness/sleep-stats${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/sleep-stats${query ? `?${query}` : ''}`);
   }
 
   async getMealPlans(
@@ -2814,14 +2814,14 @@ class ApiClient {
     if (params?.startDate) queryParams.set('startDate', params.startDate);
     if (params?.endDate) queryParams.set('endDate', params.endDate);
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/wellness/meal-plans${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/meal-plans${query ? `?${query}` : ''}`);
   }
 
   async createMealPlan(
     householdId: string,
     data: CreateMealPlanRequest
   ): Promise<MealPlan> {
-    return this.request(`/households/${householdId}/wellness/meal-plans`, {
+    return this.request(`/${householdId}/wellness/meal-plans`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2832,7 +2832,7 @@ class ApiClient {
     planId: string,
     data: UpdateMealPlanRequest
   ): Promise<MealPlan> {
-    return this.request(`/households/${householdId}/wellness/meal-plans/${planId}`, {
+    return this.request(`/${householdId}/wellness/meal-plans/${planId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -2842,7 +2842,7 @@ class ApiClient {
     householdId: string,
     planId: string
   ): Promise<void> {
-    return this.request(`/households/${householdId}/wellness/meal-plans/${planId}`, {
+    return this.request(`/${householdId}/wellness/meal-plans/${planId}`, {
       method: 'DELETE',
     });
   }
@@ -2852,14 +2852,14 @@ class ApiClient {
     category?: string
   ): Promise<{ resources: MentalHealthResource[]; total: number }> {
     const query = category ? `?category=${category}` : '';
-    return this.request(`/households/${householdId}/wellness/mental-health/resources${query}`);
+    return this.request(`/${householdId}/wellness/mental-health/resources${query}`);
   }
 
   async createMentalHealthResource(
     householdId: string,
     data: CreateMentalHealthResourceRequest
   ): Promise<MentalHealthResource> {
-    return this.request(`/households/${householdId}/wellness/mental-health/resources`, {
+    return this.request(`/${householdId}/wellness/mental-health/resources`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2870,14 +2870,14 @@ class ApiClient {
     memberId?: string
   ): Promise<{ entries: GratitudeEntry[]; total: number }> {
     const query = memberId ? `?memberId=${memberId}` : '';
-    return this.request(`/households/${householdId}/wellness/mental-health/gratitude${query}`);
+    return this.request(`/${householdId}/wellness/mental-health/gratitude${query}`);
   }
 
   async createGratitudeEntry(
     householdId: string,
     data: CreateGratitudeRequest
   ): Promise<GratitudeEntry> {
-    return this.request(`/households/${householdId}/wellness/mental-health/gratitude`, {
+    return this.request(`/${householdId}/wellness/mental-health/gratitude`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2891,78 +2891,78 @@ class ApiClient {
     if (params?.memberId) queryParams.set('memberId', params.memberId);
     if (params?.days) queryParams.set('days', String(params.days));
     const query = queryParams.toString();
-    return this.request(`/households/${householdId}/wellness/mental-health/mood-journal${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/mental-health/mood-journal${query ? `?${query}` : ''}`);
   }
 
   // ==================== Advanced Analytics & Admin (F15.1-F15.5) ====================
 
   async getAdvancedReports(householdId: string): Promise<{ reports: AdvancedReport[]; total: number }> {
-    return this.request(`/households/${householdId}/admin-analytics/reports`);
+    return this.request(`/${householdId}/admin-analytics/reports`);
   }
 
   async createAdvancedReport(householdId: string, data: CreateAdvancedReportRequest): Promise<AdvancedReport> {
-    return this.request(`/households/${householdId}/admin-analytics/reports`, {
+    return this.request(`/${householdId}/admin-analytics/reports`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async getAdvancedReport(householdId: string, reportId: string): Promise<{ report: AdvancedReport }> {
-    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}`);
+    return this.request(`/${householdId}/admin-analytics/reports/${reportId}`);
   }
 
   async updateAdvancedReport(householdId: string, reportId: string, data: UpdateAdvancedReportRequest): Promise<AdvancedReport> {
-    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}`, {
+    return this.request(`/${householdId}/admin-analytics/reports/${reportId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteAdvancedReport(householdId: string, reportId: string): Promise<void> {
-    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/admin-analytics/reports/${reportId}`, { method: 'DELETE' });
   }
 
   async generateReport(householdId: string, reportId: string): Promise<GeneratedReport> {
-    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}/generate`, { method: 'POST' });
+    return this.request(`/${householdId}/admin-analytics/reports/${reportId}/generate`, { method: 'POST' });
   }
 
   async getGeneratedReports(householdId: string, reportId: string): Promise<{ reports: GeneratedReport[]; total: number }> {
-    return this.request(`/households/${householdId}/admin-analytics/reports/${reportId}/generated`);
+    return this.request(`/${householdId}/admin-analytics/reports/${reportId}/generated`);
   }
 
   async getAdminDashboard(householdId: string): Promise<AdminDashboard> {
-    return this.request(`/households/${householdId}/admin-analytics/admin/dashboard`);
+    return this.request(`/${householdId}/admin-analytics/admin/dashboard`);
   }
 
   async getAdminMembers(householdId: string): Promise<{ members: AdminMemberSummary[]; total: number }> {
-    return this.request(`/households/${householdId}/admin-analytics/admin/members`);
+    return this.request(`/${householdId}/admin-analytics/admin/members`);
   }
 
   async getAdminAlerts(householdId: string): Promise<{ alerts: AdminAlert[]; total: number }> {
-    return this.request(`/households/${householdId}/admin-analytics/admin/alerts`);
+    return this.request(`/${householdId}/admin-analytics/admin/alerts`);
   }
 
   async markAlertRead(householdId: string, alertId: string): Promise<{ id: string; isRead: boolean }> {
-    return this.request(`/households/${householdId}/admin-analytics/admin/alerts/${alertId}/read`, { method: 'PATCH' });
+    return this.request(`/${householdId}/admin-analytics/admin/alerts/${alertId}/read`, { method: 'PATCH' });
   }
 
   async createDataExport(householdId: string, data: DataExportRequest): Promise<DataExport> {
-    return this.request(`/households/${householdId}/admin-analytics/exports`, {
+    return this.request(`/${householdId}/admin-analytics/exports`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async getDataExports(householdId: string): Promise<{ exports: DataExport[]; total: number }> {
-    return this.request(`/households/${householdId}/admin-analytics/exports`);
+    return this.request(`/${householdId}/admin-analytics/exports`);
   }
 
   async getDataExport(householdId: string, exportId: string): Promise<DataExport> {
-    return this.request(`/households/${householdId}/admin-analytics/exports/${exportId}`);
+    return this.request(`/${householdId}/admin-analytics/exports/${exportId}`);
   }
 
   async deleteDataExport(householdId: string, exportId: string): Promise<void> {
-    return this.request(`/households/${householdId}/admin-analytics/exports/${exportId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/admin-analytics/exports/${exportId}`, { method: 'DELETE' });
   }
 
   async getAuditLogs(householdId: string, query?: AuditLogQuery): Promise<{ logs: AuditLogEntry[]; total: number }> {
@@ -2975,32 +2975,32 @@ class ApiClient {
     if (query?.limit) queryParams.set('limit', String(query.limit));
     if (query?.offset) queryParams.set('offset', String(query.offset));
     const qs = queryParams.toString();
-    return this.request(`/households/${householdId}/admin-analytics/audit-logs${qs ? `?${qs}` : ''}`);
+    return this.request(`/${householdId}/admin-analytics/audit-logs${qs ? `?${qs}` : ''}`);
   }
 
   async getAuditLogSummary(householdId: string): Promise<AuditLogSummary> {
-    return this.request(`/households/${householdId}/admin-analytics/audit-logs/summary`);
+    return this.request(`/${householdId}/admin-analytics/audit-logs/summary`);
   }
 
   async getPerformanceMetrics(householdId: string): Promise<PerformanceMetrics> {
-    return this.request(`/households/${householdId}/admin-analytics/performance`);
+    return this.request(`/${householdId}/admin-analytics/performance`);
   }
 
   async getPerformanceHistory(householdId: string, period?: string): Promise<{ metrics: PerformanceMetrics[]; period: string }> {
     const query = period ? `?period=${period}` : '';
-    return this.request(`/households/${householdId}/admin-analytics/performance/history${query}`);
+    return this.request(`/${householdId}/admin-analytics/performance/history${query}`);
   }
 
   async getUsageMetrics(householdId: string): Promise<UsageMetrics> {
-    return this.request(`/households/${householdId}/admin-analytics/usage`);
+    return this.request(`/${householdId}/admin-analytics/usage`);
   }
 
   async getErrorMetrics(householdId: string): Promise<{ errors: ErrorMetric[]; total: number }> {
-    return this.request(`/households/${householdId}/admin-analytics/errors`);
+    return this.request(`/${householdId}/admin-analytics/errors`);
   }
 
   async resolveError(householdId: string, errorId: string): Promise<{ id: string; isResolved: boolean }> {
-    return this.request(`/households/${householdId}/admin-analytics/errors/${errorId}/resolve`, { method: 'PATCH' });
+    return this.request(`/${householdId}/admin-analytics/errors/${errorId}/resolve`, { method: 'PATCH' });
   }
 
   // ==================== Community & Social (F16.1-F16.5) ====================
@@ -3011,48 +3011,48 @@ class ApiClient {
     if (params?.limit) qp.set('limit', String(params.limit));
     if (params?.offset) qp.set('offset', String(params.offset));
     const q = qp.toString();
-    return this.request(`/households/${householdId}/community/forums/posts${q ? `?${q}` : ''}`);
+    return this.request(`/${householdId}/community/forums/posts${q ? `?${q}` : ''}`);
   }
 
   async createForumPost(householdId: string, data: CreateForumPostRequest): Promise<ForumPost> {
-    return this.request(`/households/${householdId}/community/forums/posts`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/forums/posts`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getForumPost(householdId: string, postId: string): Promise<{ post: ForumPost; replies: ForumReply[] }> {
-    return this.request(`/households/${householdId}/community/forums/posts/${postId}`);
+    return this.request(`/${householdId}/community/forums/posts/${postId}`);
   }
 
   async createForumReply(householdId: string, postId: string, data: CreateForumReplyRequest): Promise<ForumReply> {
-    return this.request(`/households/${householdId}/community/forums/posts/${postId}/replies`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/forums/posts/${postId}/replies`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async likeForumPost(householdId: string, postId: string): Promise<{ liked: boolean; likeCount: number }> {
-    return this.request(`/households/${householdId}/community/forums/posts/${postId}/like`, { method: 'POST' });
+    return this.request(`/${householdId}/community/forums/posts/${postId}/like`, { method: 'POST' });
   }
 
   async deleteForumPost(householdId: string, postId: string): Promise<void> {
-    return this.request(`/households/${householdId}/community/forums/posts/${postId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/community/forums/posts/${postId}`, { method: 'DELETE' });
   }
 
   async getSocialChallenges(householdId: string, status?: string): Promise<{ challenges: SocialChallenge[]; total: number }> {
     const q = status ? `?status=${status}` : '';
-    return this.request(`/households/${householdId}/community/social-challenges${q}`);
+    return this.request(`/${householdId}/community/social-challenges${q}`);
   }
 
   async createSocialChallenge(householdId: string, data: CreateSocialChallengeRequest): Promise<SocialChallenge> {
-    return this.request(`/households/${householdId}/community/social-challenges`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/social-challenges`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getSocialChallenge(householdId: string, challengeId: string): Promise<{ challenge: SocialChallenge; participants: SocialChallengeParticipant[] }> {
-    return this.request(`/households/${householdId}/community/social-challenges/${challengeId}`);
+    return this.request(`/${householdId}/community/social-challenges/${challengeId}`);
   }
 
   async joinSocialChallenge(householdId: string, challengeId: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/community/social-challenges/${challengeId}/join`, { method: 'POST' });
+    return this.request(`/${householdId}/community/social-challenges/${challengeId}/join`, { method: 'POST' });
   }
 
   async updateSocialChallengeProgress(householdId: string, challengeId: string, value: number): Promise<{ currentValue: number; rank: number }> {
-    return this.request(`/households/${householdId}/community/social-challenges/${challengeId}/progress`, { method: 'POST', body: JSON.stringify({ value }) });
+    return this.request(`/${householdId}/community/social-challenges/${challengeId}/progress`, { method: 'POST', body: JSON.stringify({ value }) });
   }
 
   async getSocialFeed(householdId: string, params?: { visibility?: string; limit?: number; offset?: number }): Promise<{ posts: SocialPost[]; total: number }> {
@@ -3061,47 +3061,47 @@ class ApiClient {
     if (params?.limit) qp.set('limit', String(params.limit));
     if (params?.offset) qp.set('offset', String(params.offset));
     const q = qp.toString();
-    return this.request(`/households/${householdId}/community/social/feed${q ? `?${q}` : ''}`);
+    return this.request(`/${householdId}/community/social/feed${q ? `?${q}` : ''}`);
   }
 
   async createSocialPost(householdId: string, data: CreateSocialPostRequest): Promise<SocialPost> {
-    return this.request(`/households/${householdId}/community/social/posts`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/social/posts`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getSocialPost(householdId: string, postId: string): Promise<{ post: SocialPost; comments: SocialComment[] }> {
-    return this.request(`/households/${householdId}/community/social/posts/${postId}`);
+    return this.request(`/${householdId}/community/social/posts/${postId}`);
   }
 
   async createSocialComment(householdId: string, postId: string, data: CreateSocialCommentRequest): Promise<SocialComment> {
-    return this.request(`/households/${householdId}/community/social/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/social/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async likeSocialPost(householdId: string, postId: string): Promise<{ liked: boolean; likeCount: number }> {
-    return this.request(`/households/${householdId}/community/social/posts/${postId}/like`, { method: 'POST' });
+    return this.request(`/${householdId}/community/social/posts/${postId}/like`, { method: 'POST' });
   }
 
   async deleteSocialPost(householdId: string, postId: string): Promise<void> {
-    return this.request(`/households/${householdId}/community/social/posts/${postId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/community/social/posts/${postId}`, { method: 'DELETE' });
   }
 
   async getFriends(householdId: string): Promise<{ friends: FriendConnection[]; pending: FriendConnection[]; total: number }> {
-    return this.request(`/households/${householdId}/community/friends`);
+    return this.request(`/${householdId}/community/friends`);
   }
 
   async sendFriendRequest(householdId: string, data: CreateFriendRequestPayload): Promise<FriendConnection> {
-    return this.request(`/households/${householdId}/community/friends/request`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/friends/request`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async respondToFriendRequest(householdId: string, connectionId: string, status: 'accepted' | 'declined'): Promise<{ id: string; status: string }> {
-    return this.request(`/households/${householdId}/community/friends/${connectionId}/respond`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    return this.request(`/${householdId}/community/friends/${connectionId}/respond`, { method: 'PATCH', body: JSON.stringify({ status }) });
   }
 
   async removeFriend(householdId: string, connectionId: string): Promise<void> {
-    return this.request(`/households/${householdId}/community/friends/${connectionId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/community/friends/${connectionId}`, { method: 'DELETE' });
   }
 
   async getFriendSuggestions(householdId: string): Promise<{ suggestions: FriendSuggestion[] }> {
-    return this.request(`/households/${householdId}/community/friends/suggestions`);
+    return this.request(`/${householdId}/community/friends/suggestions`);
   }
 
   async getCommunityEvents(householdId: string, params?: { status?: string; eventType?: string }): Promise<{ events: CommunityEvent[]; total: number }> {
@@ -3109,593 +3109,593 @@ class ApiClient {
     if (params?.status) qp.set('status', params.status);
     if (params?.eventType) qp.set('eventType', params.eventType);
     const q = qp.toString();
-    return this.request(`/households/${householdId}/community/community-events${q ? `?${q}` : ''}`);
+    return this.request(`/${householdId}/community/community-events${q ? `?${q}` : ''}`);
   }
 
   async createCommunityEvent(householdId: string, data: CreateCommunityEventRequest): Promise<CommunityEvent> {
-    return this.request(`/households/${householdId}/community/community-events`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/community-events`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getCommunityEvent(householdId: string, eventId: string): Promise<{ event: CommunityEvent; participants: CommunityEventParticipation[] }> {
-    return this.request(`/households/${householdId}/community/community-events/${eventId}`);
+    return this.request(`/${householdId}/community/community-events/${eventId}`);
   }
 
   async joinCommunityEvent(householdId: string, eventId: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/community/community-events/${eventId}/join`, { method: 'POST' });
+    return this.request(`/${householdId}/community/community-events/${eventId}/join`, { method: 'POST' });
   }
 
   async updateCommunityEvent(householdId: string, eventId: string, data: Partial<CreateCommunityEventRequest>): Promise<CommunityEvent> {
-    return this.request(`/households/${householdId}/community/community-events/${eventId}`, { method: 'PATCH', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/community/community-events/${eventId}`, { method: 'PATCH', body: JSON.stringify(data) });
   }
 
   async deleteCommunityEvent(householdId: string, eventId: string): Promise<void> {
-    return this.request(`/households/${householdId}/community/community-events/${eventId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/community/community-events/${eventId}`, { method: 'DELETE' });
   }
 
   // Phase 17: Smart Automation & AI
 
   // F17.1 Smart Scheduling
   async getSmartScheduleConfig(householdId: string): Promise<SmartScheduleConfig> {
-    return this.request(`/households/${householdId}/automation/schedule/config`);
+    return this.request(`/${householdId}/automation/schedule/config`);
   }
 
   async updateSmartScheduleConfig(householdId: string, data: UpdateSmartScheduleConfigRequest): Promise<SmartScheduleConfig> {
-    return this.request(`/households/${householdId}/automation/schedule/config`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/schedule/config`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async runScheduleOptimization(householdId: string): Promise<ScheduleOptimizationResult> {
-    return this.request(`/households/${householdId}/automation/schedule/optimize`, { method: 'POST' });
+    return this.request(`/${householdId}/automation/schedule/optimize`, { method: 'POST' });
   }
 
   async getScheduleConflicts(householdId: string): Promise<{ conflicts: SmartScheduleConflict[]; total: number }> {
-    return this.request(`/households/${householdId}/automation/schedule/conflicts`);
+    return this.request(`/${householdId}/automation/schedule/conflicts`);
   }
 
   async resolveScheduleConflict(householdId: string, conflictId: string, resolution: string): Promise<{ success: boolean }> {
-    return this.request(`/households/${householdId}/automation/schedule/resolve-conflict`, { method: 'POST', body: JSON.stringify({ conflictId, resolution }) });
+    return this.request(`/${householdId}/automation/schedule/resolve-conflict`, { method: 'POST', body: JSON.stringify({ conflictId, resolution }) });
   }
 
   // F17.2 AI Chore Suggestions
   async getAISuggestions(householdId: string): Promise<{ suggestions: AIChoreSuggestion[]; total: number }> {
-    return this.request(`/households/${householdId}/automation/suggestions`);
+    return this.request(`/${householdId}/automation/suggestions`);
   }
 
   async provideSuggestionFeedback(householdId: string, feedback: SuggestionFeedback): Promise<{ suggestionId: string; accepted: boolean }> {
-    return this.request(`/households/${householdId}/automation/suggestions/${feedback.suggestionId}/feedback`, { method: 'POST', body: JSON.stringify(feedback) });
+    return this.request(`/${householdId}/automation/suggestions/${feedback.suggestionId}/feedback`, { method: 'POST', body: JSON.stringify(feedback) });
   }
 
   async getSuggestionPreferences(householdId: string): Promise<SuggestionPreferences> {
-    return this.request(`/households/${householdId}/automation/suggestions/preferences`);
+    return this.request(`/${householdId}/automation/suggestions/preferences`);
   }
 
   async updateSuggestionPreferences(householdId: string, data: UpdateSuggestionPreferencesRequest): Promise<SuggestionPreferences> {
-    return this.request(`/households/${householdId}/automation/suggestions/preferences`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/suggestions/preferences`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async generateSuggestions(householdId: string): Promise<{ generated: number; message: string }> {
-    return this.request(`/households/${householdId}/automation/suggestions/generate`, { method: 'POST' });
+    return this.request(`/${householdId}/automation/suggestions/generate`, { method: 'POST' });
   }
 
   // F17.3 Automation Rules
   async getAutomationRules(householdId: string): Promise<{ rules: AutomationRule[]; total: number }> {
-    return this.request(`/households/${householdId}/automation/automation/rules`);
+    return this.request(`/${householdId}/automation/automation/rules`);
   }
 
   async createAutomationRule(householdId: string, data: CreateAutomationRuleRequest): Promise<AutomationRule> {
-    return this.request(`/households/${householdId}/automation/automation/rules`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/automation/rules`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getAutomationRule(householdId: string, ruleId: string): Promise<AutomationRule> {
-    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}`);
+    return this.request(`/${householdId}/automation/automation/rules/${ruleId}`);
   }
 
   async updateAutomationRule(householdId: string, ruleId: string, data: UpdateAutomationRuleRequest): Promise<AutomationRule> {
-    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/automation/rules/${ruleId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteAutomationRule(householdId: string, ruleId: string): Promise<void> {
-    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/automation/automation/rules/${ruleId}`, { method: 'DELETE' });
   }
 
   async getAutomationRuleLogs(householdId: string, ruleId: string): Promise<{ logs: AutomationExecutionLog[]; total: number }> {
-    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}/logs`);
+    return this.request(`/${householdId}/automation/automation/rules/${ruleId}/logs`);
   }
 
   async testAutomationRule(householdId: string, ruleId: string): Promise<{ ruleId: string; success: boolean; message: string }> {
-    return this.request(`/households/${householdId}/automation/automation/rules/${ruleId}/test`, { method: 'POST' });
+    return this.request(`/${householdId}/automation/automation/rules/${ruleId}/test`, { method: 'POST' });
   }
 
   // F17.4 Predictive Analytics
   async getPredictions(householdId: string): Promise<{ predictions: Prediction[]; total: number }> {
-    return this.request(`/households/${householdId}/automation/predictions`);
+    return this.request(`/${householdId}/automation/predictions`);
   }
 
   async getPredictiveInsights(householdId: string): Promise<{ insights: PredictiveInsight[]; total: number }> {
-    return this.request(`/households/${householdId}/automation/predictions/insights`);
+    return this.request(`/${householdId}/automation/predictions/insights`);
   }
 
   async markInsightRead(householdId: string, insightId: string): Promise<{ id: string; isRead: boolean }> {
-    return this.request(`/households/${householdId}/automation/predictions/insights/${insightId}/read`, { method: 'PUT' });
+    return this.request(`/${householdId}/automation/predictions/insights/${insightId}/read`, { method: 'PUT' });
   }
 
   async getPredictiveAnalyticsConfig(householdId: string): Promise<PredictiveAnalyticsConfig> {
-    return this.request(`/households/${householdId}/automation/predictions/config`);
+    return this.request(`/${householdId}/automation/predictions/config`);
   }
 
   async updatePredictiveAnalyticsConfig(householdId: string, data: UpdatePredictiveAnalyticsConfigRequest): Promise<PredictiveAnalyticsConfig> {
-    return this.request(`/households/${householdId}/automation/predictions/config`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/predictions/config`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async generatePredictions(householdId: string): Promise<{ generated: number; message: string }> {
-    return this.request(`/households/${householdId}/automation/predictions/generate`, { method: 'POST' });
+    return this.request(`/${householdId}/automation/predictions/generate`, { method: 'POST' });
   }
 
   // F17.5 Natural Language Commands
   async executeCommand(householdId: string, data: CommandRequest): Promise<CommandResponse> {
-    return this.request(`/households/${householdId}/automation/commands`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/commands`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getCommandHistory(householdId: string, params?: { page?: number; pageSize?: number }): Promise<CommandHistory> {
     const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
-    return this.request(`/households/${householdId}/automation/commands/history${query}`);
+    return this.request(`/${householdId}/automation/commands/history${query}`);
   }
 
   async getCommandCapabilities(householdId: string): Promise<{ capabilities: CommandCapability[] }> {
-    return this.request(`/households/${householdId}/automation/commands/capabilities`);
+    return this.request(`/${householdId}/automation/commands/capabilities`);
   }
 
   // ===== Phase 18: Communication & Calendar Integration =====
 
   // F18.1 Calendar Sync
   async getCalendarConnections(householdId: string): Promise<{ connections: CalendarConnection[] }> {
-    return this.request(`/households/${householdId}/family-hub/calendar/connections`);
+    return this.request(`/${householdId}/family-hub/calendar/connections`);
   }
 
   async createCalendarConnection(householdId: string, memberId: string, data: CreateCalendarConnectionRequest): Promise<CalendarConnection> {
-    return this.request(`/households/${householdId}/family-hub/calendar/connections`, { method: 'POST', body: JSON.stringify({ ...data, memberId }) });
+    return this.request(`/${householdId}/family-hub/calendar/connections`, { method: 'POST', body: JSON.stringify({ ...data, memberId }) });
   }
 
   async deleteCalendarConnection(householdId: string, connectionId: string): Promise<void> {
-    return this.request(`/households/${householdId}/family-hub/calendar/connections/${connectionId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/family-hub/calendar/connections/${connectionId}`, { method: 'DELETE' });
   }
 
   async syncCalendarConnection(householdId: string, connectionId: string): Promise<{ synced: number; message: string }> {
-    return this.request(`/households/${householdId}/family-hub/calendar/connections/${connectionId}/sync`, { method: 'POST' });
+    return this.request(`/${householdId}/family-hub/calendar/connections/${connectionId}/sync`, { method: 'POST' });
   }
 
   async getCalendarEvents(householdId: string, params?: { start?: string; end?: string }): Promise<{ events: CalendarEvent[] }> {
     const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
-    return this.request(`/households/${householdId}/family-hub/calendar/events${query}`);
+    return this.request(`/${householdId}/family-hub/calendar/events${query}`);
   }
 
   async getCalendarSyncConfig(householdId: string): Promise<CalendarSyncConfig> {
-    return this.request(`/households/${householdId}/family-hub/calendar/config`);
+    return this.request(`/${householdId}/family-hub/calendar/config`);
   }
 
   async updateCalendarSyncConfig(householdId: string, data: UpdateCalendarSyncConfigRequest): Promise<CalendarSyncConfig> {
-    return this.request(`/households/${householdId}/family-hub/calendar/config`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/family-hub/calendar/config`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   // F18.2 Family Chat
   async getChatChannels(householdId: string): Promise<{ channels: ChatChannel[] }> {
-    return this.request(`/households/${householdId}/family-hub/chat/channels`);
+    return this.request(`/${householdId}/family-hub/chat/channels`);
   }
 
   async createChatChannel(householdId: string, data: CreateChatChannelRequest): Promise<ChatChannel> {
-    return this.request(`/households/${householdId}/family-hub/chat/channels`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/family-hub/chat/channels`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getChatMessages(householdId: string, channelId: string, params?: { page?: number; pageSize?: number }): Promise<{ messages: ChatMessage[]; total: number }> {
     const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
-    return this.request(`/households/${householdId}/family-hub/chat/channels/${channelId}/messages${query}`);
+    return this.request(`/${householdId}/family-hub/chat/channels/${channelId}/messages${query}`);
   }
 
   async sendChatMessage(householdId: string, channelId: string, data: CreateChatMessageRequest): Promise<ChatMessage> {
-    return this.request(`/households/${householdId}/family-hub/chat/channels/${channelId}/messages`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/family-hub/chat/channels/${channelId}/messages`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getChatUnreadCounts(householdId: string): Promise<{ unread: ChatUnreadCount[] }> {
-    return this.request(`/households/${householdId}/family-hub/chat/unread`);
+    return this.request(`/${householdId}/family-hub/chat/unread`);
   }
 
   // F18.3 Photo Albums
   async getPhotoAlbums(householdId: string): Promise<{ albums: PhotoAlbum[] }> {
-    return this.request(`/households/${householdId}/family-hub/photos/albums`);
+    return this.request(`/${householdId}/family-hub/photos/albums`);
   }
 
   async createPhotoAlbum(householdId: string, data: CreatePhotoAlbumRequest): Promise<PhotoAlbum> {
-    return this.request(`/households/${householdId}/family-hub/photos/albums`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/family-hub/photos/albums`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getAlbumPhotos(householdId: string, albumId: string, params?: { page?: number; pageSize?: number }): Promise<{ photos: AlbumPhoto[]; total: number }> {
     const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
-    return this.request(`/households/${householdId}/family-hub/photos/albums/${albumId}/photos${query}`);
+    return this.request(`/${householdId}/family-hub/photos/albums/${albumId}/photos${query}`);
   }
 
   async uploadPhoto(householdId: string, data: UploadPhotoRequest): Promise<AlbumPhoto> {
-    return this.request(`/households/${householdId}/family-hub/photos/upload`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/family-hub/photos/upload`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async deletePhoto(householdId: string, photoId: string): Promise<void> {
-    return this.request(`/households/${householdId}/family-hub/photos/${photoId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/family-hub/photos/${photoId}`, { method: 'DELETE' });
   }
 
   // F18.4 Shareable Achievements
   async getShareableAchievements(householdId: string): Promise<{ achievements: ShareableAchievement[] }> {
-    return this.request(`/households/${householdId}/family-hub/sharing/achievements`);
+    return this.request(`/${householdId}/family-hub/sharing/achievements`);
   }
 
   async createShareableAchievement(householdId: string, memberId: string, data: CreateShareableAchievementRequest): Promise<ShareableAchievement> {
-    return this.request(`/households/${householdId}/family-hub/sharing/achievements`, { method: 'POST', body: JSON.stringify({ ...data, memberId }) });
+    return this.request(`/${householdId}/family-hub/sharing/achievements`, { method: 'POST', body: JSON.stringify({ ...data, memberId }) });
   }
 
   async shareAchievementToSocial(householdId: string, achievementId: string, platform: string): Promise<ShareRecord> {
-    return this.request(`/households/${householdId}/family-hub/sharing/achievements/${achievementId}/share`, { method: 'POST', body: JSON.stringify({ platform }) });
+    return this.request(`/${householdId}/family-hub/sharing/achievements/${achievementId}/share`, { method: 'POST', body: JSON.stringify({ platform }) });
   }
 
   async getShareSettings(householdId: string): Promise<ShareSettings> {
-    return this.request(`/households/${householdId}/family-hub/sharing/settings`);
+    return this.request(`/${householdId}/family-hub/sharing/settings`);
   }
 
   async updateShareSettings(householdId: string, data: UpdateShareSettingsRequest): Promise<ShareSettings> {
-    return this.request(`/households/${householdId}/family-hub/sharing/settings`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/family-hub/sharing/settings`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   // F18.5 Progressive Unlocks
   async getProgressiveUnlocks(householdId: string, params?: { category?: string }): Promise<{ unlocks: ProgressiveUnlock[] }> {
     const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
-    return this.request(`/households/${householdId}/family-hub/unlocks${query}`);
+    return this.request(`/${householdId}/family-hub/unlocks${query}`);
   }
 
   async getMemberUnlockProgress(householdId: string, memberId: string): Promise<{ progress: MemberUnlockProgress[] }> {
-    return this.request(`/households/${householdId}/family-hub/unlocks/members/${memberId}`);
+    return this.request(`/${householdId}/family-hub/unlocks/members/${memberId}`);
   }
 
   async getUnlockProgressSummary(householdId: string, memberId: string): Promise<UnlockProgressSummary> {
-    return this.request(`/households/${householdId}/family-hub/unlocks/members/${memberId}/summary`);
+    return this.request(`/${householdId}/family-hub/unlocks/members/${memberId}/summary`);
   }
 
   async checkUnlocks(householdId: string, memberId: string): Promise<{ newUnlocks: ProgressiveUnlock[]; message: string }> {
-    return this.request(`/households/${householdId}/family-hub/unlocks/members/${memberId}/check`, { method: 'POST' });
+    return this.request(`/${householdId}/family-hub/unlocks/members/${memberId}/check`, { method: 'POST' });
   }
 
   // ===== Phase 19: Financial Integration & Advanced Scheduling =====
 
   // F19.1 Banking Integration
   async getBankingConnections(householdId: string): Promise<{ connections: BankingConnection[] }> {
-    return this.request(`/households/${householdId}/financial/banking/connections`);
+    return this.request(`/${householdId}/financial/banking/connections`);
   }
 
   async createBankingConnection(householdId: string, data: CreateBankingConnectionRequest): Promise<BankingConnection> {
-    return this.request(`/households/${householdId}/financial/banking/connections`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/banking/connections`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async deleteBankingConnection(householdId: string, connectionId: string): Promise<void> {
-    return this.request(`/households/${householdId}/financial/banking/connections/${connectionId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/financial/banking/connections/${connectionId}`, { method: 'DELETE' });
   }
 
   async verifyBankingConnection(householdId: string, connectionId: string): Promise<{ verified: boolean }> {
-    return this.request(`/households/${householdId}/financial/banking/connections/${connectionId}/verify`, { method: 'POST' });
+    return this.request(`/${householdId}/financial/banking/connections/${connectionId}/verify`, { method: 'POST' });
   }
 
   async getAllowanceDeposits(householdId: string): Promise<{ deposits: AllowanceDeposit[]; total: number }> {
-    return this.request(`/households/${householdId}/financial/banking/deposits`);
+    return this.request(`/${householdId}/financial/banking/deposits`);
   }
 
   async triggerDeposit(householdId: string, data: { memberId: string; bankingConnectionId: string; amount: number; currency?: string }): Promise<AllowanceDeposit> {
-    return this.request(`/households/${householdId}/financial/banking/deposits/trigger`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/banking/deposits/trigger`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getDepositConfigs(householdId: string): Promise<{ configs: AllowanceDepositConfig[] }> {
-    return this.request(`/households/${householdId}/financial/banking/deposit-configs`);
+    return this.request(`/${householdId}/financial/banking/deposit-configs`);
   }
 
   async createDepositConfig(householdId: string, data: CreateAllowanceDepositConfigRequest): Promise<AllowanceDepositConfig> {
-    return this.request(`/households/${householdId}/financial/banking/deposit-configs`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/banking/deposit-configs`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateDepositConfig(householdId: string, configId: string, data: UpdateAllowanceDepositConfigRequest): Promise<AllowanceDepositConfig> {
-    return this.request(`/households/${householdId}/financial/banking/deposit-configs/${configId}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/banking/deposit-configs/${configId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteDepositConfig(householdId: string, configId: string): Promise<void> {
-    return this.request(`/households/${householdId}/financial/banking/deposit-configs/${configId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/financial/banking/deposit-configs/${configId}`, { method: 'DELETE' });
   }
 
   async getDepositSummary(householdId: string): Promise<AllowanceDepositSummary> {
-    return this.request(`/households/${householdId}/financial/banking/summary`);
+    return this.request(`/${householdId}/financial/banking/summary`);
   }
 
   // F19.2 Rotation System
   async getChoreRotations(householdId: string): Promise<{ rotations: ChoreRotation[] }> {
-    return this.request(`/households/${householdId}/financial/rotations`);
+    return this.request(`/${householdId}/financial/rotations`);
   }
 
   async createChoreRotation(householdId: string, data: CreateChoreRotationRequest): Promise<ChoreRotation> {
-    return this.request(`/households/${householdId}/financial/rotations`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/rotations`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getChoreRotation(householdId: string, rotationId: string): Promise<ChoreRotation> {
-    return this.request(`/households/${householdId}/financial/rotations/${rotationId}`);
+    return this.request(`/${householdId}/financial/rotations/${rotationId}`);
   }
 
   async updateChoreRotation(householdId: string, rotationId: string, data: UpdateChoreRotationRequest): Promise<ChoreRotation> {
-    return this.request(`/households/${householdId}/financial/rotations/${rotationId}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/rotations/${rotationId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteChoreRotation(householdId: string, rotationId: string): Promise<void> {
-    return this.request(`/households/${householdId}/financial/rotations/${rotationId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/financial/rotations/${rotationId}`, { method: 'DELETE' });
   }
 
   async advanceRotation(householdId: string, rotationId: string): Promise<{ nextAssigneeId: string }> {
-    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/advance`, { method: 'POST' });
+    return this.request(`/${householdId}/financial/rotations/${rotationId}/advance`, { method: 'POST' });
   }
 
   async skipRotation(householdId: string, rotationId: string, reason?: string): Promise<{ skipped: boolean }> {
-    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/skip`, { method: 'POST', body: JSON.stringify({ reason }) });
+    return this.request(`/${householdId}/financial/rotations/${rotationId}/skip`, { method: 'POST', body: JSON.stringify({ reason }) });
   }
 
   async getRotationHistory(householdId: string, rotationId: string): Promise<{ history: RotationHistory[]; total: number }> {
-    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/history`);
+    return this.request(`/${householdId}/financial/rotations/${rotationId}/history`);
   }
 
   async getRotationFairness(householdId: string, rotationId: string): Promise<RotationFairnessReport> {
-    return this.request(`/households/${householdId}/financial/rotations/${rotationId}/fairness`);
+    return this.request(`/${householdId}/financial/rotations/${rotationId}/fairness`);
   }
 
   // F19.3 Chore Chains
   async getChoreChains(householdId: string): Promise<{ chains: ChoreChain[] }> {
-    return this.request(`/households/${householdId}/financial/chains`);
+    return this.request(`/${householdId}/financial/chains`);
   }
 
   async createChoreChain(householdId: string, data: CreateChoreChainRequest): Promise<ChoreChain> {
-    return this.request(`/households/${householdId}/financial/chains`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/chains`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getChoreChainProgress(householdId: string, chainId: string): Promise<ChoreChainProgress> {
-    return this.request(`/households/${householdId}/financial/chains/${chainId}`);
+    return this.request(`/${householdId}/financial/chains/${chainId}`);
   }
 
   async updateChoreChain(householdId: string, chainId: string, data: UpdateChoreChainRequest): Promise<ChoreChain> {
-    return this.request(`/households/${householdId}/financial/chains/${chainId}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/chains/${chainId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteChoreChain(householdId: string, chainId: string): Promise<void> {
-    return this.request(`/households/${householdId}/financial/chains/${chainId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/financial/chains/${chainId}`, { method: 'DELETE' });
   }
 
   async completeChainStep(householdId: string, chainId: string, stepId: string): Promise<{ completed: boolean }> {
-    return this.request(`/households/${householdId}/financial/chains/${chainId}/steps/${stepId}/complete`, { method: 'POST' });
+    return this.request(`/${householdId}/financial/chains/${chainId}/steps/${stepId}/complete`, { method: 'POST' });
   }
 
   // F19.4 Responsibilities vs Jobs
   async getResponsibilityConfig(householdId: string): Promise<ResponsibilityConfig> {
-    return this.request(`/households/${householdId}/financial/classification/config`);
+    return this.request(`/${householdId}/financial/classification/config`);
   }
 
   async updateResponsibilityConfig(householdId: string, data: UpdateResponsibilityConfigRequest): Promise<ResponsibilityConfig> {
-    return this.request(`/households/${householdId}/financial/classification/config`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/classification/config`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async getChoreClassifications(householdId: string): Promise<{ classifications: ChoreClassification[] }> {
-    return this.request(`/households/${householdId}/financial/classification/chores`);
+    return this.request(`/${householdId}/financial/classification/chores`);
   }
 
   async classifyChore(householdId: string, data: ClassifyChoreRequest): Promise<ChoreClassification> {
-    return this.request(`/households/${householdId}/financial/classification/chores`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/classification/chores`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateChoreClassification(householdId: string, choreId: string, data: Partial<ClassifyChoreRequest>): Promise<ChoreClassification> {
-    return this.request(`/households/${householdId}/financial/classification/chores/${choreId}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/classification/chores/${choreId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async getClassificationSummary(householdId: string): Promise<ClassificationSummary> {
-    return this.request(`/households/${householdId}/financial/classification/summary`);
+    return this.request(`/${householdId}/financial/classification/summary`);
   }
 
   // F19.5 Chore Marketplace
   async getMarketplaceListings(householdId: string): Promise<{ listings: MarketplaceListing[]; total: number }> {
-    return this.request(`/households/${householdId}/financial/marketplace/listings`);
+    return this.request(`/${householdId}/financial/marketplace/listings`);
   }
 
   async createMarketplaceListing(householdId: string, data: CreateMarketplaceListingRequest): Promise<MarketplaceListing> {
-    return this.request(`/households/${householdId}/financial/marketplace/listings`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/marketplace/listings`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async claimMarketplaceListing(householdId: string, listingId: string): Promise<MarketplaceListing> {
-    return this.request(`/households/${householdId}/financial/marketplace/listings/${listingId}/claim`, { method: 'POST' });
+    return this.request(`/${householdId}/financial/marketplace/listings/${listingId}/claim`, { method: 'POST' });
   }
 
   async completeMarketplaceListing(householdId: string, listingId: string): Promise<MarketplaceListing> {
-    return this.request(`/households/${householdId}/financial/marketplace/listings/${listingId}/complete`, { method: 'POST' });
+    return this.request(`/${householdId}/financial/marketplace/listings/${listingId}/complete`, { method: 'POST' });
   }
 
   async cancelMarketplaceListing(householdId: string, listingId: string): Promise<MarketplaceListing> {
-    return this.request(`/households/${householdId}/financial/marketplace/listings/${listingId}/cancel`, { method: 'POST' });
+    return this.request(`/${householdId}/financial/marketplace/listings/${listingId}/cancel`, { method: 'POST' });
   }
 
   async getMarketplaceStats(householdId: string): Promise<MarketplaceStats> {
-    return this.request(`/households/${householdId}/financial/marketplace/stats`);
+    return this.request(`/${householdId}/financial/marketplace/stats`);
   }
 
   async getMarketplaceConfig(householdId: string): Promise<MarketplaceConfig> {
-    return this.request(`/households/${householdId}/financial/marketplace/config`);
+    return this.request(`/${householdId}/financial/marketplace/config`);
   }
 
   async updateMarketplaceConfig(householdId: string, data: UpdateMarketplaceConfigRequest): Promise<MarketplaceConfig> {
-    return this.request(`/households/${householdId}/financial/marketplace/config`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/financial/marketplace/config`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   // ===== Board Preferences =====
   async getBoardPreferences(householdId: string): Promise<BoardPreferences> {
-    return this.request(`/households/${householdId}/board/preferences`);
+    return this.request(`/${householdId}/board/preferences`);
   }
 
   async updateBoardPreferences(householdId: string, data: Partial<BoardPreferences>): Promise<BoardPreferences> {
-    return this.request(`/households/${householdId}/board/preferences`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/board/preferences`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   // ===== Calendar =====
   async getCalendarChores(householdId: string, startDate: string, endDate: string, memberId?: string): Promise<CalendarChoreView[]> {
     const params = new URLSearchParams({ startDate, endDate });
     if (memberId) params.set('memberId', memberId);
-    return this.request(`/households/${householdId}/calendar?${params.toString()}`);
+    return this.request(`/${householdId}/calendar?${params.toString()}`);
   }
 
   async getCalendarCounts(householdId: string, startDate: string, endDate: string): Promise<Record<string, { total: number; completed: number }>> {
-    return this.request(`/households/${householdId}/calendar/counts?startDate=${startDate}&endDate=${endDate}`);
+    return this.request(`/${householdId}/calendar/counts?startDate=${startDate}&endDate=${endDate}`);
   }
 
   // ===== Chore Comments =====
   async getChoreComments(householdId: string, choreId: string): Promise<ChoreComment[]> {
-    return this.request(`/households/${householdId}/chores/${choreId}/comments`);
+    return this.request(`/${householdId}/chores/${choreId}/comments`);
   }
 
   async addChoreComment(householdId: string, choreId: string, comment: string): Promise<ChoreComment> {
-    return this.request(`/households/${householdId}/chores/${choreId}/comments`, { method: 'POST', body: JSON.stringify({ comment }) });
+    return this.request(`/${householdId}/chores/${choreId}/comments`, { method: 'POST', body: JSON.stringify({ comment }) });
   }
 
   async deleteChoreComment(householdId: string, choreId: string, commentId: string): Promise<void> {
-    return this.request(`/households/${householdId}/chores/${choreId}/comments/${commentId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/chores/${choreId}/comments/${commentId}`, { method: 'DELETE' });
   }
 
   // ===== Chore Attachments =====
   async getChoreAttachments(householdId: string, choreId: string): Promise<ChoreAttachment[]> {
-    return this.request(`/households/${householdId}/chores/${choreId}/attachments`);
+    return this.request(`/${householdId}/chores/${choreId}/attachments`);
   }
 
   async addChoreAttachment(householdId: string, choreId: string, data: AddAttachmentRequest): Promise<ChoreAttachment> {
-    return this.request(`/households/${householdId}/chores/${choreId}/attachments`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/chores/${choreId}/attachments`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async deleteChoreAttachment(householdId: string, choreId: string, attachmentId: string): Promise<void> {
-    return this.request(`/households/${householdId}/chores/${choreId}/attachments/${attachmentId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/chores/${choreId}/attachments/${attachmentId}`, { method: 'DELETE' });
   }
 
   // ===== Chore Activity =====
   async getChoreActivity(householdId: string, choreId: string, limit = 50, offset = 0): Promise<ChoreActivityEntry[]> {
-    return this.request(`/households/${householdId}/chores/${choreId}/activity?limit=${limit}&offset=${offset}`);
+    return this.request(`/${householdId}/chores/${choreId}/activity?limit=${limit}&offset=${offset}`);
   }
 
   // ===== Bulk Actions =====
   async bulkUpdateChores(householdId: string, data: BulkUpdateRequest): Promise<{ updated: number }> {
-    return this.request(`/households/${householdId}/chores/bulk`, { method: 'PATCH', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/chores/bulk`, { method: 'PATCH', body: JSON.stringify(data) });
   }
 
   async bulkReorderChores(householdId: string, updates: Array<{ choreId: string; boardOrder: number }>): Promise<{ updated: number }> {
-    return this.request(`/households/${householdId}/chores/reorder`, { method: 'PATCH', body: JSON.stringify({ updates }) });
+    return this.request(`/${householdId}/chores/reorder`, { method: 'PATCH', body: JSON.stringify({ updates }) });
   }
 
   async bulkDeleteChores(householdId: string, choreIds: string[]): Promise<{ deleted: number }> {
-    return this.request(`/households/${householdId}/chores/bulk-delete`, { method: 'POST', body: JSON.stringify({ choreIds }) });
+    return this.request(`/${householdId}/chores/bulk-delete`, { method: 'POST', body: JSON.stringify({ choreIds }) });
   }
 
   // ===== Saved Filters =====
   async getSavedFilters(householdId: string): Promise<SavedFilterView[]> {
-    return this.request(`/households/${householdId}/board/filters`);
+    return this.request(`/${householdId}/board/filters`);
   }
 
   async createSavedFilter(householdId: string, data: CreateSavedFilterRequest): Promise<SavedFilterView> {
-    return this.request(`/households/${householdId}/board/filters`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/board/filters`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateSavedFilter(householdId: string, filterId: string, data: UpdateSavedFilterRequest): Promise<SavedFilterView> {
-    return this.request(`/households/${householdId}/board/filters/${filterId}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/board/filters/${filterId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteSavedFilter(householdId: string, filterId: string): Promise<void> {
-    return this.request(`/households/${householdId}/board/filters/${filterId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/board/filters/${filterId}`, { method: 'DELETE' });
   }
 
   // ===== Tags =====
   async getHouseholdTags(householdId: string): Promise<Tag[]> {
-    return this.request(`/households/${householdId}/tags`);
+    return this.request(`/${householdId}/tags`);
   }
 
   async createTag(householdId: string, data: { name: string; color?: string }): Promise<Tag> {
-    return this.request(`/households/${householdId}/tags`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/tags`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async deleteTag(householdId: string, tagId: string): Promise<void> {
-    return this.request(`/households/${householdId}/tags/${tagId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/tags/${tagId}`, { method: 'DELETE' });
   }
 
   async getChoreTags(householdId: string, choreId: string): Promise<ChoreTag[]> {
-    return this.request(`/households/${householdId}/chores/${choreId}/tags`);
+    return this.request(`/${householdId}/chores/${choreId}/tags`);
   }
 
   async addChoreTag(householdId: string, choreId: string, tagId: string): Promise<ChoreTag> {
-    return this.request(`/households/${householdId}/chores/${choreId}/tags`, { method: 'POST', body: JSON.stringify({ tagId }) });
+    return this.request(`/${householdId}/chores/${choreId}/tags`, { method: 'POST', body: JSON.stringify({ tagId }) });
   }
 
   async removeChoreTag(householdId: string, choreId: string, tagId: string): Promise<void> {
-    return this.request(`/households/${householdId}/chores/${choreId}/tags/${tagId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/chores/${choreId}/tags/${tagId}`, { method: 'DELETE' });
   }
 
   // ===== Time Tracking =====
   async startTimeTracking(householdId: string, choreId: string): Promise<TimeLog> {
-    return this.request(`/households/${householdId}/chores/${choreId}/time/start`, { method: 'POST' });
+    return this.request(`/${householdId}/chores/${choreId}/time/start`, { method: 'POST' });
   }
 
   async stopTimeTracking(householdId: string, choreId: string): Promise<TimeLog> {
-    return this.request(`/households/${householdId}/chores/${choreId}/time/stop`, { method: 'POST' });
+    return this.request(`/${householdId}/chores/${choreId}/time/stop`, { method: 'POST' });
   }
 
   async getTimeLogs(householdId: string, choreId: string): Promise<TimeLog[]> {
-    return this.request(`/households/${householdId}/chores/${choreId}/time`);
+    return this.request(`/${householdId}/chores/${choreId}/time`);
   }
 
   // ===== Dependencies =====
   async getChoreDependencies(householdId: string, choreId: string): Promise<ChoreDependency[]> {
-    return this.request(`/households/${householdId}/chores/${choreId}/dependencies`);
+    return this.request(`/${householdId}/chores/${choreId}/dependencies`);
   }
 
   async addChoreDependency(householdId: string, choreId: string, data: { dependsOnChoreId: string; type?: string }): Promise<ChoreDependency> {
-    return this.request(`/households/${householdId}/chores/${choreId}/dependencies`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/chores/${choreId}/dependencies`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async removeChoreDependency(householdId: string, choreId: string, depId: string): Promise<void> {
-    return this.request(`/households/${householdId}/chores/${choreId}/dependencies/${depId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/chores/${choreId}/dependencies/${depId}`, { method: 'DELETE' });
   }
   // ===== Import / Export =====
   async exportChores(householdId: string, format: 'csv' | 'json' = 'json'): Promise<ChoreExportData> {
-    return this.request(`/households/${householdId}/chores/export?format=${format}`);
+    return this.request(`/${householdId}/chores/export?format=${format}`);
   }
 
   async importChores(householdId: string, data: { content: string; format?: string }): Promise<{ imported: number; skipped: number; errors: string[] }> {
-    return this.request(`/households/${householdId}/chores/import`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/chores/import`, { method: 'POST', body: JSON.stringify(data) });
   }
   // ===== School & Extracurricular =====
   async createSchoolSchedule(householdId: string, data: CreateSchoolScheduleInput): Promise<SchoolSchedule> {
-    return this.request(`/households/${householdId}/school/school-schedules`, {
+    return this.request(`/${householdId}/school/school-schedules`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async createActivity(householdId: string, data: CreateActivityInput): Promise<ExtracurricularActivity> {
-    return this.request(`/households/${householdId}/school/activities`, {
+    return this.request(`/${householdId}/school/activities`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async createEvent(householdId: string, data: CreateEventInput): Promise<ActivityEvent> {
-    return this.request(`/households/${householdId}/school/events`, {
+    return this.request(`/${householdId}/school/events`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async createVolunteerLog(householdId: string, data: LogVolunteerInput): Promise<VolunteerLog> {
-    return this.request(`/households/${householdId}/school/volunteer-logs`, {
+    return this.request(`/${householdId}/school/volunteer-logs`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async createCollegePrepActivity(householdId: string, data: CreateCollegePrepInput): Promise<CollegePrepActivity> {
-    return this.request(`/households/${householdId}/school/college-prep`, {
+    return this.request(`/${householdId}/school/college-prep`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
