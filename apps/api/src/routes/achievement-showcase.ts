@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { db } from '../lib/db';
 import { members } from '@chorechamp/database';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type {
   Achievement,
   AchievementShowcase,
@@ -98,9 +98,9 @@ export async function achievementShowcaseRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
 
-    // Get member info
+    // Get member info (scoped to household)
     const [member] = await db.query.members.findMany({
-      where: eq(members.id, memberId),
+      where: and(eq(members.id, memberId), eq(members.householdId, householdId)),
       limit: 1,
     });
 

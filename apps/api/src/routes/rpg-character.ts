@@ -748,6 +748,14 @@ export async function rpgCharacterRoutes(fastify: FastifyInstance) {
       });
     }
 
+    // Only the member themselves or parents can award XP
+    if (membership.id !== memberId && membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can award XP to other members',
+      });
+    }
+
     // Get current profile
     const [profile] = await db
       .select()

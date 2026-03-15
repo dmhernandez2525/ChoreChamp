@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { db } from '../lib/db';
 import { members } from '@chorechamp/database';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type {
   FamilyChallenge,
   ChallengeParticipant,
@@ -338,7 +338,7 @@ export async function familyChallengeRoutes(fastify: FastifyInstance) {
     }
 
     const [joiningMember] = await db.query.members.findMany({
-      where: eq(members.id, body.memberId),
+      where: and(eq(members.id, body.memberId), eq(members.householdId, householdId)),
       limit: 1,
     });
 

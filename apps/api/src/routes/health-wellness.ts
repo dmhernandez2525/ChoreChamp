@@ -1,5 +1,7 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 const activityCategoryValues = [
   'chores', 'physical', 'creative', 'educational', 'social', 'self_care', 'outdoor', 'other',
@@ -79,18 +81,17 @@ const createGratitudeSchema = z.object({
   content: z.string().min(1).max(500),
 });
 
-function requireAuth(request: FastifyRequest, reply: FastifyReply) {
-  if (!request.headers.authorization) {
-    reply.status(401).send({ error: 'Unauthorized' });
-  }
-}
-
 export async function healthWellnessRoutes(fastify: FastifyInstance) {
-  fastify.addHook('onRequest', requireAuth);
 
   // ===== F14.1: Activity Tracking =====
 
-  fastify.get('/activity-logs', async (request) => {
+  fastify.get('/activity-logs', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, startDate, endDate } = request.query as Record<string, string | undefined>;
     return {
       logs: [],
@@ -100,6 +101,12 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/activity-logs', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createActivityLogSchema.parse(request.body);
     const id = crypto.randomUUID();
     return reply.status(201).send({
@@ -113,7 +120,13 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/activity-stats', async (request) => {
+  fastify.get('/activity-stats', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.query as Record<string, string | undefined>;
     return {
       members: [],
@@ -125,11 +138,23 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.get('/activity-goals', async () => {
+  fastify.get('/activity-goals', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return { goals: [] };
   });
 
   fastify.post('/activity-goals', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = activityGoalSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -143,7 +168,13 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.patch('/activity-goals/:goalId', async (request) => {
+  fastify.patch('/activity-goals/:goalId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; goalId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { goalId } = request.params as { goalId: string };
     const body = activityGoalSchema.parse(request.body);
     return { id: goalId, ...body, updatedAt: new Date().toISOString() };
@@ -151,12 +182,24 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
 
   // ===== F14.2: Wellness Check-ins =====
 
-  fastify.get('/wellness/check-ins', async (request) => {
+  fastify.get('/wellness/check-ins', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, limit } = request.query as Record<string, string | undefined>;
     return { checkIns: [], total: 0, filters: { memberId, limit } };
   });
 
   fastify.post('/wellness/check-ins', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createCheckInSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -169,7 +212,13 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/wellness/trends', async (request) => {
+  fastify.get('/wellness/trends', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, days } = request.query as Record<string, string | undefined>;
     return {
       moodTrend: [],
@@ -183,12 +232,24 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
 
   // ===== F14.3: Sleep & Routine Management =====
 
-  fastify.get('/sleep-logs', async (request) => {
+  fastify.get('/sleep-logs', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.query as Record<string, string | undefined>;
     return { logs: [], total: 0, filters: { memberId } };
   });
 
   fastify.post('/sleep-logs', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createSleepLogSchema.parse(request.body);
     const bedtime = new Date(body.bedtime);
     const wakeTime = new Date(body.wakeTime);
@@ -204,7 +265,13 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/sleep-stats', async (request) => {
+  fastify.get('/sleep-stats', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, days } = request.query as Record<string, string | undefined>;
     return {
       averageDurationMinutes: 0,
@@ -219,12 +286,24 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
 
   // ===== F14.4: Nutrition & Meal Planning =====
 
-  fastify.get('/meal-plans', async (request) => {
+  fastify.get('/meal-plans', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { startDate, endDate } = request.query as Record<string, string | undefined>;
     return { plans: [], total: 0, filters: { startDate, endDate } };
   });
 
   fastify.post('/meal-plans', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createMealPlanSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -239,24 +318,48 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.patch('/meal-plans/:planId', async (request) => {
+  fastify.patch('/meal-plans/:planId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; planId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { planId } = request.params as { planId: string };
     const body = request.body as Record<string, unknown>;
     return { id: planId, ...body, updatedAt: new Date().toISOString() };
   });
 
-  fastify.delete('/meal-plans/:planId', async (_request, reply) => {
+  fastify.delete('/meal-plans/:planId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 
   // ===== F14.5: Mental Health Support =====
 
-  fastify.get('/mental-health/resources', async (request) => {
+  fastify.get('/mental-health/resources', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { category } = request.query as Record<string, string | undefined>;
     return { resources: [], total: 0, filters: { category } };
   });
 
   fastify.post('/mental-health/resources', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createResourceSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -269,12 +372,24 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/mental-health/gratitude', async (request) => {
+  fastify.get('/mental-health/gratitude', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.query as Record<string, string | undefined>;
     return { entries: [], total: 0, filters: { memberId } };
   });
 
   fastify.post('/mental-health/gratitude', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createGratitudeSchema.parse(request.body);
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -283,7 +398,13 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/mental-health/mood-journal', async (request) => {
+  fastify.get('/mental-health/mood-journal', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, days } = request.query as Record<string, string | undefined>;
     return {
       entries: [],

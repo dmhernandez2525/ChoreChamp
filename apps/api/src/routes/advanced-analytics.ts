@@ -1,5 +1,7 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 const reportTypeValues = [
   'chore_completion', 'member_performance', 'household_overview', 'gamification', 'wellness', 'custom',
@@ -38,19 +40,17 @@ const createExportSchema = z.object({
   includeAttachments: z.boolean(),
 });
 
-function requireAuth(request: FastifyRequest, reply: FastifyReply) {
-  if (!request.headers.authorization) {
-    reply.status(401).send({ error: 'Unauthorized' });
-  }
-}
-
 export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
-  fastify.addHook('onRequest', requireAuth);
 
   // ===== F15.1: Advanced Reporting =====
 
-  fastify.get('/reports', async (request) => {
-    const { householdId } = request.query as Record<string, string | undefined>;
+  fastify.get('/reports', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       reports: [],
       total: 0,
@@ -59,6 +59,12 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/reports', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createReportSchema.parse(request.body);
     const id = crypto.randomUUID();
     return reply.status(201).send({
@@ -70,7 +76,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/reports/:reportId', async (request) => {
+  fastify.get('/reports/:reportId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; reportId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { reportId } = request.params as { reportId: string };
     return {
       report: {
@@ -85,7 +97,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.patch('/reports/:reportId', async (request) => {
+  fastify.patch('/reports/:reportId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; reportId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { reportId } = request.params as { reportId: string };
     const body = updateReportSchema.parse(request.body);
     return {
@@ -95,11 +113,23 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.delete('/reports/:reportId', async (_request, reply) => {
+  fastify.delete('/reports/:reportId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 
   fastify.post('/reports/:reportId/generate', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; reportId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { reportId } = request.params as { reportId: string };
     return reply.status(201).send({
       id: crypto.randomUUID(),
@@ -109,7 +139,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/reports/:reportId/generated', async (request) => {
+  fastify.get('/reports/:reportId/generated', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; reportId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { reportId } = request.params as { reportId: string };
     return {
       reports: [],
@@ -120,7 +156,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
 
   // ===== F15.2: Admin Dashboard =====
 
-  fastify.get('/admin/dashboard', async () => {
+  fastify.get('/admin/dashboard', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       memberCount: 0,
       activeMembers: 0,
@@ -142,21 +184,39 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.get('/admin/members', async () => {
+  fastify.get('/admin/members', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       members: [],
       total: 0,
     };
   });
 
-  fastify.get('/admin/alerts', async () => {
+  fastify.get('/admin/alerts', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       alerts: [],
       total: 0,
     };
   });
 
-  fastify.patch('/admin/alerts/:alertId/read', async (request) => {
+  fastify.patch('/admin/alerts/:alertId/read', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; alertId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { alertId } = request.params as { alertId: string };
     return {
       id: alertId,
@@ -168,6 +228,12 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
   // ===== F15.3: Data Export =====
 
   fastify.post('/exports', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = createExportSchema.parse(request.body);
     const id = crypto.randomUUID();
     return reply.status(201).send({
@@ -178,14 +244,26 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/exports', async () => {
+  fastify.get('/exports', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       exports: [],
       total: 0,
     };
   });
 
-  fastify.get('/exports/:exportId', async (request) => {
+  fastify.get('/exports/:exportId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; exportId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { exportId } = request.params as { exportId: string };
     return {
       id: exportId,
@@ -199,13 +277,25 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.delete('/exports/:exportId', async (_request, reply) => {
+  fastify.delete('/exports/:exportId', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return reply.status(204).send();
   });
 
   // ===== F15.4: Audit Logging =====
 
-  fastify.get('/audit-logs', async (request) => {
+  fastify.get('/audit-logs', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { actorId, action, startDate, endDate, limit, offset } = request.query as Record<
       string,
       string | undefined
@@ -217,7 +307,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.get('/audit-logs/summary', async () => {
+  fastify.get('/audit-logs/summary', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       totalActions: 0,
       actionBreakdown: {},
@@ -228,7 +324,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
 
   // ===== F15.5: Performance Monitoring =====
 
-  fastify.get('/performance', async () => {
+  fastify.get('/performance', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       currentMetrics: {
         responseTimeMs: 50,
@@ -242,7 +344,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.get('/performance/history', async (request) => {
+  fastify.get('/performance/history', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { period } = request.query as Record<string, string | undefined>;
     return {
       metrics: [],
@@ -250,7 +358,13 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.get('/usage', async () => {
+  fastify.get('/usage', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       totalRequests: 0,
       uniqueUsers: 0,
@@ -260,14 +374,26 @@ export async function advancedAnalyticsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.get('/errors', async () => {
+  fastify.get('/errors', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       errors: [],
       total: 0,
     };
   });
 
-  fastify.patch('/errors/:errorId/resolve', async (request) => {
+  fastify.patch('/errors/:errorId/resolve', async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string; errorId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { errorId } = request.params as { errorId: string };
     return {
       id: errorId,

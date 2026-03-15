@@ -26,7 +26,7 @@ import {
   getRarityInfo,
   getCardCategoryInfo,
 } from '@chorechamp/gamification';
-import type { CardRarity, RarityWeights, TradeCard } from '@chorechamp/types';
+import type { CardRarity, RarityWeights, TradeCard, PackOpenResult } from '@chorechamp/types';
 import { verifyMembership } from '../lib/membership';
 
 // Validation schemas
@@ -384,10 +384,10 @@ export async function collectibleCardsRoutes(fastify: FastifyInstance) {
 
     const ownedCardIds = new Set(owned.map(o => o.cardId));
 
-    // Open packs
-    const results = [];
+    // Open packs atomically (cards + points deduction)
+    const results: PackOpenResult[] = [];
     for (let i = 0; i < body.quantity; i++) {
-      const result = openPack(
+      results.push(openPack(
         pack.id,
         pack.name,
         pack.cardCount,
@@ -395,53 +395,56 @@ export async function collectibleCardsRoutes(fastify: FastifyInstance) {
         pack.guaranteedRarity as CardRarity | null,
         availableCards as Parameters<typeof openPack>[5],
         ownedCardIds
-      );
-      results.push(result);
-
-      // Update owned cards
-      for (const packCard of result.cards) {
-        const existingOwned = owned.find(o => o.cardId === packCard.card.id);
-
-        if (existingOwned) {
-          await db
-            .update(ownedCards)
-            .set({
-              quantity: sql`${ownedCards.quantity} + 1`,
-              lastObtainedAt: new Date(),
-            })
-            .where(eq(ownedCards.id, existingOwned.id));
-        } else {
-          await db.insert(ownedCards).values({
-            cardId: packCard.card.id,
-            memberId: membership.id,
-            householdId,
-            quantity: 1,
-            isFavorite: false,
-            isNew: true,
-          });
-        }
-      }
-
-      // Record pack opening
-      await db.insert(packOpenings).values({
-        packId: pack.id,
-        memberId: membership.id,
-        householdId,
-        pointsSpent: pack.pointCost,
-        cardsReceived: result.cards.map(c => c.card.id),
-        newCardsCount: result.newCards,
-        duplicateCardsCount: result.duplicateCards,
-        highestRarity: getHighestRarity(result.cards.map(c => ({ rarity: c.card.rarity as CardRarity }))),
-      });
+      ));
     }
 
-    // Deduct points
-    await db
-      .update(members)
-      .set({
-        pointsCurrent: sql`${members.pointsCurrent} - ${totalCost}`,
-      })
-      .where(eq(members.id, membership.id));
+    await db.transaction(async (tx) => {
+      for (const result of results) {
+        // Update owned cards
+        for (const packCard of result.cards) {
+          const existingOwned = owned.find(o => o.cardId === packCard.card.id);
+
+          if (existingOwned) {
+            await tx
+              .update(ownedCards)
+              .set({
+                quantity: sql`${ownedCards.quantity} + 1`,
+                lastObtainedAt: new Date(),
+              })
+              .where(eq(ownedCards.id, existingOwned.id));
+          } else {
+            await tx.insert(ownedCards).values({
+              cardId: packCard.card.id,
+              memberId: membership.id,
+              householdId,
+              quantity: 1,
+              isFavorite: false,
+              isNew: true,
+            });
+          }
+        }
+
+        // Record pack opening
+        await tx.insert(packOpenings).values({
+          packId: pack.id,
+          memberId: membership.id,
+          householdId,
+          pointsSpent: pack.pointCost,
+          cardsReceived: result.cards.map(c => c.card.id),
+          newCardsCount: result.newCards,
+          duplicateCardsCount: result.duplicateCards,
+          highestRarity: getHighestRarity(result.cards.map(c => ({ rarity: c.card.rarity as CardRarity }))),
+        });
+      }
+
+      // Deduct points
+      await tx
+        .update(members)
+        .set({
+          pointsCurrent: sql`${members.pointsCurrent} - ${totalCost}`,
+        })
+        .where(eq(members.id, membership.id));
+    });
 
     // Emit pack opened event
     const io = fastify.io;

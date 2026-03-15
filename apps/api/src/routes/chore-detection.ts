@@ -469,7 +469,8 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
     }
     const { eventId } = request.params;
     const { wasAccurate, feedbackNote } = confirmDetectionSchema.parse(request.body);
-    const memberId = request.headers['x-member-id'] as string;
+    // Derive memberId from authenticated user's membership
+    const memberId = membership.id;
 
     const event = await db.query.detectionEvents.findFirst({
       where: and(
@@ -554,7 +555,7 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
           pointsCurrent: sql`points_current + ${event.pointsAwarded}`,
           pointsLifetime: sql`points_lifetime + ${event.pointsAwarded}`,
         })
-        .where(eq(members.id, memberId));
+        .where(and(eq(members.id, memberId), eq(members.householdId, householdId)));
     }
 
     return { event: updated };
