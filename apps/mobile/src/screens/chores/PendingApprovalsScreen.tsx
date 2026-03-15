@@ -41,12 +41,8 @@ export function PendingApprovalsScreen() {
     if (!activeHousehold) return;
 
     try {
-      // TODO: Replace with actual API call when endpoint exists
-      // const completions = await apiClient.getPendingCompletions(activeHousehold.id);
-      // setPendingCompletions(completions);
-
-      // Mock data for now
-      setPendingCompletions([]);
+      const completions = await apiClient.getPendingCompletions(activeHousehold.id);
+      setPendingCompletions(completions as PendingCompletion[]);
     } catch (error) {
       console.error('Failed to load pending completions:', error);
     } finally {
