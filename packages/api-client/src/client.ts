@@ -460,7 +460,8 @@ class ApiClient {
 
   // ===== Households =====
   async getHouseholds(): Promise<Household[]> {
-    return this.request('/households');
+    const data = await this.request<Array<{ household: Household; member: unknown }>>('/households');
+    return data.map((item) => item.household);
   }
 
   async getHousehold(id: string): Promise<Household> {
