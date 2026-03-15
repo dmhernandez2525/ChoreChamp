@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { db } from '../lib/db';
-import { households, webhookEvents } from '@chorechamp/database/schema';
+import { households, webhookEvents, members, userHouseholds } from '@chorechamp/database/schema';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { createLogger } from '../lib/logger';
 import { requireStripe, getStripeWebhookSecret } from '../lib/stripe';
@@ -710,5 +710,36 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
     }
 
     return reply.send({ success: true, household: { id: updated.id, name: updated.name, tier: updated.subscriptionTier } });
+  });
+
+  // Admin: link a user account to an existing member (protected by BETTER_AUTH_SECRET)
+  fastify.post<{
+    Body: { memberId: string; userId: string; householdId: string; secret: string };
+  }>('/admin/link-member', async (request, reply) => {
+    const { memberId, userId, householdId, secret } = request.body;
+    const adminSecret = process.env.BETTER_AUTH_SECRET;
+
+    if (!adminSecret || secret !== adminSecret) {
+      return reply.status(403).send({ error: 'Forbidden' });
+    }
+
+    // Update member's userId
+    const [updated] = await db
+      .update(members)
+      .set({ userId, updatedAt: new Date() })
+      .where(eq(members.id, memberId))
+      .returning();
+
+    if (!updated) {
+      return reply.status(404).send({ error: 'Member not found' });
+    }
+
+    // Also create userHouseholds entry
+    await db
+      .insert(userHouseholds)
+      .values({ userId, householdId })
+      .onConflictDoNothing();
+
+    return reply.send({ success: true, member: { id: updated.id, name: updated.name, userId: updated.userId } });
   });
 }
