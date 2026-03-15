@@ -37,8 +37,6 @@ const mockNotifications = [
   { id: '8', notificationType: 'system', title: 'System update', body: 'New features', status: 'read', createdAt: new Date() },
 ];
 
-const mockMutate = vi.fn();
-
 // Mock api-client hooks
 vi.mock('@chorechamp/api-client', () => ({
   apiClient: {
