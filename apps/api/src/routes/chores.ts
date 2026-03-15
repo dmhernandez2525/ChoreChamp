@@ -403,57 +403,59 @@ export async function choreRoutes(fastify: FastifyInstance) {
     // Determine initial status
     const status = chore.requiresApproval ? 'pending' : 'approved';
 
-    // Create completion
-    const [completion] = await db
-      .insert(choreCompletions)
-      .values({
-        choreId,
-        householdId,
-        memberId: membership.id,
-        scheduledDate: body.scheduledDate,
-        status,
-        photoUrl: body.photoUrl,
-        pointsAwarded: status === 'approved' ? totalPoints : 0,
-        streakDay: memberCurrentStreak + 1,
-        startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
-        durationSeconds: body.durationSeconds,
-      })
-      .returning();
+    // Wrap insert + point/streak updates in a transaction to prevent race conditions
+    const { completion } = await db.transaction(async (tx) => {
+      const [comp] = await tx
+        .insert(choreCompletions)
+        .values({
+          choreId,
+          householdId,
+          memberId: membership.id,
+          scheduledDate: body.scheduledDate,
+          status,
+          photoUrl: body.photoUrl,
+          pointsAwarded: status === 'approved' ? totalPoints : 0,
+          streakDay: memberCurrentStreak + 1,
+          startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
+          durationSeconds: body.durationSeconds,
+        })
+        .returning();
 
-    // If auto-approved, award points and update streak
-    if (status === 'approved') {
-      const today = new Date().toISOString().split('T')[0];
-      const lastCompleted = membership.streakLastCompletedDate;
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      if (status === 'approved') {
+        const today = new Date().toISOString().split('T')[0];
+        const lastCompleted = membership.streakLastCompletedDate;
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-      let newStreak = memberCurrentStreak;
-      if (lastCompleted === yesterday || lastCompleted === today) {
-        newStreak = memberCurrentStreak + 1;
-      } else if (lastCompleted !== today) {
-        newStreak = 1; // Reset streak
+        let newStreak = memberCurrentStreak;
+        if (lastCompleted === yesterday || lastCompleted === today) {
+          newStreak = memberCurrentStreak + 1;
+        } else if (lastCompleted !== today) {
+          newStreak = 1;
+        }
+
+        await tx
+          .update(members)
+          .set({
+            pointsCurrent: memberCurrentPoints + totalPoints,
+            pointsLifetime: memberLifetimePoints + totalPoints,
+            streakCurrent: newStreak,
+            streakLongest: Math.max(memberLongestStreak, newStreak),
+            streakLastCompletedDate: today,
+            updatedAt: new Date(),
+          })
+          .where(eq(members.id, membership.id));
+
+        await tx
+          .update(households)
+          .set({
+            totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(households.id, householdId));
       }
 
-      await db
-        .update(members)
-        .set({
-          pointsCurrent: memberCurrentPoints + totalPoints,
-          pointsLifetime: memberLifetimePoints + totalPoints,
-          streakCurrent: newStreak,
-          streakLongest: Math.max(memberLongestStreak, newStreak),
-          streakLastCompletedDate: today,
-          updatedAt: new Date(),
-        })
-        .where(eq(members.id, membership.id));
-
-      // Update household stats
-      await db
-        .update(households)
-        .set({
-          totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(eq(households.id, householdId));
-    }
+      return { completion: comp };
+    });
 
     // Emit real-time event
     const io = fastify.io as Server;
@@ -590,50 +592,52 @@ export async function choreRoutes(fastify: FastifyInstance) {
     const milestoneBonus = getStreakBonus(currentStreak + 1);
     const totalPoints = basePoints + milestoneBonus;
 
-    // Update completion
-    const [updatedCompletion] = await db
-      .update(choreCompletions)
-      .set({
-        status: 'approved',
-        approvedBy: membership.id,
-        approvedAt: new Date(),
-        pointsAwarded: totalPoints,
-      })
-      .where(eq(choreCompletions.id, completionId))
-      .returning();
+    // Wrap approval + point/streak updates in a transaction
+    const { updatedCompletion } = await db.transaction(async (tx) => {
+      const [comp] = await tx
+        .update(choreCompletions)
+        .set({
+          status: 'approved',
+          approvedBy: membership.id,
+          approvedAt: new Date(),
+          pointsAwarded: totalPoints,
+        })
+        .where(eq(choreCompletions.id, completionId))
+        .returning();
 
-    // Award points and update streak
-    const today = new Date().toISOString().split('T')[0];
-    const lastCompleted = completingMember.streakLastCompletedDate;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      const lastCompleted = completingMember.streakLastCompletedDate;
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-    let newStreak = currentStreak;
-    if (lastCompleted === yesterday || lastCompleted === today) {
-      newStreak = currentStreak + 1;
-    } else if (lastCompleted !== today) {
-      newStreak = 1;
-    }
+      let newStreak = currentStreak;
+      if (lastCompleted === yesterday || lastCompleted === today) {
+        newStreak = currentStreak + 1;
+      } else if (lastCompleted !== today) {
+        newStreak = 1;
+      }
 
-    await db
-      .update(members)
-      .set({
-        pointsCurrent: currentPoints + totalPoints,
-        pointsLifetime: lifetimePoints + totalPoints,
-        streakCurrent: newStreak,
-        streakLongest: Math.max(longestStreak, newStreak),
-        streakLastCompletedDate: today,
-        updatedAt: new Date(),
-      })
-      .where(eq(members.id, completion.memberId));
+      await tx
+        .update(members)
+        .set({
+          pointsCurrent: currentPoints + totalPoints,
+          pointsLifetime: lifetimePoints + totalPoints,
+          streakCurrent: newStreak,
+          streakLongest: Math.max(longestStreak, newStreak),
+          streakLastCompletedDate: today,
+          updatedAt: new Date(),
+        })
+        .where(eq(members.id, completion.memberId));
 
-    // Update household stats
-    await db
-      .update(households)
-      .set({
-        totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
-        updatedAt: new Date(),
-      })
-      .where(eq(households.id, householdId));
+      await tx
+        .update(households)
+        .set({
+          totalChoresCompleted: sql`${households.totalChoresCompleted} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(households.id, householdId));
+
+      return { updatedCompletion: comp };
+    });
 
     // Emit real-time event
     const io = fastify.io as Server;
@@ -644,7 +648,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
         memberId: completion.memberId,
         memberName: completingMember.name,
         pointsAwarded: totalPoints,
-        approvedBy: membership!.name,
+        approvedBy: membership.name,
         timestamp: new Date().toISOString(),
       });
     }
@@ -709,7 +713,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
         choreId: completion.choreId,
         memberId: completion.memberId,
         reason,
-        rejectedBy: membership!.name,
+        rejectedBy: membership.name,
         timestamp: new Date().toISOString(),
       });
     }
