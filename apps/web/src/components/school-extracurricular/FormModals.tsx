@@ -497,7 +497,7 @@ export function AddActivityDialog({ open, onOpenChange, householdId, onSubmit }:
             <select
               required
               value={commitmentLevel}
-              onChange={(e) => setCommitmentLevel(e.target.value as any)}
+              onChange={(e) => setCommitmentLevel(e.target.value as typeof commitmentLevel)}
               className={selectClass}
             >
               {COMMITMENT_LEVELS.map((cl) => (
@@ -975,7 +975,7 @@ export function AddCollegePrepDialog({ open, onOpenChange, householdId, onSubmit
             <select
               required
               value={status}
-              onChange={(e) => setStatus(e.target.value as any)}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
               className={selectClass}
             >
               <option value="not_started">Not Started</option>
@@ -988,7 +988,7 @@ export function AddCollegePrepDialog({ open, onOpenChange, householdId, onSubmit
             <select
               required
               value={priority}
-              onChange={(e) => setPriority(e.target.value as any)}
+              onChange={(e) => setPriority(e.target.value as typeof priority)}
               className={selectClass}
             >
               <option value="low">Low</option>

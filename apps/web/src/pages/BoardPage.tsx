@@ -58,9 +58,7 @@ export default function BoardPage() {
   const { householdId } = useParams<{ householdId: string }>();
   const navigate = useNavigate();
 
-  if (!householdId) return <Navigate to="/" />;
-
-  // Auth & stores
+  // Auth & stores (all hooks must be called unconditionally)
   const { user } = useAuth();
   const { viewMode, loadPreferences } = useBoardStore();
   const { activeFilters, searchQuery, setSearchQuery } = useFilterStore();
@@ -78,7 +76,7 @@ export default function BoardPage() {
   const [detailChoreId, setDetailChoreId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ choreId: string; choreTitle: string; x: number; y: number } | null>(null);
 
-  // Queries
+  // Queries (householdId may be undefined but hooks must be called unconditionally)
   const { data: household, isLoading: loadingHousehold } = useHousehold(householdId!);
   const { data: members = [], isLoading: loadingMembers } = useMembers(householdId!);
   const { data: boardPrefs } = useBoardPreferences(householdId!);
@@ -122,6 +120,9 @@ export default function BoardPage() {
   const handleUpdateChoreField = useCallback((choreId: string, field: string, value: string) => {
     updateChore.mutate({ choreId, data: { [field]: value } });
   }, [updateChore.mutate]);
+
+  // Guard: redirect if no householdId (after all hooks)
+  if (!householdId) return <Navigate to="/" />;
 
   // Current member for gamification display
   const currentMember = members.find(m => m.userId === user?.id);

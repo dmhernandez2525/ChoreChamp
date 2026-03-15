@@ -30,7 +30,7 @@ vi.mock('@radix-ui/react-dialog', () => ({
   Root: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
     open ? <div>{children}</div> : null,
   Portal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Overlay: ({ className, ...props }: Record<string, unknown>) => (
+  Overlay: ({ _className, ...props }: Record<string, unknown>) => (
     <div data-testid="dialog-overlay" {...props} />
   ),
   Content: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) => (

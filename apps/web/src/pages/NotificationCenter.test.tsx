@@ -11,11 +11,11 @@ vi.mock('react-router-dom', () => ({
 
 // Mock UI components
 vi.mock('@chorechamp/ui', () => ({
-  Button: ({ children, onClick, variant, size, ...props }: {
+  Button: ({ children, onClick, _variant, _size, ...props }: {
     children: React.ReactNode;
     onClick?: () => void;
-    variant?: string;
-    size?: string;
+    _variant?: string;
+    _size?: string;
     [key: string]: unknown;
   }) => (
     <button onClick={onClick} {...props}>{children}</button>

@@ -18,11 +18,11 @@ vi.mock('../context/AuthContext', () => ({
 
 // Mock UI
 vi.mock('@chorechamp/ui', () => ({
-  Button: ({ children, onClick, disabled, asChild, className, ...props }: {
+  Button: ({ children, onClick, disabled, _asChild, className, ...props }: {
     children: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
-    asChild?: boolean;
+    _asChild?: boolean;
     className?: string;
     [key: string]: unknown;
   }) => (
