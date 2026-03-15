@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   Landmark,
@@ -12,13 +12,81 @@ import {
   DollarSign,
   RefreshCcw,
   Check,
+  AlertCircle,
 } from 'lucide-react';
+import {
+  useBankingConnections,
+  useDepositSummary,
+  useChoreRotations,
+  useChoreChains,
+  useChores,
+  useChoreClassifications,
+  useClassificationSummary,
+  useMarketplaceListings,
+  useMarketplaceStats,
+} from '@chorechamp/api-client';
+import { Skeleton } from '../components/common';
 
 type FinancialTab = 'banking' | 'rotations' | 'chains' | 'classification' | 'marketplace';
 
-function BankingTab() {
+function StatCard({ label, value, isLoading }: { label: string; value: string; isLoading: boolean }) {
+  return (
+    <div
+      className="p-4 rounded-lg"
+      style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
+    >
+      {isLoading ? (
+        <>
+          <Skeleton className="h-8 w-16 mb-1" />
+          <Skeleton className="h-4 w-24" />
+        </>
+      ) : (
+        <>
+          <div className="text-2xl font-bold mb-1" style={{ color: 'var(--app-text)' }}>
+            {value}
+          </div>
+          <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
+            {label}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div
+      className="flex items-center gap-3 p-4 rounded-lg mb-6"
+      style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}
+    >
+      <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#dc2626' }} />
+      <p className="text-sm" style={{ color: '#991b1b' }}>
+        {message}
+      </p>
+    </div>
+  );
+}
+
+function BankingTab({ householdId }: { householdId: string }) {
+  const { data: connectionsData, isLoading: loadingConnections, isError: connectionsError } = useBankingConnections(householdId);
+  const { data: summary, isLoading: loadingSummary, isError: summaryError } = useDepositSummary(householdId);
+
+  const isLoading = loadingConnections || loadingSummary;
+  const isError = connectionsError || summaryError;
+
+  const connections = connectionsData?.connections ?? [];
+  const totalDeposited = summary?.totalDeposited ?? 0;
+  const pendingDeposits = summary?.pendingDeposits ?? 0;
+  const activeConfigs = summary?.activeConfigs ?? 0;
+
+  const formatCurrency = (amount: number) =>
+    `$${amount.toFixed(2)}`;
+
   return (
     <div>
+      {isError && <ErrorBanner message="Failed to load banking data. Please try again." />}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold" style={{ color: 'var(--app-text)' }}>
           Banking Integration
@@ -33,24 +101,9 @@ function BankingTab() {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        {[
-          { label: 'Total Deposited', value: '$0.00' },
-          { label: 'Pending', value: '$0.00' },
-          { label: 'Active Configs', value: '0' },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="p-4 rounded-lg"
-            style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
-          >
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--app-text)' }}>
-              {stat.value}
-            </div>
-            <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
+        <StatCard label="Total Deposited" value={formatCurrency(totalDeposited)} isLoading={isLoading} />
+        <StatCard label="Pending" value={formatCurrency(pendingDeposits)} isLoading={isLoading} />
+        <StatCard label="Active Configs" value={String(activeConfigs)} isLoading={isLoading} />
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -70,23 +123,75 @@ function BankingTab() {
         ))}
       </div>
 
-      <div
-        className="text-center py-12 rounded-lg"
-        style={{ backgroundColor: 'var(--app-surface-muted)' }}
-      >
-        <DollarSign className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
-        <p style={{ color: 'var(--app-text-muted)' }}>No banking connections</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
-          Connect a bank account to automate allowance deposits
-        </p>
-      </div>
+      {isLoading ? (
+        <div className="py-12 space-y-3">
+          <Skeleton className="h-12 w-12 mx-auto rounded-full" />
+          <Skeleton className="h-4 w-48 mx-auto" />
+          <Skeleton className="h-3 w-64 mx-auto" />
+        </div>
+      ) : connections.length === 0 ? (
+        <div
+          className="text-center py-12 rounded-lg"
+          style={{ backgroundColor: 'var(--app-surface-muted)' }}
+        >
+          <DollarSign className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
+          <p style={{ color: 'var(--app-text-muted)' }}>No banking connections</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
+            Connect a bank account to automate allowance deposits
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {connections.map((conn) => (
+            <div
+              key={conn.id}
+              className="flex items-center justify-between p-4 rounded-lg"
+              style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
+            >
+              <div className="flex items-center gap-3">
+                <Landmark className="w-5 h-5" style={{ color: 'var(--app-accent)' }} />
+                <div>
+                  <div className="font-medium" style={{ color: 'var(--app-text)' }}>
+                    {conn.institutionName}
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
+                    {conn.accountName} ****{conn.accountMask}
+                  </div>
+                </div>
+              </div>
+              <span
+                className="text-xs px-2 py-1 rounded-full font-medium"
+                style={{
+                  backgroundColor: conn.isActive ? '#dcfce7' : '#fef3c7',
+                  color: conn.isActive ? '#166534' : '#92400e',
+                }}
+              >
+                {conn.isActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function RotationsTab() {
+function RotationsTab({ householdId }: { householdId: string }) {
+  const { data: rotationsData, isLoading, isError } = useChoreRotations(householdId);
+
+  const rotations = rotationsData?.rotations ?? [];
+
+  const rotationTypeLabels: Record<string, string> = {
+    round_robin: 'Round Robin',
+    weighted: 'Weighted',
+    random: 'Random',
+    skill_based: 'Skill-Based',
+  };
+
   return (
     <div>
+      {isError && <ErrorBanner message="Failed to load rotation data. Please try again." />}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold" style={{ color: 'var(--app-text)' }}>
           Chore Rotations
@@ -116,23 +221,68 @@ function RotationsTab() {
         ))}
       </div>
 
-      <div
-        className="text-center py-12 rounded-lg"
-        style={{ backgroundColor: 'var(--app-surface-muted)' }}
-      >
-        <RefreshCcw className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
-        <p style={{ color: 'var(--app-text-muted)' }}>No rotations configured</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
-          Set up automatic chore rotation between family members
-        </p>
-      </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : rotations.length === 0 ? (
+        <div
+          className="text-center py-12 rounded-lg"
+          style={{ backgroundColor: 'var(--app-surface-muted)' }}
+        >
+          <RefreshCcw className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
+          <p style={{ color: 'var(--app-text-muted)' }}>No rotations configured</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
+            Set up automatic chore rotation between family members
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {rotations.map((rotation) => (
+            <div
+              key={rotation.id}
+              className="flex items-center justify-between p-4 rounded-lg"
+              style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
+            >
+              <div>
+                <div className="font-medium" style={{ color: 'var(--app-text)' }}>
+                  {rotation.choreName}
+                </div>
+                <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
+                  {rotationTypeLabels[rotation.rotationType] ?? rotation.rotationType} · {rotation.participantIds.length} participants
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium" style={{ color: 'var(--app-accent)' }}>
+                  {rotation.frequency}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
+                  Fairness: {Math.round(rotation.fairnessScore * 100)}%
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function ChainsTab() {
+function ChainsTab({ householdId }: { householdId: string }) {
+  const { data: chainsData, isLoading, isError } = useChoreChains(householdId);
+
+  const chains = chainsData?.chains ?? [];
+
+  const activeChains = chains.filter((c) => c.status === 'in_progress' || c.status === 'pending');
+  const completedChains = chains.filter((c) => c.status === 'completed');
+  const totalSteps = chains.reduce((sum, c) => sum + c.totalSteps, 0);
+
   return (
     <div>
+      {isError && <ErrorBanner message="Failed to load chore chain data. Please try again." />}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold" style={{ color: 'var(--app-text)' }}>
           Chore Chains
@@ -147,43 +297,100 @@ function ChainsTab() {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        {[
-          { label: 'Active Chains', value: '0' },
-          { label: 'Completed', value: '0' },
-          { label: 'Total Steps', value: '0' },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="p-4 rounded-lg"
-            style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
-          >
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--app-text)' }}>
-              {stat.value}
-            </div>
-            <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
+        <StatCard label="Active Chains" value={String(activeChains.length)} isLoading={isLoading} />
+        <StatCard label="Completed" value={String(completedChains.length)} isLoading={isLoading} />
+        <StatCard label="Total Steps" value={String(totalSteps)} isLoading={isLoading} />
       </div>
 
-      <div
-        className="text-center py-12 rounded-lg"
-        style={{ backgroundColor: 'var(--app-surface-muted)' }}
-      >
-        <Link2 className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
-        <p style={{ color: 'var(--app-text-muted)' }}>No chore chains</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
-          Create chains to link dependent chores together with bonus points
-        </p>
-      </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : chains.length === 0 ? (
+        <div
+          className="text-center py-12 rounded-lg"
+          style={{ backgroundColor: 'var(--app-surface-muted)' }}
+        >
+          <Link2 className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
+          <p style={{ color: 'var(--app-text-muted)' }}>No chore chains</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
+            Create chains to link dependent chores together with bonus points
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {chains.map((chain) => {
+            const progress = chain.totalSteps > 0
+              ? Math.round((chain.completedSteps / chain.totalSteps) * 100)
+              : 0;
+            return (
+              <div
+                key={chain.id}
+                className="p-4 rounded-lg"
+                style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium" style={{ color: 'var(--app-text)' }}>
+                    {chain.name}
+                  </div>
+                  <span
+                    className="text-xs px-2 py-1 rounded-full font-medium"
+                    style={{
+                      backgroundColor: chain.status === 'completed' ? '#dcfce7' : chain.status === 'blocked' ? '#fef3c7' : '#dbeafe',
+                      color: chain.status === 'completed' ? '#166534' : chain.status === 'blocked' ? '#92400e' : '#1e40af',
+                    }}
+                  >
+                    {chain.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex-1 h-2 rounded-full overflow-hidden"
+                    style={{ backgroundColor: 'var(--app-surface-muted)' }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${progress}%`, backgroundColor: 'var(--app-accent)' }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium" style={{ color: 'var(--app-text-muted)' }}>
+                    {chain.completedSteps}/{chain.totalSteps}
+                  </span>
+                </div>
+                {chain.bonusPoints > 0 && (
+                  <div className="text-xs mt-2" style={{ color: 'var(--app-text-muted)' }}>
+                    +{chain.bonusPoints} bonus points on completion
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-function ClassificationTab() {
+function ClassificationTab({ householdId }: { householdId: string }) {
+  const { data: summary, isLoading: loadingSummary, isError: summaryError } = useClassificationSummary(householdId);
+  const { data: classificationsData, isLoading: loadingClassifications, isError: classificationsError } = useChoreClassifications(householdId);
+  const { data: chores, isLoading: loadingChores } = useChores(householdId);
+
+  const isLoading = loadingSummary || loadingClassifications || loadingChores;
+  const isError = summaryError || classificationsError;
+
+  const totalChores = summary?.totalChores ?? 0;
+  const responsibilities = summary?.responsibilities ?? 0;
+  const jobs = summary?.jobs ?? 0;
+  const unclassified = summary?.unclassified ?? 0;
+  const classifications = classificationsData?.classifications ?? [];
+
   return (
     <div>
+      {isError && <ErrorBanner message="Failed to load classification data. Please try again." />}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold" style={{ color: 'var(--app-text)' }}>
           Responsibilities vs Jobs
@@ -191,25 +398,10 @@ function ClassificationTab() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total Chores', value: '0' },
-          { label: 'Responsibilities', value: '0' },
-          { label: 'Jobs', value: '0' },
-          { label: 'Unclassified', value: '0' },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="p-4 rounded-lg"
-            style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
-          >
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--app-text)' }}>
-              {stat.value}
-            </div>
-            <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
+        <StatCard label="Total Chores" value={String(totalChores)} isLoading={isLoading} />
+        <StatCard label="Responsibilities" value={String(responsibilities)} isLoading={isLoading} />
+        <StatCard label="Jobs" value={String(jobs)} isLoading={isLoading} />
+        <StatCard label="Unclassified" value={String(unclassified)} isLoading={isLoading} />
       </div>
 
       <div
@@ -243,23 +435,110 @@ function ClassificationTab() {
         </div>
       </div>
 
-      <div
-        className="text-center py-12 rounded-lg"
-        style={{ backgroundColor: 'var(--app-surface-muted)' }}
-      >
-        <Briefcase className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
-        <p style={{ color: 'var(--app-text-muted)' }}>No chores classified yet</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
-          Classify your chores as responsibilities or jobs to teach financial literacy
-        </p>
-      </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : classifications.length === 0 ? (
+        <div
+          className="text-center py-12 rounded-lg"
+          style={{ backgroundColor: 'var(--app-surface-muted)' }}
+        >
+          <Briefcase className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
+          <p style={{ color: 'var(--app-text-muted)' }}>No chores classified yet</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
+            Classify your chores as responsibilities or jobs to teach financial literacy
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {classifications.map((cls) => {
+            const chore = (chores ?? []).find((c) => c.id === cls.choreId);
+            return (
+              <div
+                key={cls.id}
+                className="flex items-center justify-between p-4 rounded-lg"
+                style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  {cls.classification === 'job' ? (
+                    <DollarSign className="w-4 h-4" style={{ color: 'var(--app-accent)' }} />
+                  ) : (
+                    <Check className="w-4 h-4" style={{ color: 'var(--app-accent)' }} />
+                  )}
+                  <div>
+                    <div className="font-medium text-sm" style={{ color: 'var(--app-text)' }}>
+                      {chore?.title ?? `Chore ${cls.choreId.slice(0, 8)}`}
+                    </div>
+                    {cls.reason && (
+                      <div className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
+                        {cls.reason}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <span
+                  className="text-xs px-2 py-1 rounded-full font-medium capitalize"
+                  style={{
+                    backgroundColor: cls.classification === 'job' ? '#dbeafe' : '#f3e8ff',
+                    color: cls.classification === 'job' ? '#1e40af' : '#6b21a8',
+                  }}
+                >
+                  {cls.classification}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-function MarketplaceTab() {
+function MarketplaceTab({ householdId }: { householdId: string }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
+
+  const { data: listingsData, isLoading: loadingListings, isError: listingsError } = useMarketplaceListings(householdId);
+  const { data: stats, isLoading: loadingStats, isError: statsError } = useMarketplaceStats(householdId);
+
+  const isLoading = loadingListings || loadingStats;
+  const isError = listingsError || statsError;
+
+  const allListings = listingsData?.listings ?? [];
+
+  const filteredListings = useMemo(() => {
+    let filtered = allListings;
+
+    if (activeFilter === 'Open') {
+      filtered = filtered.filter((l) => l.status === 'open');
+    } else if (activeFilter === 'Claimed') {
+      filtered = filtered.filter((l) => l.status === 'claimed');
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (l) =>
+          l.choreName.toLowerCase().includes(query) ||
+          l.listedByName.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [allListings, activeFilter, searchQuery]);
+
+  const activeListings = stats?.activeListings ?? 0;
+  const completedListings = stats?.completedListings ?? 0;
+  const totalPointsTraded = stats?.totalPointsTraded ?? 0;
+  const totalListings = stats?.totalListings ?? 0;
+
   return (
     <div>
+      {isError && <ErrorBanner message="Failed to load marketplace data. Please try again." />}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold" style={{ color: 'var(--app-text)' }}>
           Chore Marketplace
@@ -274,25 +553,10 @@ function MarketplaceTab() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Active', value: '0' },
-          { label: 'Completed', value: '0' },
-          { label: 'Points Traded', value: '0' },
-          { label: 'Total Listings', value: '0' },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="p-4 rounded-lg"
-            style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
-          >
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--app-text)' }}>
-              {stat.value}
-            </div>
-            <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
+        <StatCard label="Active" value={String(activeListings)} isLoading={isLoading} />
+        <StatCard label="Completed" value={String(completedListings)} isLoading={isLoading} />
+        <StatCard label="Points Traded" value={String(totalPointsTraded)} isLoading={isLoading} />
+        <StatCard label="Total Listings" value={String(totalListings)} isLoading={isLoading} />
       </div>
 
       <div className="relative mb-6">
@@ -303,6 +567,8 @@ function MarketplaceTab() {
         <input
           type="text"
           placeholder="Search marketplace..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-10 pr-4 py-2 rounded-lg"
           style={{
             backgroundColor: 'var(--app-surface)',
@@ -316,10 +582,11 @@ function MarketplaceTab() {
         {['All', 'Open', 'Claimed', 'My Listings'].map((filter) => (
           <button
             key={filter}
+            onClick={() => setActiveFilter(filter)}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={{
-              backgroundColor: filter === 'All' ? 'var(--app-accent-soft)' : 'var(--app-surface-muted)',
-              color: filter === 'All' ? 'var(--app-accent)' : 'var(--app-text)',
+              backgroundColor: filter === activeFilter ? 'var(--app-accent-soft)' : 'var(--app-surface-muted)',
+              color: filter === activeFilter ? 'var(--app-accent)' : 'var(--app-text)',
               border: '1px solid var(--app-border)',
             }}
           >
@@ -328,22 +595,68 @@ function MarketplaceTab() {
         ))}
       </div>
 
-      <div
-        className="text-center py-12 rounded-lg"
-        style={{ backgroundColor: 'var(--app-surface-muted)' }}
-      >
-        <ShoppingCart className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
-        <p style={{ color: 'var(--app-text-muted)' }}>No marketplace listings</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
-          Post chores with point bounties for other family members to claim
-        </p>
-      </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : filteredListings.length === 0 ? (
+        <div
+          className="text-center py-12 rounded-lg"
+          style={{ backgroundColor: 'var(--app-surface-muted)' }}
+        >
+          <ShoppingCart className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--app-text-muted)' }} />
+          <p style={{ color: 'var(--app-text-muted)' }}>
+            {allListings.length === 0 ? 'No marketplace listings' : 'No listings match your filters'}
+          </p>
+          <p className="text-sm mt-1" style={{ color: 'var(--app-text-muted)' }}>
+            {allListings.length === 0
+              ? 'Post chores with point bounties for other family members to claim'
+              : 'Try adjusting your search or filter criteria'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredListings.map((listing) => (
+            <div
+              key={listing.id}
+              className="flex items-center justify-between p-4 rounded-lg"
+              style={{ backgroundColor: 'var(--app-surface)', border: '1px solid var(--app-border)' }}
+            >
+              <div>
+                <div className="font-medium" style={{ color: 'var(--app-text)' }}>
+                  {listing.choreName}
+                </div>
+                <div className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
+                  Posted by {listing.listedByName}
+                  {listing.claimedByName ? ` · Claimed by ${listing.claimedByName}` : ''}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-bold" style={{ color: 'var(--app-accent)' }}>
+                  {listing.pointBounty} pts
+                </div>
+                <span
+                  className="text-xs px-2 py-1 rounded-full font-medium"
+                  style={{
+                    backgroundColor: listing.status === 'open' ? '#dcfce7' : listing.status === 'claimed' ? '#dbeafe' : '#f3f4f6',
+                    color: listing.status === 'open' ? '#166534' : listing.status === 'claimed' ? '#1e40af' : '#374151',
+                  }}
+                >
+                  {listing.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function FinancialScheduling() {
-  const { householdId } = useParams();
+  const { householdId } = useParams<{ householdId: string }>();
   const [activeTab, setActiveTab] = useState<FinancialTab>('banking');
 
   const tabs: Array<{ id: FinancialTab; label: string; icon: typeof Landmark }> = [
@@ -400,11 +713,11 @@ export default function FinancialScheduling() {
         </div>
 
         <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--app-surface)' }}>
-          {activeTab === 'banking' && <BankingTab />}
-          {activeTab === 'rotations' && <RotationsTab />}
-          {activeTab === 'chains' && <ChainsTab />}
-          {activeTab === 'classification' && <ClassificationTab />}
-          {activeTab === 'marketplace' && <MarketplaceTab />}
+          {activeTab === 'banking' && <BankingTab householdId={householdId!} />}
+          {activeTab === 'rotations' && <RotationsTab householdId={householdId!} />}
+          {activeTab === 'chains' && <ChainsTab householdId={householdId!} />}
+          {activeTab === 'classification' && <ClassificationTab householdId={householdId!} />}
+          {activeTab === 'marketplace' && <MarketplaceTab householdId={householdId!} />}
         </div>
       </div>
     </div>
