@@ -6,6 +6,7 @@ import { households, members, pointTransactions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveMemberLimit } from '../lib/subscription';
 import { verifyMembership, verifyParentMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 // Validation schemas
 const createMemberSchema = z.object({
@@ -36,6 +37,7 @@ export async function memberRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -59,6 +61,7 @@ export async function memberRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = createMemberSchema.parse(request.body);
 
     const isParent = await verifyParentMembership(user.id, householdId);
@@ -119,6 +122,8 @@ export async function memberRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -152,6 +157,8 @@ export async function memberRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
     const body = updateMemberSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -216,6 +223,8 @@ export async function memberRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
 
     const isParent = await verifyParentMembership(user.id, householdId);
     if (!isParent) {
@@ -259,6 +268,8 @@ export async function memberRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
     const { amount, reason } = request.body as { amount: number; reason?: string };
 
     const isParent = await verifyParentMembership(user.id, householdId);
@@ -324,6 +335,8 @@ export async function memberRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {

@@ -5,6 +5,7 @@ import { db } from '../lib/db';
 import { chores, choreSchedules, choreCompletions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 const dateRangeSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -19,6 +20,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const query = dateRangeSchema.parse(request.query);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -71,6 +73,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const query = dateRangeSchema.parse(request.query);
 
     const membership = await verifyMembership(user.id, householdId);

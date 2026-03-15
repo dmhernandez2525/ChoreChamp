@@ -15,6 +15,7 @@ import type {
 } from '@chorechamp/types';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 // In-memory storage for reminders (in production, use database tables)
 const memberPreferences = new Map<string, ReminderPreferences>();
@@ -113,6 +114,8 @@ export async function reminderRoutes(fastify: FastifyInstance) {
       householdId: string;
       memberId: string;
     };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -143,6 +146,8 @@ export async function reminderRoutes(fastify: FastifyInstance) {
       householdId: string;
       memberId: string;
     };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
     const body = request.body as UpdateReminderPreferencesRequest;
 
     const membership = await verifyMembership(user.id, householdId);
@@ -177,6 +182,7 @@ export async function reminderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -245,6 +251,8 @@ export async function reminderRoutes(fastify: FastifyInstance) {
       householdId: string;
       memberId: string;
     };
+    validateUUID(householdId, 'householdId');
+    validateUUID(memberId, 'memberId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -349,6 +357,7 @@ export async function reminderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -411,6 +420,7 @@ export async function reminderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -473,6 +483,7 @@ export async function reminderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = request.body as CreateReminderConfigRequest;
 
     const membership = await verifyMembership(user.id, householdId);

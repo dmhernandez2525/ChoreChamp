@@ -10,6 +10,7 @@ import {
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveTierForHousehold } from '../lib/subscription';
 import { verifyParentMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 import type { SubscriptionTier } from '@chorechamp/types';
 
 function resolveReportWindowDays(tier: SubscriptionTier): number {
@@ -39,6 +40,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const {
       startDate,
       endDate,
@@ -148,6 +150,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const {
       startDate,
       endDate,
@@ -217,6 +220,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const {
       startDate,
       endDate,
@@ -269,6 +273,7 @@ export async function reportsRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const {
       startDate,
       endDate,

@@ -9,6 +9,7 @@ import type { Difficulty } from '@chorechamp/gamification';
 import { Server } from 'socket.io';
 import { emitToHousehold } from '../lib/socket';
 import { verifyMembership, verifyParentMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 // Validation schemas
 const createChoreSchema = z.object({
@@ -77,6 +78,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const isParent = await verifyParentMembership(user.id, householdId);
     if (!isParent) {
@@ -123,6 +125,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -186,6 +189,7 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = createChoreSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -241,6 +245,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -274,6 +280,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
     const body = updateChoreSchema.parse(request.body);
 
     const isParent = await verifyParentMembership(user.id, householdId);
@@ -312,6 +320,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
 
     const isParent = await verifyParentMembership(user.id, householdId);
     if (!isParent) {
@@ -350,6 +360,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
     const body = completeChoreSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);
@@ -485,6 +497,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(choreId, 'choreId');
     const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
 
     const membership = await verifyMembership(user.id, householdId);
@@ -518,6 +532,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, completionId } = request.params as { householdId: string; completionId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(completionId, 'completionId');
 
     const isParent = await verifyParentMembership(user.id, householdId);
     if (!isParent) {
@@ -665,6 +681,8 @@ export async function choreRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, completionId } = request.params as { householdId: string; completionId: string };
+    validateUUID(householdId, 'householdId');
+    validateUUID(completionId, 'completionId');
     const { reason } = request.body as { reason?: string };
 
     const isParent = await verifyParentMembership(user.id, householdId);

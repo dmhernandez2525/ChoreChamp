@@ -4,6 +4,7 @@ import { db } from '../lib/db';
 import { choreSchedules, chores, members, choreCompletions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 export async function scheduleRoutes(fastify: FastifyInstance) {
   // Get schedule for a date range
@@ -12,6 +13,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const { startDate, endDate, memberId } = request.query as {
       startDate?: string;
       endDate?: string;
@@ -62,6 +64,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -106,6 +109,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -139,6 +143,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {

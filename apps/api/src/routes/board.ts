@@ -5,6 +5,7 @@ import { db } from '../lib/db';
 import { choreBoardPreferences } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { verifyMembership } from '../lib/membership';
+import { validateUUID } from '../lib/validate-params';
 
 const updateBoardPreferencesSchema = z.object({
   viewMode: z.enum(['kanban', 'calendar', 'list', 'dashboard']).optional(),
@@ -28,6 +29,7 @@ export async function boardRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
 
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
@@ -64,6 +66,7 @@ export async function boardRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    validateUUID(householdId, 'householdId');
     const body = updateBoardPreferencesSchema.parse(request.body);
 
     const membership = await verifyMembership(user.id, householdId);

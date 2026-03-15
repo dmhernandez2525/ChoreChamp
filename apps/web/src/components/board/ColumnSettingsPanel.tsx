@@ -115,7 +115,7 @@ export function ColumnSettingsPanel({ householdId, open, onOpenChange }: ColumnS
   const handleToggleRule = (ruleId: string) => {
     const rule = automationRules.find((r) => r.id === ruleId);
     if (rule) {
-      updateRule.mutate({ ruleId, data: { status: rule.enabled ? 'inactive' : 'active' } as any });
+      updateRule.mutate({ ruleId, data: { status: rule.enabled ? 'inactive' : 'active' } } as Parameters<typeof updateRule.mutate>[0]);
     }
   };
 
@@ -236,9 +236,9 @@ export function ColumnSettingsPanel({ householdId, open, onOpenChange }: ColumnS
                     initialData={editingRule ? {
                       name: editingRule.name,
                       description: editingRule.description ?? '',
-                      trigger: editingRule.trigger as any,
+                      trigger: editingRule.trigger as 'chore_completed' | 'chore_created' | 'due_date_passed' | 'status_changed' | 'assigned',
                       triggerConfig: editingRule.triggerConfig,
-                      action: editingRule.action as any,
+                      action: editingRule.action as 'assign' | 'change_status' | 'add_tag' | 'send_notification' | 'set_priority' | 'create_chore',
                       actionConfig: editingRule.actionConfig,
                       enabled: editingRule.enabled,
                     } : undefined}

@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { households, members, inviteCodes, userHouseholds } from '@chorechamp/database';
+import { households, members, inviteCodes, userHouseholds, chores, choreCompletions, choreSchedules, rewards, rewardRedemptions, pointTransactions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { randomBytes } from 'crypto';
 import { getEffectiveMemberLimit, getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
@@ -252,7 +252,27 @@ export async function householdRoutes(fastify: FastifyInstance) {
       });
     }
 
-    await db.delete(households).where(eq(households.id, householdId));
+    // Delete all related data in a transaction to ensure atomicity.
+    // The DB schema has onDelete: 'cascade' on most FKs, but explicit
+    // deletes inside a transaction give us reliable ordering and let
+    // the application handle any future non-cascaded tables.
+    await db.transaction(async (tx) => {
+      // 1. Child-of-child tables (depend on chores/members)
+      await tx.delete(choreCompletions).where(eq(choreCompletions.householdId, householdId));
+      await tx.delete(choreSchedules).where(eq(choreSchedules.householdId, householdId));
+      await tx.delete(rewardRedemptions).where(eq(rewardRedemptions.householdId, householdId));
+      await tx.delete(pointTransactions).where(eq(pointTransactions.householdId, householdId));
+
+      // 2. Direct children of household
+      await tx.delete(chores).where(eq(chores.householdId, householdId));
+      await tx.delete(rewards).where(eq(rewards.householdId, householdId));
+      await tx.delete(inviteCodes).where(eq(inviteCodes.householdId, householdId));
+      await tx.delete(userHouseholds).where(eq(userHouseholds.householdId, householdId));
+      await tx.delete(members).where(eq(members.householdId, householdId));
+
+      // 3. Finally, delete the household itself
+      await tx.delete(households).where(eq(households.id, householdId));
+    });
 
     return reply.status(204).send();
   });
@@ -365,7 +385,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Find invite code
+    // Find invite code (read outside transaction for early validation)
     const [invite] = await db
       .select()
       .from(inviteCodes)
@@ -389,7 +409,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Check max uses
+    // Check max uses (preliminary check; authoritative check inside transaction)
     if (invite.maxUses && (invite.useCount || 0) >= invite.maxUses) {
       return reply.status(410).send({
         error: 'Gone',
@@ -440,49 +460,79 @@ export async function householdRoutes(fastify: FastifyInstance) {
       }
     }
 
-    // Create member
-    const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    // Wrap the join operation in a transaction to ensure atomicity
+    const result = await db.transaction(async (tx) => {
+      // Atomically check and increment the invite code use count (prevents TOCTOU race)
+      if (invite.maxUses) {
+        const [updated] = await tx
+          .update(inviteCodes)
+          .set({ useCount: sql`${inviteCodes.useCount} + 1` })
+          .where(and(
+            eq(inviteCodes.id, invite.id),
+            sql`COALESCE(${inviteCodes.useCount}, 0) < ${invite.maxUses}`
+          ))
+          .returning();
 
-    const [member] = await db
-      .insert(members)
-      .values({
-        householdId: invite.householdId,
+        if (!updated) {
+          throw Object.assign(new Error('Invite code has reached maximum uses'), { statusCode: 410 });
+        }
+      } else {
+        // No max uses limit; just increment
+        await tx
+          .update(inviteCodes)
+          .set({ useCount: sql`COALESCE(${inviteCodes.useCount}, 0) + 1` })
+          .where(eq(inviteCodes.id, invite.id));
+      }
+
+      // Create member
+      const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+      const [member] = await tx
+        .insert(members)
+        .values({
+          householdId: invite.householdId,
+          userId: user.id,
+          name: user.name || user.email.split('@')[0],
+          role: invite.role || 'child',
+          color: randomColor,
+          // Apply caregiver permissions if joining as caregiver
+          caregiverPermissions: invite.role === 'caregiver' ? invite.caregiverPermissions : null,
+          // Caregivers don't redeem rewards by default
+          canRedeemRewards: invite.role !== 'caregiver',
+          // Caregivers don't require approval
+          requiresApproval: invite.role !== 'caregiver' && invite.role !== 'parent',
+        })
+        .returning();
+
+      // Link user to household
+      await tx.insert(userHouseholds).values({
         userId: user.id,
-        name: user.name || user.email.split('@')[0],
-        role: invite.role || 'child',
-        color: randomColor,
-        // Apply caregiver permissions if joining as caregiver
-        caregiverPermissions: invite.role === 'caregiver' ? invite.caregiverPermissions : null,
-        // Caregivers don't redeem rewards by default
-        canRedeemRewards: invite.role !== 'caregiver',
-        // Caregivers don't require approval
-        requiresApproval: invite.role !== 'caregiver' && invite.role !== 'parent',
-      })
-      .returning();
+        householdId: invite.householdId,
+      });
 
-    // Link user to household
-    await db.insert(userHouseholds).values({
-      userId: user.id,
-      householdId: invite.householdId,
+      // Get household
+      const [household] = await tx
+        .select()
+        .from(households)
+        .where(eq(households.id, invite.householdId));
+
+      return { household, member };
+    }).catch((err) => {
+      if (err.statusCode === 410) {
+        return reply.status(410).send({
+          error: 'Gone',
+          message: err.message,
+        });
+      }
+      throw err;
     });
 
-    // Increment use count
-    await db
-      .update(inviteCodes)
-      .set({ useCount: (invite.useCount || 0) + 1 })
-      .where(eq(inviteCodes.id, invite.id));
-
-    // Get household
-    const [household] = await db
-      .select()
-      .from(households)
-      .where(eq(households.id, invite.householdId));
-
-    return reply.status(201).send({
-      household,
-      member,
-    });
+    // If reply was already sent by error handler, result will be the reply object
+    if (result && 'household' in result) {
+      return reply.status(201).send(result);
+    }
+    return result;
   });
 
   // Leave household

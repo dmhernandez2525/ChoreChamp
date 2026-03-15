@@ -112,16 +112,16 @@ export default function BoardPage() {
   // Reschedule chore (from calendar drag)
   const handleReschedule = useCallback((choreId: string, newDate: string) => {
     bulkUpdate.mutate({ choreIds: [choreId], changes: { startDate: newDate } });
-  }, [bulkUpdate]);
+  }, [bulkUpdate.mutate]);
 
   const handleChangePriority = useCallback((choreId: string, priority: ChorePriority) => {
     bulkUpdate.mutate({ choreIds: [choreId], changes: { priority } });
-  }, [bulkUpdate]);
+  }, [bulkUpdate.mutate]);
 
   // Inline edit from list view
   const handleUpdateChoreField = useCallback((choreId: string, field: string, value: string) => {
     updateChore.mutate({ choreId, data: { [field]: value } });
-  }, [updateChore]);
+  }, [updateChore.mutate]);
 
   // Current member for gamification display
   const currentMember = members.find(m => m.userId === user?.id);

@@ -90,13 +90,36 @@ const PLATFORM_CONFIG: Record<SmartHomePlatform, {
   },
 };
 
-// Simple encryption for demo (use proper encryption in production)
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
+
+const ENCRYPTION_KEY = process.env.SMART_HOME_ENCRYPTION_KEY || 'chorechamp-smart-home-default-key!!';
+const ALGORITHM = 'aes-256-gcm';
+
+function getKey(): Buffer {
+  return scryptSync(ENCRYPTION_KEY, 'chorechamp-salt', 32);
+}
+
 function encryptCredentials(config: HubConfiguration): string {
-  return Buffer.from(JSON.stringify(config)).toString('base64');
+  const iv = randomBytes(16);
+  const key = getKey();
+  const cipher = createCipheriv(ALGORITHM, key, iv);
+  let encrypted = cipher.update(JSON.stringify(config), 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag().toString('hex');
+  return `${iv.toString('hex')}:${authTag}:${encrypted}`;
 }
 
 function decryptCredentials(encrypted: string): HubConfiguration {
-  return JSON.parse(Buffer.from(encrypted, 'base64').toString('utf-8'));
+  const [ivHex, authTagHex, data] = encrypted.split(':');
+  if (!ivHex || !authTagHex || !data) {
+    throw new Error('Invalid encrypted credential format');
+  }
+  const key = getKey();
+  const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, 'hex'));
+  decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+  let decrypted = decipher.update(data, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return JSON.parse(decrypted);
 }
 
 // Mock device sync (replace with actual API calls in production)
