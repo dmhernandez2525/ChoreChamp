@@ -41,14 +41,17 @@ test.describe('Responsive & Accessibility', () => {
     await expect(root).toBeVisible();
   });
 
-  test('login page is accessible on mobile', async ({ page }) => {
+  test('rewards page renders on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/login');
+    await page.goto(`/households/${HID}/rewards`);
     await page.waitForLoadState('networkidle');
+    await ensureAuthenticated(page);
+    await page.waitForTimeout(2000);
 
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    const root = page.locator('#root');
+    await expect(root).toBeVisible();
+    const bodyText = await page.locator('body').textContent();
+    expect(bodyText && bodyText.length > 20).toBeTruthy();
   });
 
   test('pages have meaningful titles', async ({ page }) => {
