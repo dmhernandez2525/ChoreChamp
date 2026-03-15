@@ -11,6 +11,7 @@ import {
 } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
+import { verifyMembership } from '../lib/membership';
 import type { RewardType, RedemptionStatus } from '@chorechamp/types';
 
 const createRewardSchema = z.object({
@@ -39,13 +40,6 @@ const rejectSchema = z.object({
 
 const MAX_FREE_REWARDS = 5;
 
-async function getMembership(userId: string, householdId: string) {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 function isParent(member: typeof members.$inferSelect | null): boolean {
   return member?.role === 'parent';
@@ -63,7 +57,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
@@ -82,7 +76,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, rewardId } = request.params as { householdId: string; rewardId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
@@ -105,7 +99,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = createRewardSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || !isParent(membership)) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can create rewards' });
     }
@@ -166,7 +160,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { householdId, rewardId } = request.params as { householdId: string; rewardId: string };
     const body = updateRewardSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || !isParent(membership)) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can update rewards' });
     }
@@ -219,7 +213,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, rewardId } = request.params as { householdId: string; rewardId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || !isParent(membership)) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can delete rewards' });
     }
@@ -237,7 +231,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { householdId, rewardId } = request.params as { householdId: string; rewardId: string };
     const body = redeemRewardSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
@@ -373,7 +367,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || !isParent(membership)) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can view redemptions' });
     }
@@ -395,7 +389,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, redemptionId } = request.params as { householdId: string; redemptionId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || !isParent(membership)) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can approve redemptions' });
     }
@@ -431,7 +425,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, redemptionId } = request.params as { householdId: string; redemptionId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || !isParent(membership)) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can fulfill redemptions' });
     }
@@ -468,7 +462,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const { householdId, redemptionId } = request.params as { householdId: string; redemptionId: string };
     const body = rejectSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || !isParent(membership)) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can reject redemptions' });
     }

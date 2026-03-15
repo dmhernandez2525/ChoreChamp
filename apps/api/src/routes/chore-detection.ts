@@ -12,6 +12,8 @@ import {
   members,
 } from '@chorechamp/database/schema';
 import { DETECTION_TEMPLATES } from '@chorechamp/types';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Zod schemas for validation
 const detectionConditionSchema = z.object({
@@ -127,7 +129,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   /**
    * GET /detection/templates - Get predefined detection templates
    */
-  fastify.get('/detection/templates', async () => {
+  fastify.get('/detection/templates', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     return {
       templates: DETECTION_TEMPLATES,
     };
@@ -143,8 +151,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { choreType?: string; zoneName?: string; enabled?: string };
-  }>('/detection/rules', async (request) => {
-    const { householdId } = request.params;
+  }>('/detection/rules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { choreType, zoneName, enabled } = request.query;
 
     const conditions = [eq(detectionRules.householdId, householdId)];
@@ -187,8 +200,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createDetectionRuleSchema>;
-  }>('/detection/rules', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/detection/rules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = createDetectionRuleSchema.parse(request.body);
 
     // Verify device exists and belongs to household
@@ -252,8 +270,14 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string; ruleId: string };
-  }>('/detection/rules/:ruleId', async (request, reply) => {
-    const { householdId, ruleId } = request.params;
+  }>('/detection/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { ruleId } = request.params;
 
     const rule = await db.query.detectionRules.findFirst({
       where: and(
@@ -294,8 +318,14 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; ruleId: string };
     Body: z.infer<typeof updateDetectionRuleSchema>;
-  }>('/detection/rules/:ruleId', async (request, reply) => {
-    const { householdId, ruleId } = request.params;
+  }>('/detection/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { ruleId } = request.params;
     const data = updateDetectionRuleSchema.parse(request.body);
 
     const existing = await db.query.detectionRules.findFirst({
@@ -326,8 +356,14 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{
     Params: { householdId: string; ruleId: string };
-  }>('/detection/rules/:ruleId', async (request, reply) => {
-    const { householdId, ruleId } = request.params;
+  }>('/detection/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { ruleId } = request.params;
 
     const existing = await db.query.detectionRules.findFirst({
       where: and(
@@ -361,8 +397,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
       limit?: string;
       offset?: string;
     };
-  }>('/detection/events', async (request) => {
-    const { householdId } = request.params;
+  }>('/detection/events', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { ruleId, eventType, pending, limit = '50', offset = '0' } = request.query;
 
     const conditions = [eq(detectionEvents.householdId, householdId)];
@@ -419,8 +460,14 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string; eventId: string };
     Body: z.infer<typeof confirmDetectionSchema>;
-  }>('/detection/events/:eventId/confirm', async (request, reply) => {
-    const { householdId, eventId } = request.params;
+  }>('/detection/events/:eventId/confirm', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { eventId } = request.params;
     const { wasAccurate, feedbackNote } = confirmDetectionSchema.parse(request.body);
     const memberId = request.headers['x-member-id'] as string;
 
@@ -523,8 +570,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof recordSensorReadingSchema>;
-  }>('/detection/readings', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/detection/readings', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const data = recordSensorReadingSchema.parse(request.body);
 
     // Verify device belongs to household
@@ -662,8 +714,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
       to?: string;
       limit?: string;
     };
-  }>('/detection/readings', async (request) => {
-    const { householdId } = request.params;
+  }>('/detection/readings', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const {
       deviceId,
       sensorType,
@@ -710,8 +767,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/detection/cleanliness', async (request) => {
-    const { householdId } = request.params;
+  }>('/detection/cleanliness', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const metrics = await db
       .select()
@@ -740,8 +802,14 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string; zoneName: string };
-  }>('/detection/cleanliness/:zoneName', async (request, reply) => {
-    const { householdId, zoneName } = request.params;
+  }>('/detection/cleanliness/:zoneName', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { zoneName } = request.params;
 
     const metric = await db.query.cleanlinessMetrics.findFirst({
       where: and(
@@ -794,8 +862,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/detection/patterns', async (request) => {
-    const { householdId } = request.params;
+  }>('/detection/patterns', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const patterns = await db
       .select()
@@ -816,8 +889,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof simulateDetectionSchema>;
-  }>('/detection/simulate', async (request, reply) => {
-    const { householdId } = request.params;
+  }>('/detection/simulate', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { ruleId, sensorData } = simulateDetectionSchema.parse(request.body);
 
     const rule = await db.query.detectionRules.findFirst({
@@ -873,8 +951,13 @@ export async function choreDetectionRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { days?: string };
-  }>('/detection/analytics', async (request) => {
-    const { householdId } = request.params;
+  }>('/detection/analytics', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const days = parseInt(request.query.days || '30');
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 

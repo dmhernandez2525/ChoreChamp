@@ -22,6 +22,8 @@ import {
   XP_MENTOR_BONUS,
   XP_MENTEE_BONUS,
 } from '@chorechamp/types';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Zod schemas
 const skillCategorySchema = z.enum(['cooking', 'cleaning', 'organization', 'laundry', 'maintenance', 'gardening', 'pet_care', 'first_aid', 'budgeting', 'time_management']);
@@ -131,8 +133,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === SKILL TREES ===
 
   // Get all skill trees
-  fastify.get('/trees', async (request) => {
+  fastify.get('/trees', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const trees = await db.select().from(skillTrees)
       .where(eq(skillTrees.householdId, householdId))
@@ -142,8 +149,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Get single skill tree with skills
-  fastify.get('/trees/:treeId', async (request) => {
-    const { householdId, treeId } = request.params as { householdId: string; treeId: string };
+  fastify.get('/trees/:treeId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { treeId } = request.params as { treeId: string };
 
     const [tree] = await db.select().from(skillTrees)
       .where(and(
@@ -163,8 +176,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create skill tree
-  fastify.post('/trees', async (request) => {
+  fastify.post('/trees', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createSkillTreeSchema>;
 
     const [newTree] = await db.insert(skillTrees).values({
@@ -176,8 +194,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Update skill tree
-  fastify.patch('/trees/:treeId', async (request) => {
-    const { householdId, treeId } = request.params as { householdId: string; treeId: string };
+  fastify.patch('/trees/:treeId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { treeId } = request.params as { treeId: string };
     const body = request.body as Partial<z.infer<typeof createSkillTreeSchema>> & { isActive?: boolean };
 
     const [updated] = await db.update(skillTrees)
@@ -194,8 +218,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === SKILLS ===
 
   // Get all skills
-  fastify.get('/skills', async (request) => {
+  fastify.get('/skills', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { treeId } = request.query as { treeId?: string };
 
     const conditions = [eq(skills.householdId, householdId)];
@@ -209,8 +238,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Get single skill
-  fastify.get('/:skillId', async (request) => {
-    const { householdId, skillId } = request.params as { householdId: string; skillId: string };
+  fastify.get('/:skillId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { skillId } = request.params as { skillId: string };
 
     const [skill] = await db.select().from(skills)
       .where(and(
@@ -238,8 +273,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create skill
-  fastify.post('/skills', async (request) => {
+  fastify.post('/skills', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createSkillSchema>;
 
     const [newSkill] = await db.insert(skills).values({
@@ -264,8 +304,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Update skill
-  fastify.patch('/:skillId', async (request) => {
-    const { householdId, skillId } = request.params as { householdId: string; skillId: string };
+  fastify.patch('/:skillId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { skillId } = request.params as { skillId: string };
     const body = request.body as Partial<z.infer<typeof createSkillSchema>>;
 
     const [updated] = await db.update(skills)
@@ -282,8 +328,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === MEMBER PROGRESS ===
 
   // Get member's skill progress
-  fastify.get('/members/:memberId/skills', async (request) => {
-    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+  fastify.get('/members/:memberId/skills', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params as { memberId: string };
 
     const progress = await db.select({
       progress: memberSkillProgress,
@@ -300,8 +352,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Start/unlock a skill for a member
-  fastify.post('/members/:memberId/skills/:skillId/start', async (request) => {
-    const { householdId, memberId, skillId } = request.params as { householdId: string; memberId: string; skillId: string };
+  fastify.post('/members/:memberId/skills/:skillId/start', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId, skillId } = request.params as { memberId: string; skillId: string };
 
     // Check if progress already exists
     const [existing] = await db.select().from(memberSkillProgress)
@@ -336,8 +394,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Log practice session
-  fastify.post('/practice', async (request) => {
+  fastify.post('/practice', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof logPracticeSchema>;
 
     // Get or create progress record
@@ -437,8 +500,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Get practice history
-  fastify.get('/members/:memberId/practice-history', async (request) => {
-    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+  fastify.get('/members/:memberId/practice-history', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params as { memberId: string };
     const { skillId, limit } = request.query as { skillId?: string; limit: number };
 
     const conditions = [
@@ -458,8 +527,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === CERTIFICATIONS ===
 
   // Get member's certifications
-  fastify.get('/members/:memberId/certifications', async (request) => {
-    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+  fastify.get('/members/:memberId/certifications', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params as { memberId: string };
 
     const certs = await db.select({
       certification: skillCertifications,
@@ -476,8 +551,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Start certification assessment
-  fastify.post('/certifications/start', async (request) => {
+  fastify.post('/certifications/start', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, skillId } = request.body as { memberId: string; skillId: string };
 
     // Check if certification already exists
@@ -520,8 +600,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Submit certification assessment
-  fastify.post('/certifications/:certId/submit', async (request) => {
-    const { householdId, certId } = request.params as { householdId: string; certId: string };
+  fastify.post('/certifications/:certId/submit', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { certId } = request.params as { certId: string };
     const { score, certifiedById } = request.body as { score: number; certifiedById?: string };
 
     const [cert] = await db.select().from(skillCertifications)
@@ -553,8 +639,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === CHALLENGES ===
 
   // Get skill challenges
-  fastify.get('/challenges', async (request) => {
+  fastify.get('/challenges', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { skillId, difficulty } = request.query as { skillId?: string; difficulty?: string };
 
     const conditions = [
@@ -572,8 +663,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create challenge
-  fastify.post('/challenges', async (request) => {
+  fastify.post('/challenges', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createChallengeSchema>;
 
     const [challenge] = await db.insert(skillChallenges).values({
@@ -585,8 +681,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Start challenge
-  fastify.post('/challenges/:challengeId/start', async (request) => {
-    const { householdId, challengeId } = request.params as { householdId: string; challengeId: string };
+  fastify.post('/challenges/:challengeId/start', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { challengeId } = request.params as { challengeId: string };
     const { memberId } = request.body as { memberId: string };
 
     const [challenge] = await db.select().from(skillChallenges)
@@ -638,7 +740,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Update challenge progress
-  fastify.patch('/challenges/:challengeId/progress/:memberId', async (request) => {
+  fastify.patch('/challenges/:challengeId/progress/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { challengeId, memberId } = request.params as { challengeId: string; memberId: string };
     const { progressIncrement } = request.body as { progressIncrement: number };
 
@@ -677,8 +785,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === MENTORSHIP ===
 
   // Get mentorships
-  fastify.get('/mentorships', async (request) => {
+  fastify.get('/mentorships', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, role, status } = request.query as { memberId?: string; role?: string; status?: string };
 
     const conditions = [eq(mentorshipRelations.householdId, householdId)];
@@ -702,8 +815,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Create mentorship
-  fastify.post('/mentorships', async (request) => {
+  fastify.post('/mentorships', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createMentorshipSchema>;
 
     // Check that mentor has the skill at advanced level or higher
@@ -728,8 +846,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Update mentorship status
-  fastify.patch('/mentorships/:mentorshipId', async (request) => {
-    const { householdId, mentorshipId } = request.params as { householdId: string; mentorshipId: string };
+  fastify.patch('/mentorships/:mentorshipId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { mentorshipId } = request.params as { mentorshipId: string };
     const { status, notes } = request.body as { status?: string; notes?: string };
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
@@ -754,8 +878,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === BADGES ===
 
   // Get member's skill badges
-  fastify.get('/members/:memberId/badges', async (request) => {
-    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+  fastify.get('/members/:memberId/badges', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params as { memberId: string };
 
     const badges = await db.select({
       memberBadge: memberSkillBadges,
@@ -772,8 +902,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Award badge to member
-  fastify.post('/members/:memberId/badges', async (request) => {
-    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+  fastify.post('/members/:memberId/badges', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params as { memberId: string };
     const { badgeId } = request.body as { badgeId: string };
 
     // Check if already awarded
@@ -799,7 +935,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === EXPERT TIPS ===
 
   // Get tips for a skill
-  fastify.get('/:skillId/tips', async (request) => {
+  fastify.get('/:skillId/tips', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { skillId } = request.params as { skillId: string };
 
     const tips = await db.select().from(expertTips)
@@ -810,8 +952,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Add tip
-  fastify.post('/:skillId/tips', async (request) => {
-    const { householdId, skillId } = request.params as { householdId: string; skillId: string };
+  fastify.post('/:skillId/tips', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { skillId } = request.params as { skillId: string };
     const body = request.body as {
       title: string;
       content: string;
@@ -830,7 +978,13 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   });
 
   // Mark tip as helpful
-  fastify.post('/tips/:tipId/helpful', async (request) => {
+  fastify.post('/tips/:tipId/helpful', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { tipId } = request.params as { tipId: string };
 
     const [tip] = await db.select().from(expertTips)
@@ -854,8 +1008,14 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
   // === STATS ===
 
   // Get skill building stats for member
-  fastify.get('/members/:memberId/stats', async (request) => {
-    const { householdId, memberId } = request.params as { householdId: string; memberId: string };
+  fastify.get('/members/:memberId/stats', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.params as { memberId: string };
 
     // Get all progress
     const progress = await db.select().from(memberSkillProgress)

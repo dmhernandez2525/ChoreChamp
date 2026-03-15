@@ -12,6 +12,8 @@ import {
   academicTrends,
   honorRollConfigs,
 } from '@chorechamp/database/schema';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Zod schemas
 const letterGradeSchema = z.enum(['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F']);
@@ -213,8 +215,13 @@ async function calculateReportCardBonus(
 
 export async function reportCardRoutes(fastify: FastifyInstance) {
   // Get all report cards for a member
-  fastify.get('/', async (request) => {
+  fastify.get('/', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
     const conditions = [eq(reportCards.householdId, householdId)];
@@ -236,8 +243,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Get single report card
-  fastify.get('/:reportCardId', async (request) => {
-    const { householdId, reportCardId } = request.params as { householdId: string; reportCardId: string };
+  fastify.get('/:reportCardId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { reportCardId } = request.params as { reportCardId: string };
 
     const [card] = await db.select().from(reportCards)
       .where(and(
@@ -259,8 +272,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create report card
-  fastify.post('/', async (request) => {
+  fastify.post('/', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createReportCardSchema>;
 
     // Calculate GPA from grades
@@ -443,8 +461,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update report card
-  fastify.patch('/:reportCardId', async (request) => {
-    const { householdId, reportCardId } = request.params as { householdId: string; reportCardId: string };
+  fastify.patch('/:reportCardId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { reportCardId } = request.params as { reportCardId: string };
     const body = request.body as z.infer<typeof updateReportCardSchema>;
 
     const updateData: Record<string, unknown> = { ...body, updatedAt: new Date() };
@@ -465,8 +489,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete report card
-  fastify.delete('/:reportCardId', async (request) => {
-    const { householdId, reportCardId } = request.params as { householdId: string; reportCardId: string };
+  fastify.delete('/:reportCardId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { reportCardId } = request.params as { reportCardId: string };
 
     await db.delete(reportCards)
       .where(and(
@@ -480,8 +510,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === BONUS CONFIGS ===
 
   // Get bonus configs
-  fastify.get('/bonus-configs', async (request) => {
+  fastify.get('/bonus-configs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const configs = await db.select().from(gradeBonusConfigs)
       .where(eq(gradeBonusConfigs.householdId, householdId))
@@ -491,8 +526,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create bonus config
-  fastify.post('/bonus-configs', async (request) => {
+  fastify.post('/bonus-configs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createBonusConfigSchema>;
 
     const [config] = await db.insert(gradeBonusConfigs).values({
@@ -505,8 +545,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update bonus config
-  fastify.patch('/bonus-configs/:configId', async (request) => {
-    const { householdId, configId } = request.params as { householdId: string; configId: string };
+  fastify.patch('/bonus-configs/:configId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { configId } = request.params as { configId: string };
     const body = request.body as Partial<z.infer<typeof createBonusConfigSchema>> & { isActive?: boolean };
 
     const [updated] = await db.update(gradeBonusConfigs)
@@ -521,8 +567,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete bonus config
-  fastify.delete('/bonus-configs/:configId', async (request) => {
-    const { householdId, configId } = request.params as { householdId: string; configId: string };
+  fastify.delete('/bonus-configs/:configId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { configId } = request.params as { configId: string };
 
     await db.delete(gradeBonusConfigs)
       .where(and(
@@ -536,8 +588,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === ACADEMIC GOALS ===
 
   // Get academic goals
-  fastify.get('/goals', async (request) => {
+  fastify.get('/goals', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
     const conditions = [eq(academicGoals.householdId, householdId)];
@@ -552,8 +609,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create academic goal
-  fastify.post('/goals', async (request) => {
+  fastify.post('/goals', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createGoalSchema>;
 
     const [goal] = await db.insert(academicGoals).values({
@@ -566,8 +628,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update academic goal
-  fastify.patch('/goals/:goalId', async (request) => {
-    const { householdId, goalId } = request.params as { householdId: string; goalId: string };
+  fastify.patch('/goals/:goalId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { goalId } = request.params as { goalId: string };
     const body = request.body as Partial<z.infer<typeof createGoalSchema>> & { currentProgress?: number; isAchieved?: boolean };
 
     const updateData: Record<string, unknown> = { ...body, updatedAt: new Date() };
@@ -587,8 +655,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete academic goal
-  fastify.delete('/goals/:goalId', async (request) => {
-    const { householdId, goalId } = request.params as { householdId: string; goalId: string };
+  fastify.delete('/goals/:goalId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { goalId } = request.params as { goalId: string };
 
     await db.delete(academicGoals)
       .where(and(
@@ -602,8 +676,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === ACHIEVEMENTS ===
 
   // Get academic achievements
-  fastify.get('/achievements', async (request) => {
+  fastify.get('/achievements', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, schoolYear, achievementType } = request.query as { memberId?: string; schoolYear?: string; achievementType?: string };
 
     const conditions = [eq(academicAchievements.householdId, householdId)];
@@ -619,8 +698,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Mark achievement celebration as shown
-  fastify.patch('/achievements/:achievementId/celebrate', async (request) => {
-    const { householdId, achievementId } = request.params as { householdId: string; achievementId: string };
+  fastify.patch('/achievements/:achievementId/celebrate', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { achievementId } = request.params as { achievementId: string };
 
     const [updated] = await db.update(academicAchievements)
       .set({ celebrationShown: true })
@@ -636,8 +721,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === ATTENDANCE ===
 
   // Get attendance records
-  fastify.get('/attendance', async (request) => {
+  fastify.get('/attendance', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
     const conditions = [eq(attendanceRecords.householdId, householdId)];
@@ -654,8 +744,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === TRENDS ===
 
   // Get academic trends
-  fastify.get('/trends', async (request) => {
+  fastify.get('/trends', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, schoolYear, metricType } = request.query as { memberId?: string; schoolYear?: string; metricType?: string };
 
     const conditions = [eq(academicTrends.householdId, householdId)];
@@ -673,8 +768,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === HONOR ROLL CONFIGS ===
 
   // Get honor roll configs
-  fastify.get('/honor-roll-configs', async (request) => {
+  fastify.get('/honor-roll-configs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     const configs = await db.select().from(honorRollConfigs)
       .where(eq(honorRollConfigs.householdId, householdId))
@@ -684,8 +784,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Create honor roll config
-  fastify.post('/honor-roll-configs', async (request) => {
+  fastify.post('/honor-roll-configs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = request.body as z.infer<typeof createHonorRollConfigSchema>;
 
     const [config] = await db.insert(honorRollConfigs).values({
@@ -699,8 +804,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Update honor roll config
-  fastify.patch('/honor-roll-configs/:configId', async (request) => {
-    const { householdId, configId } = request.params as { householdId: string; configId: string };
+  fastify.patch('/honor-roll-configs/:configId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { configId } = request.params as { configId: string };
     const body = request.body as Partial<z.infer<typeof createHonorRollConfigSchema>> & { isActive?: boolean };
 
     const [updated] = await db.update(honorRollConfigs)
@@ -715,8 +826,14 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   });
 
   // Delete honor roll config
-  fastify.delete('/honor-roll-configs/:configId', async (request) => {
-    const { householdId, configId } = request.params as { householdId: string; configId: string };
+  fastify.delete('/honor-roll-configs/:configId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { configId } = request.params as { configId: string };
 
     await db.delete(honorRollConfigs)
       .where(and(
@@ -730,8 +847,13 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
   // === STATISTICS ===
 
   // Get report card statistics
-  fastify.get('/stats', async (request) => {
+  fastify.get('/stats', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, schoolYear } = request.query as { memberId?: string; schoolYear?: string };
 
     const conditions = [eq(reportCards.householdId, householdId)];

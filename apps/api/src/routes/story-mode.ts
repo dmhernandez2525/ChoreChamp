@@ -41,6 +41,8 @@ import type {
   StoryDifficulty,
   QuestStatus,
 } from '@chorechamp/types';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Helper to get or create member story progress
 async function getOrCreateStoryProgress(memberId: string, householdId: string) {
@@ -234,8 +236,14 @@ function formatDialogue(dialogue: typeof storyDialogues.$inferSelect): StoryDial
 
 export async function storyModeRoutes(app: FastifyInstance) {
   // Get all chapters with progress
-  app.get('/chapters', async (request, reply) => {
-    const { memberId, householdId } = request.query as { memberId: string; householdId: string };
+  app.get('/chapters', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.query as { memberId: string };
 
     // Ensure story progress exists
     await getOrCreateStoryProgress(memberId, householdId);
@@ -270,9 +278,15 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Get specific chapter details
-  app.get('/chapters/:chapterId', async (request, reply) => {
+  app.get('/chapters/:chapterId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { chapterId } = request.params as { chapterId: string };
-    const { memberId, householdId } = request.query as { memberId: string; householdId: string };
+    const { memberId } = request.query as { memberId: string };
 
     // Ensure story progress exists
     await getOrCreateStoryProgress(memberId, householdId);
@@ -370,8 +384,14 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Get story progress overview
-  app.get('/progress', async (request, reply) => {
-    const { memberId, householdId } = request.query as { memberId: string; householdId: string };
+  app.get('/progress', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId } = request.query as { memberId: string };
 
     // Get or create progress
     const progress = await getOrCreateStoryProgress(memberId, householdId);
@@ -462,7 +482,13 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Start a quest
-  app.post('/quests/:questId/start', async (request, reply) => {
+  app.post('/quests/:questId/start', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { questId } = request.params as { questId: string };
     const { memberId } = request.body as { memberId: string; householdId: string };
 
@@ -590,7 +616,13 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Update quest objective progress
-  app.post('/quests/:questId/objectives/:objectiveId/progress', async (request, reply) => {
+  app.post('/quests/:questId/objectives/:objectiveId/progress', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { questId, objectiveId } = request.params as { questId: string; objectiveId: string };
     const { memberId, progressAmount } = request.body as { memberId: string; progressAmount: number };
 
@@ -666,7 +698,13 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Complete a quest
-  app.post('/quests/:questId/complete', async (request, reply) => {
+  app.post('/quests/:questId/complete', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { questId } = request.params as { questId: string };
     const { memberId } = request.body as { memberId: string; householdId: string };
 
@@ -926,7 +964,13 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Make a dialogue choice
-  app.post('/dialogues/:dialogueId/choice', async (request, reply) => {
+  app.post('/dialogues/:dialogueId/choice', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { dialogueId } = request.params as { dialogueId: string };
     const { memberId, choiceId } = request.body as { memberId: string; choiceId: string };
 
@@ -1044,7 +1088,13 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Mark dialogue as viewed
-  app.post('/dialogues/:dialogueId/view', async (request, reply) => {
+  app.post('/dialogues/:dialogueId/view', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { dialogueId } = request.params as { dialogueId: string };
     const { memberId } = request.body as { memberId: string };
 
@@ -1084,7 +1134,13 @@ export async function storyModeRoutes(app: FastifyInstance) {
   });
 
   // Get all characters
-  app.get('/characters', async (request, reply) => {
+  app.get('/characters', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.query as { memberId: string };
 
     // Get all characters

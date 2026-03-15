@@ -86,7 +86,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         members,
         and(
           eq(members.householdId, households.id),
-          eq(members.userId, user.id)
+          eq(members.userId, user.id),
+          eq(members.isActive, true)
         )
       )
       .where(eq(userHouseholds.userId, user.id));
@@ -159,7 +160,7 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
       .select()
       .from(members)
       .where(
-        and(eq(members.householdId, body.householdId), eq(members.userId, user.id))
+        and(eq(members.householdId, body.householdId), eq(members.userId, user.id), eq(members.isActive, true))
       );
 
     if (!membership) {
@@ -219,7 +220,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -295,7 +297,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -345,7 +348,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, body.targetHouseholdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -410,7 +414,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -468,7 +473,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -518,7 +524,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -581,7 +588,8 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
         and(
           eq(members.householdId, householdId),
           eq(members.userId, user.id),
-          eq(members.role, 'parent')
+          eq(members.role, 'parent'),
+          eq(members.isActive, true)
         )
       );
 
@@ -640,7 +648,7 @@ export async function multiHouseholdRoutes(fastify: FastifyInstance) {
       .select()
       .from(members)
       .where(
-        and(eq(members.householdId, householdId), eq(members.userId, user.id))
+        and(eq(members.householdId, householdId), eq(members.userId, user.id), eq(members.isActive, true))
       );
 
     if (!membership) {

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { db } from '../lib/db';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { getMemberLimitForTier } from '../lib/subscription';
+import { verifyMembership } from '../lib/membership';
 import {
   households,
   members,
@@ -382,13 +383,6 @@ async function ensureCatalogSeeded(): Promise<void> {
   await db.insert(storeCatalogItems).values(buildDefaultCatalog(new Date()));
 }
 
-async function getMembership(userId: string, householdId: string): Promise<Membership | null> {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 async function getTargetMember(membership: Membership, householdId: string, targetMemberId?: string): Promise<Membership | null> {
   if (!targetMemberId) return membership;
@@ -651,7 +645,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const query = catalogQuerySchema.parse(request.query);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const conditions = [];
@@ -678,7 +672,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const now = new Date();
@@ -702,7 +696,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const wallet = await getOrCreateWallet(membership.id, householdId);
@@ -713,7 +707,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
     if (membership.role !== 'parent' && membership.id !== memberId) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can view other member wallets.' });
@@ -730,7 +724,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const entitlements = await db
@@ -747,7 +741,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = createPurchaseSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const targetMember = await getTargetMember(membership, householdId, body.memberId);
@@ -882,7 +876,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId, purchaseId } = request.params as { householdId: string; purchaseId: string };
     const body = approvePurchaseSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can approve purchases.' });
     }
@@ -958,7 +952,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, purchaseId } = request.params as { householdId: string; purchaseId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can decline purchases.' });
     }
@@ -990,7 +984,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const purchases = await db
@@ -1015,7 +1009,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, purchaseId } = request.params as { householdId: string; purchaseId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const [purchaseRecord] = await db
@@ -1048,7 +1042,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId, purchaseId } = request.params as { householdId: string; purchaseId: string };
     const body = createRefundRequestSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const [purchase] = await db
@@ -1091,7 +1085,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage refunds.' });
     }
@@ -1116,7 +1110,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId, refundId } = request.params as { householdId: string; refundId: string };
     const body = resolveRefundSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can resolve refunds.' });
     }
@@ -1219,7 +1213,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) return reply.status(403).send({ error: 'Forbidden', message: 'Not a household member.' });
 
     const controls = await getOrCreateControls(membership.id, householdId);
@@ -1230,7 +1224,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can view member controls.' });
     }
@@ -1247,7 +1241,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId, memberId } = request.params as { householdId: string; memberId: string };
     const body = updateControlsSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can update member controls.' });
     }
@@ -1285,7 +1279,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = createGiftCardSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can create gift cards.' });
     }
@@ -1365,7 +1359,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can view gift cards.' });
     }
@@ -1384,7 +1378,7 @@ export async function inAppStoreRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = redeemGiftCardSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership || membership.role !== 'parent') {
       return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can redeem gift cards.' });
     }

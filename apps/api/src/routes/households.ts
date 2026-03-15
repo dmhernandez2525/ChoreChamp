@@ -107,7 +107,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
       .innerJoin(households, eq(userHouseholds.householdId, households.id))
       .innerJoin(members, and(
         eq(members.householdId, households.id),
-        eq(members.userId, user.id)
+        eq(members.userId, user.id),
+        eq(members.isActive, true)
       ))
       .where(eq(userHouseholds.userId, user.id));
 
@@ -127,7 +128,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
       .from(members)
       .where(and(
         eq(members.householdId, householdId),
-        eq(members.userId, user.id)
+        eq(members.userId, user.id),
+        eq(members.isActive, true)
       ));
 
     if (!membership) {
@@ -177,7 +179,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(members.householdId, householdId),
         eq(members.userId, user.id),
-        eq(members.role, 'parent')
+        eq(members.role, 'parent'),
+        eq(members.isActive, true)
       ));
 
     if (!membership) {
@@ -292,7 +295,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(members.householdId, householdId),
         eq(members.userId, user.id),
-        eq(members.role, 'parent')
+        eq(members.role, 'parent'),
+        eq(members.isActive, true)
       ));
 
     if (!membership) {
@@ -350,7 +354,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
       .where(and(
         eq(members.householdId, householdId),
         eq(members.userId, user.id),
-        eq(members.role, 'parent')
+        eq(members.role, 'parent'),
+        eq(members.isActive, true)
       ));
 
     if (!membership) {
@@ -423,7 +428,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
       .from(members)
       .where(and(
         eq(members.householdId, invite.householdId),
-        eq(members.userId, user.id)
+        eq(members.userId, user.id),
+        eq(members.isActive, true)
       ));
 
     if (existingMember) {
@@ -547,7 +553,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
       .from(members)
       .where(and(
         eq(members.householdId, householdId),
-        eq(members.userId, user.id)
+        eq(members.userId, user.id),
+        eq(members.isActive, true)
       ));
 
     if (!membership) {

@@ -2,9 +2,10 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, eq, desc } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { supportThreads, supportMessages, members, households } from '@chorechamp/database';
+import { supportThreads, supportMessages, households } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
+import { verifyMembership } from '../lib/membership';
 import type { SupportPriority, SupportThreadStatus } from '@chorechamp/types';
 
 const createThreadSchema = z.object({
@@ -20,13 +21,6 @@ const closeThreadSchema = z.object({
   status: z.enum(['open', 'pending', 'closed']).optional(),
 });
 
-async function getMembership(userId: string, householdId: string) {
-  const [membership] = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.householdId, householdId), eq(members.userId, userId)));
-  return membership || null;
-}
 
 async function getSupportTier(householdId: string) {
   const [household] = await db.select().from(households).where(eq(households.id, householdId));
@@ -41,7 +35,7 @@ export async function supportRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
@@ -60,7 +54,7 @@ export async function supportRoutes(fastify: FastifyInstance) {
     const { user } = request as AuthenticatedRequest;
     const { householdId, threadId } = request.params as { householdId: string; threadId: string };
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
@@ -89,7 +83,7 @@ export async function supportRoutes(fastify: FastifyInstance) {
     const { householdId } = request.params as { householdId: string };
     const body = createThreadSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
@@ -141,7 +135,7 @@ export async function supportRoutes(fastify: FastifyInstance) {
     const { householdId, threadId } = request.params as { householdId: string; threadId: string };
     const body = createMessageSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }
@@ -189,7 +183,7 @@ export async function supportRoutes(fastify: FastifyInstance) {
     const { householdId, threadId } = request.params as { householdId: string; threadId: string };
     const body = closeThreadSchema.parse(request.body);
 
-    const membership = await getMembership(user.id, householdId);
+    const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member' });
     }

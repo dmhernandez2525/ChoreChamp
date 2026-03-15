@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { eq, and, or, sql } from 'drizzle-orm';
 import { choreDependencies, chores } from '@chorechamp/database/schema';
 import { db } from '../lib/db';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 const addDependencySchema = z.object({
   dependsOnChoreId: z.string().uuid(),
@@ -15,7 +16,12 @@ export async function dependencyRoutes(app: FastifyInstance) {
   app.get('/:householdId/chores/:choreId/dependencies', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { choreId } = request.params as { householdId: string; choreId: string };
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     // Join to the "other" chore in the relationship so the UI can display
     // the related chore's title. When choreId is the source, join on
@@ -49,7 +55,12 @@ export async function dependencyRoutes(app: FastifyInstance) {
   app.post('/:householdId/chores/:choreId/dependencies', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { choreId } = request.params as { householdId: string; choreId: string };
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const body = addDependencySchema.parse(request.body);
 
     // Prevent self-dependency
@@ -100,7 +111,12 @@ export async function dependencyRoutes(app: FastifyInstance) {
   app.delete('/:householdId/chores/:choreId/dependencies/:depId', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { choreId, depId } = request.params as { householdId: string; choreId: string; depId: string };
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId, depId } = request.params as { householdId: string; choreId: string; depId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
 
     await db
       .delete(choreDependencies)

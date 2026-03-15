@@ -478,6 +478,13 @@ export async function allowanceRoutes(fastify: FastifyInstance) {
 
     // Deduct points and update payout status atomically
     const [updated] = await db.transaction(async (tx) => {
+      // Check sufficient balance before deducting
+      const [currentMember] = await tx.select({ pointsCurrent: members.pointsCurrent })
+        .from(members).where(eq(members.id, payout.memberId));
+      if (!currentMember || (currentMember.pointsCurrent || 0) < payout.pointsConverted) {
+        throw Object.assign(new Error('Insufficient points for payout'), { statusCode: 400 });
+      }
+
       // Deduct points from member
       await tx.update(members)
         .set({

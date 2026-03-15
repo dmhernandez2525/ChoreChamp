@@ -16,6 +16,8 @@ import {
 } from '@chorechamp/database/schema';
 import { eq, and, desc, gte, lte } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 // Validation schemas
 const dayOfWeekSchema = z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
@@ -161,8 +163,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== SCHOOL SCHEDULES =====
 
   // Get all school schedules for household
-  fastify.get('/school-schedules', async (request) => {
+  fastify.get('/school-schedules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.query as { memberId?: string };
 
     const conditions = [eq(schoolSchedules.householdId, householdId)];
@@ -179,8 +186,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Create school schedule
-  fastify.post('/school-schedules', async (request, reply) => {
+  fastify.post('/school-schedules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = createSchoolScheduleSchema.parse(request.body);
 
     const id = randomUUID();
@@ -212,8 +224,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Update school schedule
-  fastify.patch('/school-schedules/:scheduleId', async (request) => {
-    const { householdId, scheduleId } = request.params as { householdId: string; scheduleId: string };
+  fastify.patch('/school-schedules/:scheduleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { scheduleId } = request.params as { scheduleId: string };
     const updates = request.body as Record<string, unknown>;
 
     await db.update(schoolSchedules)
@@ -234,8 +252,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Delete school schedule
-  fastify.delete('/school-schedules/:scheduleId', async (request) => {
-    const { householdId, scheduleId } = request.params as { householdId: string; scheduleId: string };
+  fastify.delete('/school-schedules/:scheduleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { scheduleId } = request.params as { scheduleId: string };
 
     await db.delete(schoolSchedules)
       .where(and(
@@ -249,8 +273,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== CLASS PERIODS =====
 
   // Get class periods for a schedule
-  fastify.get('/class-periods', async (request) => {
+  fastify.get('/class-periods', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { scheduleId, memberId, dayOfWeek } = request.query as {
       scheduleId?: string;
       memberId?: string;
@@ -271,8 +300,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Create class period
-  fastify.post('/class-periods', async (request, reply) => {
+  fastify.post('/class-periods', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = createClassPeriodSchema.parse(request.body);
 
     const id = randomUUID();
@@ -304,8 +338,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Bulk create class periods
-  fastify.post('/class-periods/bulk', async (request, reply) => {
+  fastify.post('/class-periods/bulk', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { periods } = request.body as { periods: z.infer<typeof createClassPeriodSchema>[] };
 
     const now = new Date();
@@ -337,8 +376,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Delete class period
-  fastify.delete('/class-periods/:periodId', async (request) => {
-    const { householdId, periodId } = request.params as { householdId: string; periodId: string };
+  fastify.delete('/class-periods/:periodId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { periodId } = request.params as { periodId: string };
 
     await db.delete(classPeriods)
       .where(and(
@@ -352,8 +397,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== EXTRACURRICULAR ACTIVITIES =====
 
   // Get all activities for household
-  fastify.get('/activities', async (request) => {
+  fastify.get('/activities', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, category, season, isActive } = request.query as {
       memberId?: string;
       category?: string;
@@ -376,8 +426,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Get activity by ID
-  fastify.get('/activities/:activityId', async (request, reply) => {
-    const { householdId, activityId } = request.params as { householdId: string; activityId: string };
+  fastify.get('/activities/:activityId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { activityId } = request.params as { activityId: string };
 
     const activity = await db.query.extracurricularActivities.findFirst({
       where: and(
@@ -394,8 +450,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Create activity
-  fastify.post('/activities', async (request, reply) => {
+  fastify.post('/activities', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = createActivitySchema.parse(request.body);
 
     const now = new Date();
@@ -444,8 +505,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Update activity
-  fastify.patch('/activities/:activityId', async (request) => {
-    const { householdId, activityId } = request.params as { householdId: string; activityId: string };
+  fastify.patch('/activities/:activityId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { activityId } = request.params as { activityId: string };
     const updates = request.body as Record<string, unknown>;
 
     await db.update(extracurricularActivities)
@@ -466,8 +533,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Delete activity
-  fastify.delete('/activities/:activityId', async (request) => {
-    const { householdId, activityId } = request.params as { householdId: string; activityId: string };
+  fastify.delete('/activities/:activityId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { activityId } = request.params as { activityId: string };
 
     await db.delete(extracurricularActivities)
       .where(and(
@@ -481,8 +554,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== ACTIVITY SCHEDULES =====
 
   // Get activity schedules
-  fastify.get('/activity-schedules', async (request) => {
+  fastify.get('/activity-schedules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { activityId, memberId, dayOfWeek } = request.query as {
       activityId?: string;
       memberId?: string;
@@ -503,8 +581,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Create activity schedule
-  fastify.post('/activity-schedules', async (request, reply) => {
+  fastify.post('/activity-schedules', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = createActivityScheduleSchema.parse(request.body);
 
     await db.insert(activitySchedules).values({
@@ -533,8 +616,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Delete activity schedule
-  fastify.delete('/activity-schedules/:scheduleId', async (request) => {
-    const { householdId, scheduleId } = request.params as { householdId: string; scheduleId: string };
+  fastify.delete('/activity-schedules/:scheduleId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { scheduleId } = request.params as { scheduleId: string };
 
     await db.delete(activitySchedules)
       .where(and(
@@ -548,8 +637,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== ACTIVITY EVENTS =====
 
   // Get activity events
-  fastify.get('/events', async (request) => {
+  fastify.get('/events', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { activityId, memberId, startDate, endDate, eventType } = request.query as {
       activityId?: string;
       memberId?: string;
@@ -574,8 +668,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Create event
-  fastify.post('/events', async (request, reply) => {
+  fastify.post('/events', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = createEventSchema.parse(request.body);
 
     const now = new Date();
@@ -612,8 +711,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Update event
-  fastify.patch('/events/:eventId', async (request) => {
-    const { householdId, eventId } = request.params as { householdId: string; eventId: string };
+  fastify.patch('/events/:eventId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { eventId } = request.params as { eventId: string };
     const updates = request.body as Record<string, unknown>;
 
     if (updates.eventDate && typeof updates.eventDate === 'string') {
@@ -638,8 +743,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Delete event
-  fastify.delete('/events/:eventId', async (request) => {
-    const { householdId, eventId } = request.params as { householdId: string; eventId: string };
+  fastify.delete('/events/:eventId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { eventId } = request.params as { eventId: string };
 
     await db.delete(activityEvents)
       .where(and(
@@ -653,8 +764,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== PRACTICE LOGS =====
 
   // Get practice logs
-  fastify.get('/practice-logs', async (request) => {
+  fastify.get('/practice-logs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { activityId, memberId, startDate, endDate } = request.query as {
       activityId?: string;
       memberId?: string;
@@ -677,8 +793,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Log practice
-  fastify.post('/practice-logs', async (request, reply) => {
+  fastify.post('/practice-logs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = logPracticeSchema.parse(request.body);
 
     await db.insert(practiceLogs).values({
@@ -705,8 +826,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Get practice statistics
-  fastify.get('/practice-logs/stats', async (request) => {
+  fastify.get('/practice-logs/stats', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, activityId } = request.query as { memberId?: string; activityId?: string };
 
     const conditions = [eq(practiceLogs.householdId, householdId)];
@@ -738,8 +864,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== VOLUNTEER LOGS =====
 
   // Get volunteer logs
-  fastify.get('/volunteer-logs', async (request) => {
+  fastify.get('/volunteer-logs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, verified, startDate, endDate } = request.query as {
       memberId?: string;
       verified?: string;
@@ -762,8 +893,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Log volunteer hours
-  fastify.post('/volunteer-logs', async (request, reply) => {
+  fastify.post('/volunteer-logs', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = logVolunteerSchema.parse(request.body);
 
     const now = new Date();
@@ -792,8 +928,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Verify volunteer hours
-  fastify.post('/volunteer-logs/:logId/verify', async (request) => {
-    const { householdId, logId } = request.params as { householdId: string; logId: string };
+  fastify.post('/volunteer-logs/:logId/verify', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { logId } = request.params as { logId: string };
     const { verifiedBy } = request.body as { verifiedBy: string };
 
     await db.update(volunteerLogs)
@@ -816,8 +958,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Get volunteer statistics
-  fastify.get('/volunteer-logs/stats', async (request) => {
+  fastify.get('/volunteer-logs/stats', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.query as { memberId?: string };
 
     const conditions = [eq(volunteerLogs.householdId, householdId)];
@@ -851,8 +998,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== COLLEGE PREP ACTIVITIES =====
 
   // Get college prep activities
-  fastify.get('/college-prep', async (request) => {
+  fastify.get('/college-prep', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, status, activityType } = request.query as {
       memberId?: string;
       status?: string;
@@ -873,8 +1025,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Create college prep activity
-  fastify.post('/college-prep', async (request, reply) => {
+  fastify.post('/college-prep', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = createCollegePrepSchema.parse(request.body);
 
     const now = new Date();
@@ -904,8 +1061,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Update college prep activity
-  fastify.patch('/college-prep/:activityId', async (request) => {
-    const { householdId, activityId } = request.params as { householdId: string; activityId: string };
+  fastify.patch('/college-prep/:activityId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { activityId } = request.params as { activityId: string };
     const updates = request.body as Record<string, unknown>;
 
     if (updates.status === 'completed' && !updates.completedAt) {
@@ -930,8 +1093,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Delete college prep activity
-  fastify.delete('/college-prep/:activityId', async (request) => {
-    const { householdId, activityId } = request.params as { householdId: string; activityId: string };
+  fastify.delete('/college-prep/:activityId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { activityId } = request.params as { activityId: string };
 
     await db.delete(collegePrepActivities)
       .where(and(
@@ -945,8 +1114,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== SCHEDULE CONFLICTS =====
 
   // Get schedule conflicts
-  fastify.get('/conflicts', async (request) => {
+  fastify.get('/conflicts', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, resolved, startDate, endDate } = request.query as {
       memberId?: string;
       resolved?: string;
@@ -969,8 +1143,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Resolve conflict
-  fastify.post('/conflicts/:conflictId/resolve', async (request) => {
-    const { householdId, conflictId } = request.params as { householdId: string; conflictId: string };
+  fastify.post('/conflicts/:conflictId/resolve', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { conflictId } = request.params as { conflictId: string };
     const { resolution } = request.body as { resolution: string };
 
     await db.update(scheduleConflicts)
@@ -993,8 +1173,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== BALANCE RECOMMENDATIONS =====
 
   // Get balance recommendations
-  fastify.get('/recommendations', async (request) => {
+  fastify.get('/recommendations', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, acknowledged } = request.query as {
       memberId?: string;
       acknowledged?: string;
@@ -1013,8 +1198,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Generate balance recommendations for a member
-  fastify.post('/recommendations/generate', async (request) => {
+  fastify.post('/recommendations/generate', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId } = request.body as { memberId: string };
 
     // Calculate balance metrics
@@ -1064,8 +1254,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Acknowledge recommendation
-  fastify.post('/recommendations/:recommendationId/acknowledge', async (request) => {
-    const { householdId, recommendationId } = request.params as { householdId: string; recommendationId: string };
+  fastify.post('/recommendations/:recommendationId/acknowledge', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { recommendationId } = request.params as { recommendationId: string };
 
     await db.update(balanceRecommendations)
       .set({
@@ -1087,8 +1283,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== TEAM ROSTERS =====
 
   // Get team roster
-  fastify.get('/team-rosters', async (request) => {
+  fastify.get('/team-rosters', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { activityId } = request.query as { activityId?: string };
 
     const conditions = [eq(teamRosters.householdId, householdId)];
@@ -1103,8 +1304,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Add team member
-  fastify.post('/team-rosters', async (request, reply) => {
+  fastify.post('/team-rosters', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const input = createTeamRosterSchema.parse(request.body);
 
     await db.insert(teamRosters).values({
@@ -1129,8 +1335,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Update team member
-  fastify.patch('/team-rosters/:rosterId', async (request) => {
-    const { householdId, rosterId } = request.params as { householdId: string; rosterId: string };
+  fastify.patch('/team-rosters/:rosterId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { rosterId } = request.params as { rosterId: string };
     const updates = request.body as Record<string, unknown>;
 
     await db.update(teamRosters)
@@ -1148,8 +1360,14 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   });
 
   // Delete team member
-  fastify.delete('/team-rosters/:rosterId', async (request) => {
-    const { householdId, rosterId } = request.params as { householdId: string; rosterId: string };
+  fastify.delete('/team-rosters/:rosterId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { rosterId } = request.params as { rosterId: string };
 
     await db.delete(teamRosters)
       .where(and(
@@ -1163,8 +1381,13 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
   // ===== WEEKLY CALENDAR =====
 
   // Get combined weekly schedule
-  fastify.get('/weekly-calendar', async (request) => {
+  fastify.get('/weekly-calendar', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
     const { memberId, weekStart } = request.query as { memberId?: string; weekStart?: string };
 
     const startDate = weekStart ? new Date(weekStart) : new Date();
