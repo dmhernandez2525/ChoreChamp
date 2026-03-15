@@ -190,7 +190,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const data = createQRCodeSchema.parse(request.body);
-    const memberId = request.headers['x-member-id'] as string;
+    const memberId = membership.id;
 
     const codeData = generateCodeData();
     const codeUrl = `chorechamp://qr/${codeData}`;
@@ -394,11 +394,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const data = scanQRCodeSchema.parse(request.body);
-    const memberId = request.headers['x-member-id'] as string;
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
+    const memberId = membership.id;
 
     // Find the QR code
     const code = await db.query.qrCodes.findFirst({
@@ -748,11 +744,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const data = checkoutEquipmentSchema.parse(request.body);
-    const memberId = request.headers['x-member-id'] as string;
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
+    const memberId = membership.id;
 
     // Verify QR code exists and is equipment type
     const code = await db.query.qrCodes.findFirst({
@@ -905,7 +897,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.query.memberId || (request.headers['x-member-id'] as string);
+    const memberId = request.query.memberId || membership.id;
     const { status } = request.query;
 
     const conditions = [eq(checkpointProgress.householdId, householdId)];

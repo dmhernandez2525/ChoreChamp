@@ -14,6 +14,7 @@ import {
   skillBadges,
   memberSkillBadges,
   expertTips,
+  members,
 } from '@chorechamp/database/schema';
 import {
   MASTERY_LEVELS,
@@ -403,100 +404,114 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
     }
     const body = request.body as z.infer<typeof logPracticeSchema>;
 
-    // Get or create progress record
-    let [progress] = await db.select().from(memberSkillProgress)
-      .where(and(
-        eq(memberSkillProgress.memberId, body.memberId),
-        eq(memberSkillProgress.skillId, body.skillId)
-      ));
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, body.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
-    if (!progress) {
-      [progress] = await db.insert(memberSkillProgress).values({
+    // All writes in a single transaction
+    const result = await db.transaction(async (tx) => {
+      // Get or create progress record
+      let [progress] = await tx.select().from(memberSkillProgress)
+        .where(and(
+          eq(memberSkillProgress.memberId, body.memberId),
+          eq(memberSkillProgress.skillId, body.skillId),
+          eq(memberSkillProgress.householdId, householdId)
+        ));
+
+      if (!progress) {
+        [progress] = await tx.insert(memberSkillProgress).values({
+          memberId: body.memberId,
+          skillId: body.skillId,
+          householdId,
+          status: 'in_progress',
+          masteryLevel: 'novice',
+          startedAt: new Date(),
+        }).returning();
+      }
+
+      // Calculate XP earned
+      const xpEarned = calculateXpEarned(
+        body.durationMinutes,
+        body.qualityRating || body.mentorAssessment,
+        !!body.mentorId
+      );
+
+      // Create practice log
+      const [log] = await tx.insert(skillPracticeLogs).values({
+        memberSkillProgressId: progress.id,
         memberId: body.memberId,
         skillId: body.skillId,
         householdId,
-        status: 'in_progress',
-        masteryLevel: 'novice',
-        startedAt: new Date(),
+        choreCompletionId: body.choreCompletionId,
+        durationMinutes: body.durationMinutes,
+        xpEarned,
+        qualityRating: body.qualityRating,
+        selfAssessment: body.selfAssessment,
+        mentorId: body.mentorId,
+        mentorAssessment: body.mentorAssessment,
+        mentorFeedback: body.mentorFeedback,
+        photoProofUrl: body.photoProofUrl,
+        notes: body.notes,
       }).returning();
-    }
 
-    // Calculate XP earned
-    const xpEarned = calculateXpEarned(
-      body.durationMinutes,
-      body.qualityRating || body.mentorAssessment,
-      !!body.mentorId
-    );
+      // Update progress
+      const newXp = progress.currentXp + xpEarned;
+      const newMasteryLevel = getMasteryLevelFromXp(newXp);
 
-    // Create practice log
-    const [log] = await db.insert(skillPracticeLogs).values({
-      memberSkillProgressId: progress.id,
-      memberId: body.memberId,
-      skillId: body.skillId,
-      householdId,
-      choreCompletionId: body.choreCompletionId,
-      durationMinutes: body.durationMinutes,
-      xpEarned,
-      qualityRating: body.qualityRating,
-      selfAssessment: body.selfAssessment,
-      mentorId: body.mentorId,
-      mentorAssessment: body.mentorAssessment,
-      mentorFeedback: body.mentorFeedback,
-      photoProofUrl: body.photoProofUrl,
-      notes: body.notes,
-    }).returning();
+      // Get skill to check XP requirement for completion
+      const [skill] = await tx.select().from(skills)
+        .where(eq(skills.id, body.skillId));
 
-    // Update progress
-    const newXp = progress.currentXp + xpEarned;
-    const newMasteryLevel = getMasteryLevelFromXp(newXp);
+      const isCompleted = newXp >= skill.xpRequired;
+      const isMastered = newMasteryLevel === 'master';
 
-    // Get skill to check XP requirement for completion
-    const [skill] = await db.select().from(skills)
-      .where(eq(skills.id, body.skillId));
+      const [updatedProgress] = await tx.update(memberSkillProgress)
+        .set({
+          currentXp: newXp,
+          masteryLevel: newMasteryLevel,
+          practiceCount: progress.practiceCount + 1,
+          totalPracticeMinutes: progress.totalPracticeMinutes + body.durationMinutes,
+          lastPracticedAt: new Date(),
+          status: isMastered ? 'mastered' : isCompleted ? 'completed' : 'in_progress',
+          completedAt: isCompleted && !progress.completedAt ? new Date() : progress.completedAt,
+          masteredAt: isMastered && !progress.masteredAt ? new Date() : progress.masteredAt,
+          mentorId: body.mentorId || progress.mentorId,
+          updatedAt: new Date(),
+        })
+        .where(eq(memberSkillProgress.id, progress.id))
+        .returning();
 
-    const isCompleted = newXp >= skill.xpRequired;
-    const isMastered = newMasteryLevel === 'master';
+      // If mentor was involved, update mentorship and award mentor XP
+      if (body.mentorId) {
+        const [mentorship] = await tx.select().from(mentorshipRelations)
+          .where(and(
+            eq(mentorshipRelations.mentorId, body.mentorId),
+            eq(mentorshipRelations.menteeId, body.memberId),
+            eq(mentorshipRelations.skillId, body.skillId),
+            eq(mentorshipRelations.householdId, householdId)
+          ));
 
-    const [updatedProgress] = await db.update(memberSkillProgress)
-      .set({
-        currentXp: newXp,
-        masteryLevel: newMasteryLevel,
-        practiceCount: progress.practiceCount + 1,
-        totalPracticeMinutes: progress.totalPracticeMinutes + body.durationMinutes,
-        lastPracticedAt: new Date(),
-        status: isMastered ? 'mastered' : isCompleted ? 'completed' : 'in_progress',
-        completedAt: isCompleted && !progress.completedAt ? new Date() : progress.completedAt,
-        masteredAt: isMastered && !progress.masteredAt ? new Date() : progress.masteredAt,
-        mentorId: body.mentorId || progress.mentorId,
-        updatedAt: new Date(),
-      })
-      .where(eq(memberSkillProgress.id, progress.id))
-      .returning();
-
-    // If mentor was involved, update mentorship and award mentor XP
-    if (body.mentorId) {
-      const [mentorship] = await db.select().from(mentorshipRelations)
-        .where(and(
-          eq(mentorshipRelations.mentorId, body.mentorId),
-          eq(mentorshipRelations.menteeId, body.memberId),
-          eq(mentorshipRelations.skillId, body.skillId)
-        ));
-
-      if (mentorship) {
-        const mentorXp = Math.round(xpEarned * (XP_MENTOR_BONUS - 1));
-        await db.update(mentorshipRelations)
-          .set({
-            sessionsCompleted: mentorship.sessionsCompleted + 1,
-            totalSessionMinutes: mentorship.totalSessionMinutes + body.durationMinutes,
-            mentorXpEarned: mentorship.mentorXpEarned + mentorXp,
-            menteeXpEarned: mentorship.menteeXpEarned + xpEarned,
-            updatedAt: new Date(),
-          })
-          .where(eq(mentorshipRelations.id, mentorship.id));
+        if (mentorship) {
+          const mentorXp = Math.round(xpEarned * (XP_MENTOR_BONUS - 1));
+          await tx.update(mentorshipRelations)
+            .set({
+              sessionsCompleted: mentorship.sessionsCompleted + 1,
+              totalSessionMinutes: mentorship.totalSessionMinutes + body.durationMinutes,
+              mentorXpEarned: mentorship.mentorXpEarned + mentorXp,
+              menteeXpEarned: mentorship.menteeXpEarned + xpEarned,
+              updatedAt: new Date(),
+            })
+            .where(eq(mentorshipRelations.id, mentorship.id));
+        }
       }
-    }
 
-    return { log, progress: updatedProgress };
+      return { log, progress: updatedProgress };
+    });
+
+    return result;
   });
 
   // Get practice history

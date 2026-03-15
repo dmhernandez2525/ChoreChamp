@@ -193,6 +193,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const input = createSchoolScheduleSchema.parse(request.body);
 
     const id = randomUUID();
@@ -231,6 +234,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const { scheduleId } = request.params as { scheduleId: string };
     const updates = request.body as Record<string, unknown>;
 
@@ -258,6 +264,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { scheduleId } = request.params as { scheduleId: string };
 
@@ -307,6 +316,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const input = createClassPeriodSchema.parse(request.body);
 
     const id = randomUUID();
@@ -345,6 +357,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const { periods } = request.body as { periods: z.infer<typeof createClassPeriodSchema>[] };
 
     const now = new Date();
@@ -382,6 +397,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { periodId } = request.params as { periodId: string };
 
@@ -457,6 +475,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const input = createActivitySchema.parse(request.body);
 
     const now = new Date();
@@ -512,6 +533,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const { activityId } = request.params as { activityId: string };
     const updates = request.body as Record<string, unknown>;
 
@@ -539,6 +563,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { activityId } = request.params as { activityId: string };
 
@@ -588,6 +615,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const input = createActivityScheduleSchema.parse(request.body);
 
     await db.insert(activitySchedules).values({
@@ -622,6 +652,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { scheduleId } = request.params as { scheduleId: string };
 
@@ -675,6 +708,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const input = createEventSchema.parse(request.body);
 
     const now = new Date();
@@ -718,6 +754,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const { eventId } = request.params as { eventId: string };
     const updates = request.body as Record<string, unknown>;
 
@@ -749,6 +788,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { eventId } = request.params as { eventId: string };
 
@@ -1032,6 +1074,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const input = createCollegePrepSchema.parse(request.body);
 
     const now = new Date();
@@ -1068,6 +1113,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const { activityId } = request.params as { activityId: string };
     const updates = request.body as Record<string, unknown>;
 
@@ -1099,6 +1147,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { activityId } = request.params as { activityId: string };
 
@@ -1149,6 +1200,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { conflictId } = request.params as { conflictId: string };
     const { resolution } = request.body as { resolution: string };
@@ -1311,6 +1365,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const input = createTeamRosterSchema.parse(request.body);
 
     await db.insert(teamRosters).values({
@@ -1342,6 +1399,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
+    }
     const { rosterId } = request.params as { rosterId: string };
     const updates = request.body as Record<string, unknown>;
 
@@ -1366,6 +1426,9 @@ export async function schoolExtracurricularRoutes(fastify: FastifyInstance) {
     const membership = await verifyMembership(user.id, householdId);
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can manage school records' });
     }
     const { rosterId } = request.params as { rosterId: string };
 

@@ -11,6 +11,7 @@ import {
   attendanceRecords,
   academicTrends,
   honorRollConfigs,
+  members,
 } from '@chorechamp/database/schema';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { verifyMembership } from '../lib/membership';
@@ -279,7 +280,19 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can create report cards' });
+    }
+
     const body = request.body as z.infer<typeof createReportCardSchema>;
+
+    // Verify target member belongs to household
+    const [targetMember] = await db.select({ id: members.id }).from(members)
+      .where(and(eq(members.id, body.memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Member not found in this household' });
+    }
 
     // Calculate GPA from grades
     let totalGpaPoints = 0;
@@ -313,151 +326,153 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
       isPerfectAttendance
     );
 
-    // Create report card
-    const [newCard] = await db.insert(reportCards).values({
-      householdId,
-      memberId: body.memberId,
-      schoolYear: body.schoolYear,
-      periodType: body.periodType,
-      periodNumber: body.periodNumber,
-      periodName: body.periodName,
-      issueDate: body.issueDate,
-      imageUrl: body.imageUrl,
-      gpa: calculatedGpa,
-      totalBonusEarned: totalBonus,
-    }).returning();
-
-    // Insert grades
-    const gradeInserts = processedGrades.map(grade => ({
-      reportCardId: newCard.id,
-      subjectId: grade.subjectId,
-      subjectName: grade.subjectName,
-      letterGrade: grade.letterGrade,
-      percentageGrade: grade.percentageGrade,
-      gpaValue: grade.gpaValue,
-      credits: grade.credits,
-      teacherComments: grade.teacherComments,
-      bonusEarned: grade.letterGrade ? Math.round(10 * getBonusMultiplierFromGrade(grade.letterGrade)) : 0,
-    }));
-
-    await db.insert(reportCardGrades).values(gradeInserts);
-
-    // Insert attendance record if provided
-    if (body.attendance) {
-      const attendancePercentage = Math.round((body.attendance.daysPresent / body.attendance.totalDays) * 100 * 100) / 100;
-      await db.insert(attendanceRecords).values({
+    // Create report card and related records atomically
+    const result = await db.transaction(async (tx) => {
+      const [newCard] = await tx.insert(reportCards).values({
         householdId,
         memberId: body.memberId,
         schoolYear: body.schoolYear,
         periodType: body.periodType,
         periodNumber: body.periodNumber,
-        totalDays: body.attendance.totalDays,
-        daysPresent: body.attendance.daysPresent,
-        daysAbsent: body.attendance.daysAbsent,
-        daysExcused: body.attendance.daysExcused,
-        daysTardy: body.attendance.daysTardy,
-        attendancePercentage,
-        isPerfect: isPerfectAttendance,
-        bonusEarned: isPerfectAttendance ? 50 : 0,
-      });
-    }
+        periodName: body.periodName,
+        issueDate: body.issueDate,
+        imageUrl: body.imageUrl,
+        gpa: calculatedGpa,
+        totalBonusEarned: totalBonus,
+      }).returning();
 
-    // Create academic trends
-    if (calculatedGpa !== null) {
-      // Find previous GPA for trend
-      const previousCards = await db.select().from(reportCards)
+      // Insert grades
+      const gradeInserts = processedGrades.map(grade => ({
+        reportCardId: newCard.id,
+        subjectId: grade.subjectId,
+        subjectName: grade.subjectName,
+        letterGrade: grade.letterGrade,
+        percentageGrade: grade.percentageGrade,
+        gpaValue: grade.gpaValue,
+        credits: grade.credits,
+        teacherComments: grade.teacherComments,
+        bonusEarned: grade.letterGrade ? Math.round(10 * getBonusMultiplierFromGrade(grade.letterGrade)) : 0,
+      }));
+
+      await tx.insert(reportCardGrades).values(gradeInserts);
+
+      // Insert attendance record if provided
+      if (body.attendance) {
+        const attendancePercentage = Math.round((body.attendance.daysPresent / body.attendance.totalDays) * 100 * 100) / 100;
+        await tx.insert(attendanceRecords).values({
+          householdId,
+          memberId: body.memberId,
+          schoolYear: body.schoolYear,
+          periodType: body.periodType,
+          periodNumber: body.periodNumber,
+          totalDays: body.attendance.totalDays,
+          daysPresent: body.attendance.daysPresent,
+          daysAbsent: body.attendance.daysAbsent,
+          daysExcused: body.attendance.daysExcused,
+          daysTardy: body.attendance.daysTardy,
+          attendancePercentage,
+          isPerfect: isPerfectAttendance,
+          bonusEarned: isPerfectAttendance ? 50 : 0,
+        });
+      }
+
+      // Create academic trends
+      if (calculatedGpa !== null) {
+        const previousCards = await tx.select().from(reportCards)
+          .where(and(
+            eq(reportCards.memberId, body.memberId),
+            eq(reportCards.householdId, householdId),
+            eq(reportCards.schoolYear, body.schoolYear)
+          ))
+          .orderBy(desc(reportCards.periodNumber))
+          .limit(1);
+
+        const previousGpa = previousCards[0]?.gpa;
+        const changePercent = previousGpa ? Math.round(((calculatedGpa - previousGpa) / previousGpa) * 100 * 100) / 100 : null;
+        const trendDirection = changePercent === null ? 'stable' : changePercent > 0 ? 'up' : changePercent < 0 ? 'down' : 'stable';
+
+        await tx.insert(academicTrends).values({
+          householdId,
+          memberId: body.memberId,
+          metricType: 'gpa',
+          schoolYear: body.schoolYear,
+          periodType: body.periodType,
+          periodNumber: body.periodNumber,
+          value: calculatedGpa,
+          previousValue: previousGpa,
+          changePercent,
+          trendDirection,
+        });
+      }
+
+      // Check for achievements
+      const achievementsToCreate: Array<{
+        memberId: string;
+        householdId: string;
+        reportCardId: string;
+        achievementType: string;
+        title: string;
+        description: string;
+        schoolYear: string;
+        periodType: string;
+        periodNumber: number;
+        bonusEarned: number;
+      }> = [];
+
+      const honorRolls = await tx.select().from(honorRollConfigs)
         .where(and(
-          eq(reportCards.memberId, body.memberId),
-          eq(reportCards.schoolYear, body.schoolYear)
+          eq(honorRollConfigs.householdId, householdId),
+          eq(honorRollConfigs.isActive, true)
         ))
-        .orderBy(desc(reportCards.periodNumber))
-        .limit(1);
+        .orderBy(desc(honorRollConfigs.minGpa));
 
-      const previousGpa = previousCards[0]?.gpa;
-      const changePercent = previousGpa ? Math.round(((calculatedGpa - previousGpa) / previousGpa) * 100 * 100) / 100 : null;
-      const trendDirection = changePercent === null ? 'stable' : changePercent > 0 ? 'up' : changePercent < 0 ? 'down' : 'stable';
+      for (const hr of honorRolls) {
+        if (calculatedGpa && calculatedGpa >= hr.minGpa) {
+          if (hr.requiresNoFailingGrades && hasFailingGrades) continue;
+          if (hr.requiresPerfectAttendance && !isPerfectAttendance) continue;
 
-      await db.insert(academicTrends).values({
-        householdId,
-        memberId: body.memberId,
-        metricType: 'gpa',
-        schoolYear: body.schoolYear,
-        periodType: body.periodType,
-        periodNumber: body.periodNumber,
-        value: calculatedGpa,
-        previousValue: previousGpa,
-        changePercent,
-        trendDirection,
-      });
-    }
+          achievementsToCreate.push({
+            memberId: body.memberId,
+            householdId,
+            reportCardId: newCard.id,
+            achievementType: 'honor_roll',
+            title: hr.badgeTitle,
+            description: `Achieved ${hr.name} with GPA of ${calculatedGpa}`,
+            schoolYear: body.schoolYear,
+            periodType: body.periodType,
+            periodNumber: body.periodNumber,
+            bonusEarned: hr.bonusPoints,
+          });
+          break;
+        }
+      }
 
-    // Check for achievements
-    const achievementsToCreate: Array<{
-      memberId: string;
-      householdId: string;
-      reportCardId: string;
-      achievementType: string;
-      title: string;
-      description: string;
-      schoolYear: string;
-      periodType: string;
-      periodNumber: number;
-      bonusEarned: number;
-    }> = [];
-
-    // Check honor roll
-    const honorRolls = await db.select().from(honorRollConfigs)
-      .where(and(
-        eq(honorRollConfigs.householdId, householdId),
-        eq(honorRollConfigs.isActive, true)
-      ))
-      .orderBy(desc(honorRollConfigs.minGpa));
-
-    for (const hr of honorRolls) {
-      if (calculatedGpa && calculatedGpa >= hr.minGpa) {
-        if (hr.requiresNoFailingGrades && hasFailingGrades) continue;
-        if (hr.requiresPerfectAttendance && !isPerfectAttendance) continue;
-
+      if (isPerfectAttendance) {
         achievementsToCreate.push({
           memberId: body.memberId,
           householdId,
           reportCardId: newCard.id,
-          achievementType: 'honor_roll',
-          title: hr.badgeTitle,
-          description: `Achieved ${hr.name} with GPA of ${calculatedGpa}`,
+          achievementType: 'perfect_attendance',
+          title: 'Perfect Attendance',
+          description: `Perfect attendance for ${body.periodName} ${body.schoolYear}`,
           schoolYear: body.schoolYear,
           periodType: body.periodType,
           periodNumber: body.periodNumber,
-          bonusEarned: hr.bonusPoints,
+          bonusEarned: 50,
         });
-        break; // Only award highest honor roll
       }
-    }
 
-    // Perfect attendance achievement
-    if (isPerfectAttendance) {
-      achievementsToCreate.push({
-        memberId: body.memberId,
-        householdId,
-        reportCardId: newCard.id,
-        achievementType: 'perfect_attendance',
-        title: 'Perfect Attendance',
-        description: `Perfect attendance for ${body.periodName} ${body.schoolYear}`,
-        schoolYear: body.schoolYear,
-        periodType: body.periodType,
-        periodNumber: body.periodNumber,
-        bonusEarned: 50,
-      });
-    }
+      if (achievementsToCreate.length > 0) {
+        await tx.insert(academicAchievements).values(achievementsToCreate);
+      }
 
-    if (achievementsToCreate.length > 0) {
-      await db.insert(academicAchievements).values(achievementsToCreate);
-    }
+      const grades = await tx.select().from(reportCardGrades)
+        .where(eq(reportCardGrades.reportCardId, newCard.id));
 
-    const grades = await db.select().from(reportCardGrades)
-      .where(eq(reportCardGrades.reportCardId, newCard.id));
+      return { ...newCard, grades, achievementsEarned: achievementsToCreate.length };
+    });
 
-    return { ...newCard, grades, achievementsEarned: achievementsToCreate.length };
+    return result;
   });
 
   // Update report card
@@ -468,6 +483,11 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can update report cards' });
+    }
+
     const { reportCardId } = request.params as { reportCardId: string };
     const body = request.body as z.infer<typeof updateReportCardSchema>;
 
@@ -496,6 +516,11 @@ export async function reportCardRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
+
+    if (membership.role !== 'parent' && membership.role !== 'admin') {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can delete report cards' });
+    }
+
     const { reportCardId } = request.params as { reportCardId: string };
 
     await db.delete(reportCards)
