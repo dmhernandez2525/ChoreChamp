@@ -1,19 +1,33 @@
 import { Server, Socket } from 'socket.io';
 import { createLogger } from './logger';
 import { verifyMembership } from './membership';
+import { auth } from './auth';
 
 const logger = createLogger('socket');
 
 export function initializeSocket(io: Server) {
-  io.on('connection', (socket: Socket) => {
-    const userId = socket.handshake.auth?.userId as string | undefined;
-    logger.info({ socketId: socket.id, userId }, 'Client connected');
+  io.on('connection', async (socket: Socket) => {
+    // Verify session server-side using better-auth instead of trusting client-supplied userId
+    let userId: string | undefined;
 
-    if (!userId) {
-      logger.warn({ socketId: socket.id }, 'Socket connected without userId, disconnecting');
+    try {
+      const headers = socket.handshake.headers as Record<string, string>;
+      const session = await auth.api.getSession({ headers });
+
+      if (!session) {
+        logger.warn({ socketId: socket.id }, 'Socket connected without valid session, disconnecting');
+        socket.disconnect(true);
+        return;
+      }
+
+      userId = session.user.id;
+    } catch {
+      logger.warn({ socketId: socket.id }, 'Socket session verification failed, disconnecting');
       socket.disconnect(true);
       return;
     }
+
+    logger.info({ socketId: socket.id, userId }, 'Client connected');
 
     socket.data.userId = userId;
     socket.join(`user:${userId}`);

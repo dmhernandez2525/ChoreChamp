@@ -401,11 +401,11 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     }
     const { hubId } = request.params as { hubId: string };
 
-    // Get hub
+    // Get hub scoped to household
     const [hub] = await db
       .select()
       .from(smartHomeHubs)
-      .where(eq(smartHomeHubs.id, hubId));
+      .where(and(eq(smartHomeHubs.id, hubId), eq(smartHomeHubs.householdId, householdId)));
 
     if (!hub) {
       return reply.status(404).send({ error: 'Hub not found' });
@@ -520,7 +520,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     }
     const { hubId } = request.params as { hubId: string };
 
-    // Soft delete hub and devices
+    // Soft delete hub and devices (scoped to household)
     await db
       .update(smartHomeHubs)
       .set({
@@ -528,12 +528,12 @@ export async function smartHomeRoutes(app: FastifyInstance) {
         status: 'disconnected',
         updatedAt: new Date(),
       })
-      .where(eq(smartHomeHubs.id, hubId));
+      .where(and(eq(smartHomeHubs.id, hubId), eq(smartHomeHubs.householdId, householdId)));
 
     await db
       .update(smartDevices)
       .set({ isActive: false })
-      .where(eq(smartDevices.hubId, hubId));
+      .where(and(eq(smartDevices.hubId, hubId), eq(smartDevices.householdId, householdId)));
 
     return reply.send({ success: true });
   });
@@ -591,11 +591,11 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     const { deviceId } = request.params as { deviceId: string };
     const { command } = request.body as { command: DeviceCommand };
 
-    // Get device and hub
+    // Get device and hub (scoped to household)
     const [device] = await db
       .select()
       .from(smartDevices)
-      .where(eq(smartDevices.id, deviceId));
+      .where(and(eq(smartDevices.id, deviceId), eq(smartDevices.householdId, householdId)));
 
     if (!device) {
       return reply.status(404).send({ error: 'Device not found' });
@@ -604,7 +604,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     const [hub] = await db
       .select()
       .from(smartHomeHubs)
-      .where(eq(smartHomeHubs.id, device.hubId));
+      .where(and(eq(smartHomeHubs.id, device.hubId), eq(smartHomeHubs.householdId, householdId)));
 
     if (!hub) {
       return reply.status(404).send({ error: 'Hub not found' });
@@ -684,8 +684,12 @@ export async function smartHomeRoutes(app: FastifyInstance) {
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(smartDevices.id, deviceId))
+      .where(and(eq(smartDevices.id, deviceId), eq(smartDevices.householdId, householdId)))
       .returning();
+
+    if (!updated) {
+      return reply.status(404).send({ error: 'Device not found' });
+    }
 
     return reply.send({ device: updated });
   });
@@ -765,8 +769,12 @@ export async function smartHomeRoutes(app: FastifyInstance) {
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(smartHomeAutomations.id, automationId))
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)))
       .returning();
+
+    if (!updated) {
+      return reply.status(404).send({ error: 'Automation not found' });
+    }
 
     return reply.send({ automation: updated });
   });
@@ -783,7 +791,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
 
     await db
       .delete(smartHomeAutomations)
-      .where(eq(smartHomeAutomations.id, automationId));
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)));
 
     return reply.send({ success: true });
   });
@@ -802,7 +810,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     const [automation] = await db
       .select()
       .from(smartHomeAutomations)
-      .where(eq(smartHomeAutomations.id, automationId));
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)));
 
     if (!automation) {
       return reply.status(404).send({ error: 'Automation not found' });
@@ -847,7 +855,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     const [automation] = await db
       .select()
       .from(smartHomeAutomations)
-      .where(eq(smartHomeAutomations.id, automationId));
+      .where(and(eq(smartHomeAutomations.id, automationId), eq(smartHomeAutomations.householdId, householdId)));
 
     if (!automation) {
       return reply.status(404).send({ error: 'Automation not found' });
@@ -941,7 +949,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
       const logs = await db
         .select()
         .from(automationLogs)
-        .where(eq(automationLogs.automationId, automationId))
+        .where(and(eq(automationLogs.automationId, automationId), eq(automationLogs.householdId, householdId)))
         .orderBy(desc(automationLogs.triggeredAt))
         .limit(limitNum);
 
@@ -1045,7 +1053,7 @@ export async function smartHomeRoutes(app: FastifyInstance) {
     await db
       .update(choreZoneDevices)
       .set({ isActive: false })
-      .where(eq(choreZoneDevices.id, zoneId));
+      .where(and(eq(choreZoneDevices.id, zoneId), eq(choreZoneDevices.householdId, householdId)));
 
     return reply.send({ success: true });
   });
