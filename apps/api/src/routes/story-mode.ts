@@ -490,7 +490,8 @@ export async function storyModeRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const { questId } = request.params as { questId: string };
-    const { memberId } = request.body as { memberId: string; householdId: string };
+    // Derive memberId from authenticated user's membership (not from untrusted body)
+    const memberId = membership.id;
 
     // Get quest
     const [quest] = await db
@@ -624,7 +625,9 @@ export async function storyModeRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const { questId, objectiveId } = request.params as { questId: string; objectiveId: string };
-    const { memberId, progressAmount } = request.body as { memberId: string; progressAmount: number };
+    const { progressAmount } = request.body as { progressAmount: number };
+    // Derive memberId from authenticated user's membership
+    const memberId = membership.id;
 
     // Get quest progress
     const [questProgress] = await db
@@ -706,7 +709,8 @@ export async function storyModeRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const { questId } = request.params as { questId: string };
-    const { memberId } = request.body as { memberId: string; householdId: string };
+    // Derive memberId from authenticated user's membership
+    const memberId = membership.id;
 
     // Get quest
     const [quest] = await db
@@ -972,7 +976,9 @@ export async function storyModeRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const { dialogueId } = request.params as { dialogueId: string };
-    const { memberId, choiceId } = request.body as { memberId: string; choiceId: string };
+    const { choiceId } = request.body as { choiceId: string };
+    // Derive memberId from authenticated user's membership
+    const memberId = membership.id;
 
     // Get dialogue
     const [dialogue] = await db
@@ -1096,7 +1102,8 @@ export async function storyModeRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const { dialogueId } = request.params as { dialogueId: string };
-    const { memberId } = request.body as { memberId: string };
+    // Derive memberId from authenticated user's membership
+    const memberId = membership.id;
 
     // Get dialogue
     const [dialogue] = await db

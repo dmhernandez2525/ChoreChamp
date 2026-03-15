@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
-import { tags, choreTags } from '@chorechamp/database/schema';
+import { tags, choreTags, chores } from '@chorechamp/database/schema';
 import { db } from '../lib/db';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { verifyMembership } from '../lib/membership';
@@ -114,6 +114,16 @@ export async function tagRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const body = addChoreTagSchema.parse(request.body);
+
+    // Verify chore belongs to this household
+    const [chore] = await db
+      .select({ id: chores.id })
+      .from(chores)
+      .where(and(eq(chores.id, choreId), eq(chores.householdId, householdId)));
+
+    if (!chore) {
+      return reply.status(404).send({ error: 'Chore not found in this household' });
+    }
 
     const [choreTag] = await db
       .insert(choreTags)

@@ -388,12 +388,9 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.headers['x-member-id'] as string;
+    // Derive memberId from authenticated user's membership (not from untrusted header)
+    const memberId = membership.id;
     const data = reportLocationSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
 
     // Check location settings
     const settings = await db.query.locationSettings.findFirst({
@@ -602,12 +599,9 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.headers['x-member-id'] as string;
+    // Derive memberId from authenticated user's membership
+    const memberId = membership.id;
     const data = reportGeofenceEventSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
 
     // Verify geofence exists
     const fence = await db.query.geofences.findFirst({
@@ -715,7 +709,8 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const requestingMemberId = request.headers['x-member-id'] as string;
+    // Derive requestingMemberId from authenticated user's membership
+    const requestingMemberId = membership.id;
 
     const locations = await db
       .select({
@@ -923,7 +918,7 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.headers['x-member-id'] as string;
+    const memberId = membership.id;
 
     const config = await db.query.awayModeConfigs.findFirst({
       where: and(
@@ -948,12 +943,8 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.headers['x-member-id'] as string;
+    const memberId = membership.id;
     const data = updateAwayModeSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
 
     const existing = await db.query.awayModeConfigs.findFirst({
       where: eq(awayModeConfigs.memberId, memberId),
@@ -1003,7 +994,7 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.headers['x-member-id'] as string;
+    const memberId = membership.id;
 
     let settings = await db.query.locationSettings.findFirst({
       where: eq(locationSettings.memberId, memberId),
@@ -1036,12 +1027,8 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.headers['x-member-id'] as string;
+    const memberId = membership.id;
     const data = updateLocationSettingsSchema.parse(request.body);
-
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
 
     const existing = await db.query.locationSettings.findFirst({
       where: eq(locationSettings.memberId, memberId),

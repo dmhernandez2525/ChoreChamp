@@ -1,8 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { eq, and, isNull, desc } from 'drizzle-orm';
-import { timeLogs, members } from '@chorechamp/database/schema';
+import { timeLogs, members, chores } from '@chorechamp/database/schema';
 import { db } from '../lib/db';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyMembership } from '../lib/membership';
 
 export async function timeTrackingRoutes(app: FastifyInstance) {
   // POST /:householdId/chores/:choreId/time/start - Start timer
@@ -108,7 +109,23 @@ export async function timeTrackingRoutes(app: FastifyInstance) {
   app.get('/:householdId/chores/:choreId/time', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
-    const { choreId } = request.params as { householdId: string; choreId: string };
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, choreId } = request.params as { householdId: string; choreId: string };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+
+    // Verify chore belongs to this household
+    const [chore] = await db
+      .select({ id: chores.id })
+      .from(chores)
+      .where(and(eq(chores.id, choreId), eq(chores.householdId, householdId)));
+
+    if (!chore) {
+      return reply.status(404).send({ error: 'Chore not found in this household' });
+    }
 
     const logs = await db
       .select()

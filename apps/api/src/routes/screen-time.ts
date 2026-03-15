@@ -681,12 +681,10 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
     if (!membership) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
-    const memberId = request.headers['x-member-id'] as string;
     const data = requestExtensionSchema.parse(request.body);
 
-    if (!memberId) {
-      return reply.status(400).send({ error: 'Member ID required' });
-    }
+    // Derive memberId from authenticated user's membership (not from untrusted header)
+    const memberId = membership.id;
 
     const [extensionRequest] = await db
       .insert(screenTimeExtensionRequests)
@@ -715,7 +713,8 @@ export async function screenTimeRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
     }
     const { requestId } = request.params;
-    const responderId = request.headers['x-member-id'] as string;
+    // Derive responderId from authenticated user's membership (not from untrusted header)
+    const responderId = membership.id;
     const data = respondExtensionSchema.parse(request.body);
 
     const existing = await db.query.screenTimeExtensionRequests.findFirst({

@@ -68,6 +68,19 @@ export async function dependencyRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'A chore cannot depend on itself' });
     }
 
+    // Verify both chores belong to this household
+    const bothChores = await db
+      .select({ id: chores.id })
+      .from(chores)
+      .where(and(
+        eq(chores.householdId, householdId),
+        or(eq(chores.id, choreId), eq(chores.id, body.dependsOnChoreId))
+      ));
+
+    if (bothChores.length < 2) {
+      return reply.status(404).send({ error: 'One or both chores not found in this household' });
+    }
+
     // BFS cycle detection: walk the dependency graph starting from
     // dependsOnChoreId. If we can reach choreId, adding the edge
     // choreId -> dependsOnChoreId would create a cycle.
