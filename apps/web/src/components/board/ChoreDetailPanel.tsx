@@ -6,8 +6,17 @@ import {
   ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { Button, cn } from '@chorechamp/ui';
-import { useChoreComments, useAddComment, useDeleteComment, useChoreActivity } from '@chorechamp/api-client';
+import {
+  useChoreComments, useAddComment, useDeleteComment, useChoreActivity,
+  useHouseholdTags, useChoreTags, useAddChoreTag, useRemoveChoreTag, useCreateTag,
+  useTimeLogs, useStartTimeTracking, useStopTimeTracking,
+  useChoreDependencies, useAddChoreDependency, useRemoveChoreDependency,
+  useChores,
+} from '@chorechamp/api-client';
 import type { Chore, ChoreCompletion, Member } from '@chorechamp/types';
+import { TagPicker } from './TagPicker';
+import { TimeTracker } from './TimeTracker';
+import { DependencyPicker } from './DependencyPicker';
 
 interface ChoreDetailPanelProps {
   chore: Chore | null;
@@ -103,7 +112,55 @@ export function ChoreDetailPanel({
   const addComment = useAddComment(householdId, choreId);
   const deleteComment = useDeleteComment(householdId, choreId);
 
+  // Tags
+  const { data: householdTags = [] } = useHouseholdTags(householdId);
+  const { data: choreTags = [] } = useChoreTags(householdId, choreId);
+  const addChoreTag = useAddChoreTag(householdId, choreId);
+  const removeChoreTag = useRemoveChoreTag(householdId, choreId);
+  const createTag = useCreateTag(householdId);
+
+  // Time tracking
+  const { data: timeLogs = [] } = useTimeLogs(householdId, choreId);
+  const startTracking = useStartTimeTracking(householdId, choreId);
+  const stopTracking = useStopTimeTracking(householdId, choreId);
+
+  // Dependencies
+  const { data: rawDependencies = [] } = useChoreDependencies(householdId, choreId);
+  const addDependency = useAddChoreDependency(householdId, choreId);
+  const removeDependency = useRemoveChoreDependency(householdId, choreId);
+  const { data: allChores = [] } = useChores(householdId);
+
   if (!chore) return null;
+
+  // Compute time tracking state from logs
+  const activeTimeLog = timeLogs.find((log: any) => log.endedAt === null);
+  const totalTrackedSeconds = timeLogs.reduce((sum: number, log: any) => {
+    if (log.endedAt) {
+      return sum + Math.round((new Date(log.endedAt).getTime() - new Date(log.startedAt).getTime()) / 1000);
+    }
+    return sum;
+  }, 0);
+
+  // Map tags to TagPicker format
+  const availableTagItems = householdTags.map((t: any) => ({ id: t.id, name: t.name, color: t.color || '#6b7280' }));
+  const selectedTagItems = choreTags.map((ct: any) => {
+    const tag = householdTags.find((t: any) => t.id === ct.tagId);
+    return { id: ct.tagId || ct.id, name: tag?.name || ct.name || 'Tag', color: tag?.color || ct.color || '#6b7280' };
+  });
+
+  // Map dependencies to DependencyPicker format
+  const dependencyItems = rawDependencies.map((dep: any) => {
+    const relatedId = dep.choreId === choreId ? dep.dependsOnChoreId : dep.choreId;
+    const relatedChore = allChores.find((c: Chore) => c.id === relatedId);
+    return {
+      id: dep.id,
+      choreId: dep.choreId,
+      dependsOnChoreId: dep.dependsOnChoreId,
+      type: dep.type || 'blocks',
+      relatedChoreTitle: relatedChore?.title || 'Unknown chore',
+      relatedChoreIcon: relatedChore?.icon || '📋',
+    };
+  });
 
   const isCompleted = completion?.status === 'approved' || (completion?.status === 'pending' && !chore.requiresApproval);
   const needsApproval = chore.requiresApproval && completion?.status === 'pending';
@@ -317,6 +374,45 @@ export function ChoreDetailPanel({
                     </div>
                   </div>
                 )}
+
+                {/* Tags */}
+                <div>
+                  <h4 className="text-xs font-semibold uppercase text-gray-500 mb-2">Tags</h4>
+                  <TagPicker
+                    availableTags={availableTagItems}
+                    selectedTags={selectedTagItems}
+                    onAddTag={(tagId) => addChoreTag.mutate(tagId)}
+                    onRemoveTag={(tagId) => removeChoreTag.mutate(tagId)}
+                    onCreateTag={(name, color) => createTag.mutate({ name, color })}
+                  />
+                </div>
+
+                {/* Time Tracker */}
+                {chore.showTimer && (
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase text-gray-500 mb-2">Time Tracker</h4>
+                    <TimeTracker
+                      isRunning={!!activeTimeLog}
+                      startedAt={activeTimeLog ? new Date(activeTimeLog.startedAt) : null}
+                      totalSeconds={totalTrackedSeconds}
+                      estimatedMinutes={chore.estimatedMinutes ?? undefined}
+                      onStart={() => startTracking.mutate()}
+                      onStop={() => stopTracking.mutate()}
+                    />
+                  </div>
+                )}
+
+                {/* Dependencies */}
+                <div>
+                  <h4 className="text-xs font-semibold uppercase text-gray-500 mb-2">Dependencies</h4>
+                  <DependencyPicker
+                    choreId={chore.id}
+                    dependencies={dependencyItems}
+                    availableChores={allChores}
+                    onAddDependency={(depChoreId, type) => addDependency.mutate({ dependsOnChoreId: depChoreId, type })}
+                    onRemoveDependency={(depId) => removeDependency.mutate(depId)}
+                  />
+                </div>
 
                 {/* Steps / Sub-step checklist */}
                 {hasSteps && (

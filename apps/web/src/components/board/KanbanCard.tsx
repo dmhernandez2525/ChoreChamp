@@ -1,9 +1,10 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@chorechamp/ui';
-import { Clock, Star, GripVertical } from 'lucide-react';
+import { Clock, GripVertical } from 'lucide-react';
 import type { Chore, Member } from '@chorechamp/types';
 import { useSelectionStore } from '@/stores/selection-store';
+import { PointsBadge } from './PointsBadge';
 
 interface KanbanCardProps {
   chore: Chore;
@@ -93,10 +94,7 @@ export function KanbanCard({ chore, members, onClick }: KanbanCardProps) {
         {/* Metadata row */}
         <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
           {/* Points */}
-          <span className="flex items-center gap-1">
-            <Star className="h-3 w-3 text-yellow-500" />
-            {chore.pointValue}
-          </span>
+          <PointsBadge points={chore.pointValue} variant="compact" />
 
           {/* Estimated time */}
           {chore.estimatedMinutes && (

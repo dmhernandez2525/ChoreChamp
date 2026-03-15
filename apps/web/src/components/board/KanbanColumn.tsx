@@ -4,6 +4,7 @@ import { cn } from '@chorechamp/ui';
 import { Plus } from 'lucide-react';
 import type { Chore, Member } from '@chorechamp/types';
 import { KanbanCard } from './KanbanCard';
+import { EmptyColumn } from './EmptyStates';
 
 interface KanbanColumnProps {
   id: string;
@@ -87,11 +88,7 @@ export function KanbanColumn({
           ))}
         </SortableContext>
 
-        {chores.length === 0 && (
-          <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-4">
-            <p className="text-sm text-gray-400">No chores</p>
-          </div>
-        )}
+        {chores.length === 0 && <EmptyColumn />}
       </div>
     </div>
   );
