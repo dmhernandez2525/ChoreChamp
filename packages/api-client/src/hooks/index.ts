@@ -7,6 +7,7 @@ import type {
   AddMemberRequest,
   UpdateMemberRequest,
   CreateChoreRequest,
+  UpdateChoreRequest,
   CompleteChoreRequest,
   JoinHouseholdRequest,
   CreateRewardRequest,
@@ -303,6 +304,12 @@ export const queryKeys = {
   marketplaceListings: (householdId: string) => ['marketplaceListings', householdId] as const,
   marketplaceStats: (householdId: string) => ['marketplaceStats', householdId] as const,
   marketplaceConfig: (householdId: string) => ['marketplaceConfig', householdId] as const,
+
+  // Tags, Time Tracking, Dependencies
+  householdTags: (householdId: string) => ['householdTags', householdId] as const,
+  choreTags: (householdId: string, choreId: string) => ['choreTags', householdId, choreId] as const,
+  timeLogs: (householdId: string, choreId: string) => ['timeLogs', householdId, choreId] as const,
+  choreDependencies: (householdId: string, choreId: string) => ['choreDependencies', householdId, choreId] as const,
 };
 
 // ===== Auth Hooks =====
@@ -576,6 +583,19 @@ export function useCreateChore(householdId: string) {
 
   return useMutation({
     mutationFn: (data: CreateChoreRequest) => apiClient.createChore(householdId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.chores(householdId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.todaysChores(householdId) });
+    },
+  });
+}
+
+export function useUpdateChore(householdId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ choreId, data }: { choreId: string; data: UpdateChoreRequest }) =>
+      apiClient.updateChore(householdId, choreId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.chores(householdId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.todaysChores(householdId) });
@@ -1806,6 +1826,15 @@ export function useBossBattle(householdId: string, battleId: string) {
     queryKey: queryKeys.bossBattle(householdId, battleId),
     queryFn: () => apiClient.getBossBattle(householdId, battleId),
     enabled: !!householdId && !!battleId,
+  });
+}
+
+export function useBossBattleStats(householdId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.bossBattle(householdId, 'stats'), 'stats'],
+    queryFn: () => apiClient.getBossBattleStats(householdId),
+    enabled: !!householdId,
+    staleTime: 1000 * 60, // 1 minute
   });
 }
 
@@ -3367,3 +3396,4 @@ export function useUpdateMarketplaceConfig(householdId: string) {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.marketplaceConfig(householdId) }); },
   });
 }
+

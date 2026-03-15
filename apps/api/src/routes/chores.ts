@@ -99,6 +99,52 @@ async function verifyParentMembership(
 }
 
 export async function choreRoutes(fastify: FastifyInstance) {
+  // Get pending completions awaiting approval
+  fastify.get('/pending-completions', {
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Only parents can view pending completions',
+      });
+    }
+
+    const pendingCompletions = await db
+      .select({
+        id: choreCompletions.id,
+        choreId: choreCompletions.choreId,
+        householdId: choreCompletions.householdId,
+        memberId: choreCompletions.memberId,
+        scheduledDate: choreCompletions.scheduledDate,
+        completedAt: choreCompletions.completedAt,
+        status: choreCompletions.status,
+        photoUrl: choreCompletions.photoUrl,
+        pointsAwarded: choreCompletions.pointsAwarded,
+        startedAt: choreCompletions.startedAt,
+        durationSeconds: choreCompletions.durationSeconds,
+        createdAt: choreCompletions.createdAt,
+        choreName: chores.title,
+        choreIcon: chores.icon,
+        memberName: members.name,
+        memberColor: members.color,
+      })
+      .from(choreCompletions)
+      .innerJoin(chores, eq(choreCompletions.choreId, chores.id))
+      .innerJoin(members, eq(choreCompletions.memberId, members.id))
+      .where(and(
+        eq(choreCompletions.householdId, householdId),
+        eq(choreCompletions.status, 'pending')
+      ))
+      .orderBy(desc(choreCompletions.completedAt));
+
+    return reply.send(pendingCompletions);
+  });
+
   // Get all chores for a household
   fastify.get('/', {
     preHandler: [requireAuth],

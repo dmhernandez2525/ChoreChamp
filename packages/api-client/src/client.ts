@@ -14,6 +14,8 @@ import type {
   CreateInviteCodeRequest,
   Chore,
   CreateChoreRequest,
+  UpdateChoreRequest,
+  PendingCompletion,
   ChoreCompletion,
   CompleteChoreRequest,
   TodayChore,
@@ -26,6 +28,7 @@ import type {
   CreateRewardRequest,
   RewardRedemption,
   BossBattle,
+  BossBattleStats,
   CreateBossBattleRequest,
   DamageBossResponse,
   ActivityFeedResponse,
@@ -582,6 +585,21 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  async updateChore(
+    householdId: string,
+    choreId: string,
+    data: UpdateChoreRequest
+  ): Promise<Chore> {
+    return this.request(`/households/${householdId}/chores/${choreId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPendingCompletions(householdId: string): Promise<PendingCompletion[]> {
+    return this.request(`/households/${householdId}/chores/pending-completions`);
   }
 
   async completeChore(
@@ -1454,6 +1472,10 @@ class ApiClient {
 
   async getBossBattle(householdId: string, battleId: string): Promise<BossBattle> {
     return this.request(`/households/${householdId}/boss-battles/${battleId}`);
+  }
+
+  async getBossBattleStats(householdId: string): Promise<BossBattleStats> {
+    return this.request(`/households/${householdId}/boss-battles/current/stats`);
   }
 
   // ===== Activity Feed =====

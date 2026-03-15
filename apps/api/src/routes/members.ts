@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../lib/db';
-import { households, members } from '@chorechamp/database';
+import { households, members, pointTransactions } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveMemberLimit } from '../lib/subscription';
 
@@ -329,7 +329,16 @@ export async function memberRoutes(fastify: FastifyInstance) {
       .where(eq(members.id, memberId))
       .returning();
 
-    // TODO: Log this bonus in a points history table
+    await db.insert(pointTransactions).values({
+      householdId,
+      memberId,
+      amount,
+      balanceAfter: member.pointsCurrent || 0,
+      transactionType: 'bonus',
+      referenceId: null,
+      referenceType: null,
+      description: reason || 'Bonus points awarded',
+    });
 
     return reply.send({
       member,
