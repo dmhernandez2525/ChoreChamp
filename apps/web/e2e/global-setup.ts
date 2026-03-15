@@ -28,8 +28,9 @@ async function globalSetup(config: FullConfig) {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    await page.goto(`${baseURL}/login`);
-    await page.waitForLoadState('networkidle');
+    await page.goto(`${baseURL}/login`, { timeout: 60000 });
+    await page.waitForLoadState('load');
+    await page.waitForTimeout(3000);
 
     await page.getByLabel(/email/i).fill(account.email);
     await page.getByLabel(/password/i).fill(account.password);
@@ -37,8 +38,8 @@ async function globalSetup(config: FullConfig) {
 
     // Wait for redirect to dashboard (Render free tier can be slow)
     await page.waitForURL('**/dashboard', { timeout: 60000 });
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('load');
+    await page.waitForTimeout(3000);
 
     // Save the storage state (cookies + localStorage)
     const statePath = path.join(AUTH_DIR, `${role}.json`);
