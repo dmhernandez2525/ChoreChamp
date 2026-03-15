@@ -29,8 +29,23 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
     updateAge: 60 * 60 * 24, // Update session every 24 hours
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 minutes
+    },
   },
   trustedOrigins: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: process.env.NODE_ENV === 'production',
+      domain: '.onrender.com',
+    },
+    defaultCookieAttributes: {
+      secure: true,
+      sameSite: 'none' as const,
+      path: '/',
+    },
+  },
 });
 
 export type Auth = typeof auth;
