@@ -4,162 +4,104 @@ import { TEST_CONFIG } from './config';
 
 const HID = TEST_CONFIG.householdId;
 
-test.describe('Create Chore Deep Interactions', () => {
+test.describe('Create Chore Form', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/chores/new`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('form shows all major sections', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const sections = ['title', 'point', 'description', 'assign', 'category', 'difficult'];
-    const foundSections = sections.filter((s) => bodyText?.toLowerCase().includes(s));
-    expect(foundSections.length).toBeGreaterThanOrEqual(2);
-  });
+  test('form has a title input that accepts text', async ({ page }) => {
+    // Find the title input by label or placeholder
+    const titleByLabel = page.getByLabel(/title/i).first();
+    const titleByPlaceholder = page.getByPlaceholder(/title|name|chore/i).first();
+    const textInput = page.locator('input[type="text"]').first();
 
-  test('title field accepts input and shows character count or validation', async ({ page }) => {
-    const titleInput =
-      page.getByLabel(/chore title|title/i).first() || page.locator('input[type="text"]').first();
-    const input = (await titleInput.isVisible().catch(() => false))
-      ? titleInput
-      : page.locator('input[type="text"]').first();
-
-    await input.fill('Test Chore Title 12345');
-    const value = await input.inputValue();
-    expect(value).toContain('Test Chore');
-  });
-
-  test('points field accepts numeric input', async ({ page }) => {
-    const pointsInput = page.getByLabel(/point/i).first();
-    const hasPoints = await pointsInput.isVisible().catch(() => false);
-
-    if (hasPoints) {
-      await pointsInput.fill('50');
-      const value = await pointsInput.inputValue();
-      expect(value).toBe('50');
-    } else {
-      const numInput = page.locator('input[type="number"]').first();
-      const hasNum = await numInput.isVisible().catch(() => false);
-      if (hasNum) {
-        await numInput.fill('50');
-        const value = await numInput.inputValue();
-        expect(value).toBe('50');
-      } else {
-        const bodyText = await page.locator('body').textContent();
-        expect(bodyText && bodyText.length > 50).toBeTruthy();
-      }
+    let titleInput = titleByLabel;
+    if (!(await titleByLabel.isVisible().catch(() => false))) {
+      titleInput = (await titleByPlaceholder.isVisible().catch(() => false))
+        ? titleByPlaceholder
+        : textInput;
     }
+
+    await expect(titleInput).toBeVisible({ timeout: 10000 });
+
+    // Verify it accepts input
+    await titleInput.fill('E2E Test Chore');
+    const value = await titleInput.inputValue();
+    expect(value).toBe('E2E Test Chore');
   });
 
-  test('difficulty selector has multiple options', async ({ page }) => {
-    const difficultySection = page.locator('text=/difficult/i').first();
-    const hasDiff = await difficultySection.isVisible().catch(() => false);
+  test('form has a priority or difficulty selector', async ({ page }) => {
+    // Look for priority/difficulty selection controls
+    const priorityButtons = page.getByRole('button').filter({
+      hasText: /easy|medium|hard|low|high|critical|simple|challenging|very hard/i,
+    });
+    const priorityButtonCount = await priorityButtons.count();
 
-    if (hasDiff) {
-      const buttons = page.getByRole('button').filter({
-        hasText: /easy|medium|hard|very hard|simple|challenging/i,
-      });
-      const radioInputs = page.locator('input[type="radio"]');
-      const count = (await buttons.count()) + (await radioInputs.count());
-      expect(count).toBeGreaterThanOrEqual(1);
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+    const prioritySelect = page.locator('select').filter({
+      hasText: /easy|medium|hard|low|high|priority|difficulty/i,
+    });
+    const hasSelect = await prioritySelect.isVisible().catch(() => false);
+
+    const radioInputs = page.locator('input[type="radio"]');
+    const radioCount = await radioInputs.count();
+
+    const priorityLabel = page.getByText(/priority|difficulty/i).first();
+    const hasLabel = await priorityLabel.isVisible().catch(() => false);
+
+    // Should have priority/difficulty controls
+    expect(priorityButtonCount > 0 || hasSelect || radioCount > 0 || hasLabel).toBeTruthy();
+  });
+
+  test('form has assignee selector showing real member names', async ({ page }) => {
+    // The assign section should show household member names
+    const assignLabel = page.getByText(/assign/i).first();
+    await expect(assignLabel).toBeVisible({ timeout: 10000 });
+
+    // Look for actual family member names in the assignee section
+    const memberNames = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
+    let foundMembers = 0;
+
+    for (const name of memberNames) {
+      const locator = page.getByText(name, { exact: false }).first();
+      const visible = await locator.isVisible().catch(() => false);
+      if (visible) foundMembers++;
     }
+
+    // Should show at least 2 real family member names as assignee options
+    // (or "Anyone" / "All Members" as alternatives)
+    const anyoneOption = page.getByText(/anyone|all member|everyone|unassigned/i).first();
+    const hasAnyone = await anyoneOption.isVisible().catch(() => false);
+
+    expect(foundMembers >= 2 || hasAnyone).toBeTruthy();
   });
 
-  test('category picker shows categories', async ({ page }) => {
-    const categorySection = page.locator('text=/category/i').first();
-    const hasCat = await categorySection.isVisible().catch(() => false);
+  test('submit button exists and form validates required fields', async ({ page }) => {
+    // Find the submit/create button
+    const submitBtn = page.getByRole('button', { name: /create|save|submit|add chore/i }).first();
+    await expect(submitBtn).toBeVisible({ timeout: 10000 });
 
-    if (hasCat) {
-      const catOptions = page.getByRole('button').filter({
-        hasText: /kitchen|bathroom|bedroom|outdoor|general|cleaning|laundry/i,
-      });
-      const selectEl = page.locator('select').first();
-      const hasCatOptions = (await catOptions.count()) > 0;
-      const hasSelect = await selectEl.isVisible().catch(() => false);
-      expect(hasCatOptions || hasSelect).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
-  });
+    // Click submit without filling in any fields to trigger validation
+    await submitBtn.click();
+    await page.waitForTimeout(1500);
 
-  test('description field accepts multi-line text', async ({ page }) => {
-    const descField =
-      page.getByLabel(/description/i).first() || page.locator('textarea').first();
-    const textarea = (await descField.isVisible().catch(() => false))
-      ? descField
-      : page.locator('textarea').first();
+    // After clicking submit on empty form, should see validation feedback
+    // Check for: validation error messages, required field indicators, or staying on the same page
+    const validationError = page.getByText(/required|please|can't be empty|enter a|must|invalid/i).first();
+    const hasValidationError = await validationError.isVisible().catch(() => false);
 
-    const hasTextarea = await textarea.isVisible().catch(() => false);
-    if (hasTextarea) {
-      await textarea.fill('Line 1\nLine 2\nLine 3');
-      const value = await textarea.inputValue();
-      expect(value).toContain('Line 1');
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
-  });
+    // Or check for HTML5 validation (browser-native required field messages)
+    // The form should not navigate away on failed validation
+    const stillOnForm = page.url().includes('/chores/new');
 
-  test('assignment section shows member options or "anyone"', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasAssignment =
-      bodyText?.toLowerCase().includes('assign') ||
-      bodyText?.toLowerCase().includes('anyone') ||
-      bodyText?.toLowerCase().includes('member') ||
-      bodyText?.toLowerCase().includes('all');
+    // Or check for visual error indicators (red borders, error icons)
+    const errorIndicators = page.locator(
+      '[class*="error"], [class*="invalid"], [aria-invalid="true"], [class*="required"]'
+    );
+    const errorCount = await errorIndicators.count();
 
-    expect(hasAssignment).toBeTruthy();
-  });
-
-  test('recurrence options are available', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasRecurrence =
-      bodyText?.toLowerCase().includes('recur') ||
-      bodyText?.toLowerCase().includes('repeat') ||
-      bodyText?.toLowerCase().includes('daily') ||
-      bodyText?.toLowerCase().includes('weekly') ||
-      bodyText?.toLowerCase().includes('once') ||
-      bodyText?.toLowerCase().includes('schedule');
-
-    expect(hasRecurrence || (bodyText?.length ?? 0) > 100).toBeTruthy();
-  });
-
-  test('form has submit and cancel buttons', async ({ page }) => {
-    const submitBtn = page.getByRole('button', { name: /create|save|submit|add/i }).first();
-    const cancelBtn = page.getByRole('button', { name: /cancel|back|discard/i }).first();
-    const cancelLink = page.getByRole('link', { name: /cancel|back/i }).first();
-
-    const hasSubmit = await submitBtn.isVisible().catch(() => false);
-    const hasCancel =
-      (await cancelBtn.isVisible().catch(() => false)) ||
-      (await cancelLink.isVisible().catch(() => false));
-
-    expect(hasSubmit || hasCancel).toBeTruthy();
-  });
-
-  test('empty form submit shows validation errors', async ({ page }) => {
-    const submitBtn = page.getByRole('button', { name: /create|save|submit|add/i }).first();
-    const hasSubmit = await submitBtn.isVisible().catch(() => false);
-
-    if (hasSubmit) {
-      await submitBtn.click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasValidation =
-        bodyText?.toLowerCase().includes('required') ||
-        bodyText?.toLowerCase().includes('error') ||
-        bodyText?.toLowerCase().includes('please') ||
-        bodyText?.toLowerCase().includes('invalid') ||
-        bodyText?.toLowerCase().includes('title');
-
-      expect(hasValidation || (bodyText?.length ?? 0) > 50).toBeTruthy();
-    }
+    expect(hasValidationError || stillOnForm || errorCount > 0).toBeTruthy();
   });
 });

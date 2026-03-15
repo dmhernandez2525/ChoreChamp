@@ -5,104 +5,99 @@ import { TEST_CONFIG } from './config';
 const HID = TEST_CONFIG.householdId;
 
 test.describe('Chore Lifecycle Workflow', () => {
-  test('navigate from dashboard to chore detail and back', async ({ page }) => {
+  test('can navigate from dashboard to chore detail', async ({ page }) => {
     await page.goto(`/households/${HID}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const choreCards = page.locator('[class*="cursor-pointer"]').filter({
-      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make/i,
+    // Dashboard should show chore cards or a chore list
+    const choreItems = page.locator('[class*="cursor-pointer"], [class*="card"], [class*="Card"]').filter({
+      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make|pick|put|feed|water|trash/i,
     });
 
-    if ((await choreCards.count()) > 0) {
-      const choreName = await choreCards.first().textContent();
-      await choreCards.first().click();
-      await page.waitForTimeout(1000);
+    const choreCount = await choreItems.count();
+    if (choreCount > 0) {
+      // Click the first chore to navigate to its detail
+      await choreItems.first().click();
+      await page.waitForTimeout(1500);
 
-      // Should show detail view
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+      // Should now show chore detail content (modal or page)
+      const url = page.url();
+      const navigatedToDetail = url.includes('/chore') || url.includes('/detail');
 
-      // Navigate back
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(500);
+      // Or a modal/overlay opened with chore info
+      const detailContent = page.getByText(/assign|due|point|status|frequency|description/i).first();
+      const hasDetailContent = await detailContent.isVisible().catch(() => false);
 
-      // Dashboard should still show
-      const dashText = await page.locator('body').textContent();
-      expect(dashText && dashText.length > 50).toBeTruthy();
+      expect(navigatedToDetail || hasDetailContent).toBeTruthy();
+    } else {
+      // If no clickable chores, dashboard should still show chore-related content
+      const choreHeading = page.getByText(/chore|task/i).first();
+      await expect(choreHeading).toBeVisible({ timeout: 10000 });
     }
   });
 
-  test('navigate from dashboard to create chore form', async ({ page }) => {
+  test('chore detail shows title, description, and assignee', async ({ page }) => {
     await page.goto(`/households/${HID}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const createBtn = page.getByRole('button', { name: /create|add|new/i }).first();
-    const createLink = page.getByRole('link', { name: /create|add|new/i }).first();
-
-    const hasBtn = await createBtn.isVisible().catch(() => false);
-    const hasLink = await createLink.isVisible().catch(() => false);
-
-    if (hasBtn || hasLink) {
-      const target = hasBtn ? createBtn : createLink;
-      await target.click();
-      await page.waitForTimeout(2000);
-
-      const bodyText = await page.locator('body').textContent();
-      const isCreatePage =
-        bodyText?.toLowerCase().includes('create') ||
-        bodyText?.toLowerCase().includes('new chore') ||
-        bodyText?.toLowerCase().includes('title');
-
-      expect(isCreatePage || (bodyText?.length ?? 0) > 50).toBeTruthy();
-    }
-  });
-
-  test('chore detail shows complete/edit actions', async ({ page }) => {
-    await page.goto(`/households/${HID}`);
-    await page.waitForLoadState('networkidle');
-    await ensureAuthenticated(page);
-    await page.waitForTimeout(2000);
-
-    const choreCards = page.locator('[class*="cursor-pointer"]').filter({
-      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make/i,
+    const choreItems = page.locator('[class*="cursor-pointer"], [class*="card"], [class*="Card"]').filter({
+      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make|pick|put|feed|water|trash/i,
     });
 
-    if ((await choreCards.count()) > 0) {
-      await choreCards.first().click();
-      await page.waitForTimeout(1000);
+    const choreCount = await choreItems.count();
+    if (choreCount > 0) {
+      await choreItems.first().click();
+      await page.waitForTimeout(1500);
 
-      const bodyText = await page.locator('body').textContent();
-      const hasActions =
-        bodyText?.toLowerCase().includes('complete') ||
-        bodyText?.toLowerCase().includes('edit') ||
-        bodyText?.toLowerCase().includes('mark') ||
-        bodyText?.toLowerCase().includes('done') ||
-        bodyText?.toLowerCase().includes('delete');
+      // Chore detail should show the chore title (visible somewhere on the page)
+      const choreTitle = page.getByRole('heading').first();
+      const hasTitle = await choreTitle.isVisible().catch(() => false);
 
-      expect(hasActions || (bodyText?.length ?? 0) > 100).toBeTruthy();
+      // Should show assignee or member name
+      const assignee = page.getByText(/Daniel|Christina|Adam|Addison|Aiden|assign|unassigned/i).first();
+      const hasAssignee = await assignee.isVisible().catch(() => false);
+
+      // Should show description, points, or other chore details
+      const choreDetails = page.getByText(/description|point|due|frequency|daily|weekly|status/i).first();
+      const hasDetails = await choreDetails.isVisible().catch(() => false);
+
+      expect(hasTitle || hasAssignee || hasDetails).toBeTruthy();
+
+      // Close the detail view
       await page.keyboard.press('Escape');
     }
   });
 
-  test('chore completion updates dashboard state', async ({ page }) => {
+  test('can interact with chore completion flow', async ({ page }) => {
     await page.goto(`/households/${HID}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    // Check for mark complete buttons directly on cards
-    const completeBtns = page.getByRole('button', { name: /complete|done|check|mark/i });
+    // Look for completion controls directly on the dashboard
+    const completeButtons = page.getByRole('button', { name: /complete|done|check|mark|finish/i });
     const checkboxes = page.locator('input[type="checkbox"]');
 
-    const hasCompleteBtns = (await completeBtns.count()) > 0;
+    const hasCompleteButtons = (await completeButtons.count()) > 0;
     const hasCheckboxes = (await checkboxes.count()) > 0;
 
-    // Either way, the dashboard has interactive elements
-    const bodyText = await page.locator('body').textContent();
-    expect(bodyText && bodyText.length > 100).toBeTruthy();
+    // Or look for chore cards that have completion indicators
+    const choreCards = page.locator('[class*="cursor-pointer"], [class*="card"], [class*="Card"]').filter({
+      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make|pick|put|feed|water|trash/i,
+    });
+    const hasChoreCards = (await choreCards.count()) > 0;
+
+    // Dashboard should have interactive chore elements
+    expect(hasCompleteButtons || hasCheckboxes || hasChoreCards).toBeTruthy();
+
+    // If there is a complete button, verify it is clickable (do not actually complete)
+    if (hasCompleteButtons) {
+      const firstButton = completeButtons.first();
+      await expect(firstButton).toBeEnabled();
+    }
   });
 });

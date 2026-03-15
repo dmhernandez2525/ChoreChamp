@@ -7,90 +7,50 @@ const HID = TEST_CONFIG.householdId;
 test.describe('Rewards Store Deep Interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/rewards`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('rewards list shows available rewards', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasRewards =
-      bodyText?.toLowerCase().includes('reward') ||
-      bodyText?.toLowerCase().includes('point') ||
-      bodyText?.toLowerCase().includes('redeem') ||
-      bodyText?.toLowerCase().includes('store');
+  test('rewards page shows reward cards or empty state', async ({ page }) => {
+    const body = page.locator('body');
 
-    expect(hasRewards).toBeTruthy();
-  });
-
-  test('reward cards are clickable', async ({ page }) => {
-    const rewardCards = page.locator('[class*="cursor-pointer"], [class*="card"], [class*="Card"]').filter({
-      hasText: /point|reward|redeem/i,
+    // Page should show either reward cards or a clear empty state message
+    const rewardCards = page.locator('[class*="card"], [class*="Card"], [data-testid*="reward"]').filter({
+      hasText: /reward|point|redeem/i,
     });
 
-    if ((await rewardCards.count()) > 0) {
-      await rewardCards.first().click();
-      await page.waitForTimeout(1000);
+    const cardCount = await rewardCards.count();
 
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+    if (cardCount > 0) {
+      // Rewards exist, verify at least one is visible
+      await expect(rewardCards.first()).toBeVisible();
     } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 20).toBeTruthy();
+      // No reward cards, should show an empty state or prompt
+      await expect(body).toContainText(/no reward|create.*reward|add.*reward|get started|empty/i);
     }
   });
 
-  test('create reward button navigates to form', async ({ page }) => {
+  test('has Create Reward button', async ({ page }) => {
     const createBtn = page.getByRole('button', { name: /create|add|new/i }).first();
     const createLink = page.getByRole('link', { name: /create|add|new/i }).first();
 
-    const hasCreate =
-      (await createBtn.isVisible().catch(() => false)) ||
-      (await createLink.isVisible().catch(() => false));
+    const hasButton = await createBtn.isVisible().catch(() => false);
+    const hasLink = await createLink.isVisible().catch(() => false);
 
-    if (hasCreate) {
-      const target = (await createBtn.isVisible().catch(() => false)) ? createBtn : createLink;
-      await target.click();
-      await page.waitForTimeout(1000);
+    expect(hasButton || hasLink).toBeTruthy();
 
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+    if (hasButton) {
+      await expect(createBtn).toBeVisible();
+    } else {
+      await expect(createLink).toBeVisible();
     }
   });
 
-  test('pending redemptions tab is accessible', async ({ page }) => {
-    const pendingTab = page.getByRole('button', { name: /pending|approval|redeem/i }).first();
-    const pendingLink = page.getByRole('tab', { name: /pending|approval|redeem/i }).first();
+  test('shows points information', async ({ page }) => {
+    const body = page.locator('body');
 
-    const hasPending =
-      (await pendingTab.isVisible().catch(() => false)) ||
-      (await pendingLink.isVisible().catch(() => false));
-
-    if (hasPending) {
-      const target = (await pendingTab.isVisible().catch(() => false)) ? pendingTab : pendingLink;
-      await target.click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 20).toBeTruthy();
-    }
-  });
-
-  test('reward detail shows points cost', async ({ page }) => {
-    const rewardCards = page.locator('[class*="card"], [class*="Card"]');
-    if ((await rewardCards.count()) > 0) {
-      const cardText = await rewardCards.first().textContent();
-      const hasPoints =
-        cardText?.match(/\d+/) !== null ||
-        cardText?.toLowerCase().includes('point');
-
-      expect(hasPoints || (cardText?.length ?? 0) > 10).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 20).toBeTruthy();
-    }
+    // Rewards page should reference points (costs, balances, or earning)
+    await expect(body).toContainText(/point|pts|cost|earn/i);
   });
 });

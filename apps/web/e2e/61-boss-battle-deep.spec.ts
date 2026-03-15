@@ -7,62 +7,57 @@ const HID = TEST_CONFIG.householdId;
 test.describe('Boss Battle Deep Interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/boss-battle`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('boss battle shows progress bar', async ({ page }) => {
-    const progressBar = page.locator('[role="progressbar"], [class*="progress"], [class*="Progress"]');
-    const bodyText = await page.locator('body').textContent();
+  test('boss battle page shows battle progress', async ({ page }) => {
+    // Should display boss battle heading or title
+    const heading = page.getByText(/boss.*battle|battle|boss/i).first();
+    await expect(heading).toBeVisible({ timeout: 10000 });
 
-    const hasProgress =
-      (await progressBar.count()) > 0 ||
-      bodyText?.toLowerCase().includes('progress') ||
-      bodyText?.toLowerCase().includes('%') ||
-      bodyText?.match(/\d+\/\d+/) !== null;
+    // Look for progress indicators: progress bar, HP, percentage, or fraction
+    const progressBar = page.locator('[role="progressbar"], [class*="progress"], [class*="Progress"]').first();
+    const hasProgressBar = await progressBar.isVisible().catch(() => false);
 
-    expect(hasProgress || (bodyText?.length ?? 0) > 100).toBeTruthy();
+    const progressText = page.getByText(/progress|hp|health|damage|\d+%|\d+\/\d+/i).first();
+    const hasProgressText = await progressText.isVisible().catch(() => false);
+
+    expect(hasProgressBar || hasProgressText).toBeTruthy();
   });
 
-  test('boss battle shows family contribution', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasContrib =
-      bodyText?.toLowerCase().includes('contribution') ||
-      bodyText?.toLowerCase().includes('damage') ||
-      bodyText?.toLowerCase().includes('attack') ||
-      bodyText?.toLowerCase().includes('team') ||
-      bodyText?.toLowerCase().includes('member');
+  test('shows family contribution or participation', async ({ page }) => {
+    // Should show family member names with their contributions
+    const memberNames = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
+    let visibleMembers = 0;
 
-    expect(hasContrib || (bodyText?.length ?? 0) > 100).toBeTruthy();
-  });
-
-  test('boss battle has visual elements or content', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-
-    const hasBossContent =
-      bodyText?.toLowerCase().includes('boss') ||
-      bodyText?.toLowerCase().includes('battle') ||
-      bodyText?.toLowerCase().includes('monster') ||
-      bodyText?.toLowerCase().includes('challenge') ||
-      bodyText?.toLowerCase().includes('goal') ||
-      bodyText?.toLowerCase().includes('family') ||
-      (bodyText?.length ?? 0) > 100;
-
-    expect(hasBossContent).toBeTruthy();
-  });
-
-  test('boss history is viewable', async ({ page }) => {
-    const historySection = page.locator('text=/history|past|previous|defeated/i').first();
-    const hasHistory = await historySection.isVisible().catch(() => false);
-
-    if (hasHistory) {
-      await historySection.scrollIntoViewIfNeeded().catch(() => {});
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 100).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+    for (const name of memberNames) {
+      const member = page.getByText(new RegExp(name, 'i')).first();
+      const isVisible = await member.isVisible().catch(() => false);
+      if (isVisible) visibleMembers++;
     }
+
+    // Or show contribution-related text
+    const contributionText = page.getByText(/contribution|damage|attack|team|participant/i).first();
+    const hasContribution = await contributionText.isVisible().catch(() => false);
+
+    expect(visibleMembers > 0 || hasContribution).toBeTruthy();
+  });
+
+  test('has battle history or stats', async ({ page }) => {
+    // Look for history section, past battles, or stats
+    const historyHeading = page.getByText(/history|past|previous|defeated|stats|record/i).first();
+    const hasHistory = await historyHeading.isVisible().catch(() => false);
+
+    // Or look for stat numbers or battle-related metrics
+    const statContent = page.getByText(/won|lost|streak|total|battle|level/i).first();
+    const hasStats = await statContent.isVisible().catch(() => false);
+
+    // Or look for a list/table of past battles
+    const battleList = page.locator('[class*="history"], [class*="History"], table, [class*="list"], [class*="List"]').first();
+    const hasList = await battleList.isVisible().catch(() => false);
+
+    expect(hasHistory || hasStats || hasList).toBeTruthy();
   });
 });

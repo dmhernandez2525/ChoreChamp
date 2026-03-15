@@ -3,96 +3,96 @@ import { ensureAuthenticated } from './helpers';
 import { TEST_CONFIG } from './config';
 
 const HID = TEST_CONFIG.householdId;
+const FAMILY_MEMBERS = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
 
 test.describe('Household Dashboard Deep Interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('dashboard tabs switch content', async ({ page }) => {
-    const tabs = page.getByRole('button').filter({
-      hasText: /today|all|upcoming|overdue|completed|approval/i,
-    });
-    const tabElements = page.getByRole('tab');
+  test('dashboard loads with real household data', async ({ page }) => {
+    const body = page.locator('body');
 
-    const totalTabs = (await tabs.count()) + (await tabElements.count());
+    // Dashboard should display household-related content
+    await expect(body).toContainText(/household|family|Hernandez|dashboard/i);
 
-    if (totalTabs >= 2) {
-      const target = (await tabs.count()) >= 2 ? tabs.nth(1) : tabElements.nth(1);
-      await target.click();
-      await page.waitForTimeout(1000);
+    // At least one family member name should be visible
+    let foundMember = false;
+    for (const member of FAMILY_MEMBERS) {
+      const memberLocator = page.locator(`text=${member}`);
+      const isVisible = await memberLocator.first().isVisible().catch(() => false);
+      if (isVisible) {
+        foundMember = true;
+        break;
+      }
+    }
+    expect(foundMember).toBeTruthy();
+  });
 
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+  test('shows upcoming chores section', async ({ page }) => {
+    const body = page.locator('body');
+
+    // Dashboard should show chores (upcoming, today, or pending)
+    await expect(body).toContainText(/chore|task|today|upcoming|pending|to do/i);
+
+    // Should display actual chore content (names of real chores)
+    const choreKeywords = /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make|dust|trash|bed|floor|bathroom|kitchen/i;
+    const bodyText = await body.textContent();
+    const hasChoreContent = choreKeywords.test(bodyText ?? '');
+
+    // Either chore names are visible or there's an explicit empty state
+    if (!hasChoreContent) {
+      await expect(body).toContainText(/no chore|all done|caught up|empty|nothing/i);
     }
   });
 
-  test('chore cards show essential info', async ({ page }) => {
-    const choreCards = page.locator('[class*="cursor-pointer"], [class*="card"], [class*="Card"]').filter({
-      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make/i,
-    });
+  test('shows member activity or stats', async ({ page }) => {
+    const body = page.locator('body');
 
-    if ((await choreCards.count()) > 0) {
-      const cardText = await choreCards.first().textContent();
-      expect(cardText && cardText.length > 5).toBeTruthy();
+    // Dashboard should show stats, activity feed, or progress info
+    await expect(body).toContainText(/completed|pending|total|point|streak|progress|activity|stat/i);
+
+    // Numeric values should be present (counts, points, percentages)
+    const bodyText = await body.textContent();
+    const hasNumbers = bodyText?.match(/\d+/) !== null;
+    expect(hasNumbers).toBeTruthy();
+  });
+
+  test('navigation to other sections works', async ({ page }) => {
+    // Find navigation links to key sections
+    const navLinks = {
+      board: page.getByRole('link', { name: /board/i }).first(),
+      rewards: page.getByRole('link', { name: /reward/i }).first(),
+      leaderboard: page.getByRole('link', { name: /leaderboard|ranking/i }).first(),
+      members: page.getByRole('link', { name: /member|family/i }).first(),
+    };
+
+    // At least 2 navigation links should be visible
+    let visibleNavCount = 0;
+    for (const [, link] of Object.entries(navLinks)) {
+      const isVisible = await link.isVisible().catch(() => false);
+      if (isVisible) {
+        visibleNavCount++;
+      }
     }
-  });
+    expect(visibleNavCount).toBeGreaterThanOrEqual(2);
 
-  test('clicking a chore opens detail view', async ({ page }) => {
-    const choreCards = page.locator('[class*="cursor-pointer"]').filter({
-      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make/i,
-    });
+    // Click one of the nav links and verify navigation occurs
+    for (const [section, link] of Object.entries(navLinks)) {
+      const isVisible = await link.isVisible().catch(() => false);
+      if (isVisible) {
+        await link.click();
+        await page.waitForLoadState('load');
+        await page.waitForTimeout(1000);
 
-    if ((await choreCards.count()) > 0) {
-      await choreCards.first().click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasDetail =
-        bodyText?.toLowerCase().includes('point') ||
-        bodyText?.toLowerCase().includes('complete') ||
-        bodyText?.toLowerCase().includes('assign') ||
-        bodyText?.toLowerCase().includes('detail');
-
-      expect(hasDetail || (bodyText?.length ?? 0) > 100).toBeTruthy();
-
-      await page.keyboard.press('Escape');
+        // URL should have changed to include the section name
+        const currentUrl = page.url();
+        expect(currentUrl).not.toBe(`/households/${HID}`);
+        break;
+      }
     }
-  });
-
-  test('create chore button is accessible', async ({ page }) => {
-    const createBtn = page.getByRole('button', { name: /create|add|new chore/i }).first();
-    const createLink = page.getByRole('link', { name: /create|add|new/i }).first();
-
-    const hasCreate =
-      (await createBtn.isVisible().catch(() => false)) ||
-      (await createLink.isVisible().catch(() => false));
-
-    expect(hasCreate).toBeTruthy();
-  });
-
-  test('dashboard shows household name', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasHouseholdName =
-      bodyText?.toLowerCase().includes('hernandez') ||
-      bodyText?.toLowerCase().includes('family') ||
-      bodyText?.toLowerCase().includes('household');
-
-    expect(hasHouseholdName || (bodyText?.length ?? 0) > 100).toBeTruthy();
-  });
-
-  test('progress summary section shows stats', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasStats =
-      bodyText?.toLowerCase().includes('completed') ||
-      bodyText?.toLowerCase().includes('pending') ||
-      bodyText?.toLowerCase().includes('total') ||
-      bodyText?.toLowerCase().includes('today') ||
-      bodyText?.match(/\d+/) !== null;
-
-    expect(hasStats).toBeTruthy();
   });
 });

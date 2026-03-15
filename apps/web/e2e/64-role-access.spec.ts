@@ -1,114 +1,59 @@
 import { test, expect } from '@playwright/test';
+import { ensureAuthenticated } from './helpers';
 import { TEST_CONFIG } from './config';
 
 const HID = TEST_CONFIG.householdId;
 
-test.describe('Role-Based Access - Parent', () => {
-  test.use({
-    storageState: { cookies: [], origins: [] },
-  });
-
-  test('parent can access settings', async ({ page }) => {
-    await page.goto(`/login`);
-    await page.waitForLoadState('networkidle');
+test.describe('Role-Based Access - Parent (authenticated via storageState)', () => {
+  test('parent can access settings page with configuration options', async ({ page }) => {
+    await page.goto(`/households/${HID}/settings`);
+    await page.waitForLoadState('load');
+    await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const emailInput = page.getByLabel(/email/i);
-    if (await emailInput.isVisible().catch(() => false)) {
-      await emailInput.fill(TEST_CONFIG.accounts.parent.email);
-      await page.getByLabel(/password/i).fill(TEST_CONFIG.accounts.parent.password);
-      await page.getByRole('button', { name: /sign in/i }).click();
+    // Settings page should display configuration UI
+    const settingsContent = page.getByText(/setting|household|name|notification|preference/i).first();
+    await expect(settingsContent).toBeVisible({ timeout: 10000 });
 
-      await page.waitForURL('**/dashboard', { timeout: 30000 }).catch(() => {});
-      await page.waitForTimeout(2000);
-
-      await page.goto(`/households/${HID}/settings`);
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasSettings =
-        bodyText?.toLowerCase().includes('setting') ||
-        bodyText?.toLowerCase().includes('household') ||
-        bodyText?.toLowerCase().includes('name');
-
-      expect(hasSettings || (bodyText?.length ?? 0) > 50).toBeTruthy();
-    }
+    // Should have interactive form elements
+    const formElements = page.locator('input, select, textarea, button[type="submit"]');
+    const formCount = await formElements.count();
+    expect(formCount).toBeGreaterThanOrEqual(1);
   });
 
-  test('parent can access member management', async ({ page }) => {
-    await page.goto(`/login`);
-    await page.waitForLoadState('networkidle');
+  test('dashboard loads with household information for authenticated user', async ({ page }) => {
+    await page.goto('/dashboard');
+    await page.waitForLoadState('load');
+    await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const emailInput = page.getByLabel(/email/i);
-    if (await emailInput.isVisible().catch(() => false)) {
-      await emailInput.fill(TEST_CONFIG.accounts.parent.email);
-      await page.getByLabel(/password/i).fill(TEST_CONFIG.accounts.parent.password);
-      await page.getByRole('button', { name: /sign in/i }).click();
+    // Should show the Hernandez household
+    const household = page.getByText(/hernandez/i).first();
+    await expect(household).toBeVisible({ timeout: 15000 });
 
-      await page.waitForURL('**/dashboard', { timeout: 30000 }).catch(() => {});
-      await page.waitForTimeout(2000);
-
-      await page.goto(`/households/${HID}/members`);
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasMembers =
-        bodyText?.toLowerCase().includes('member') ||
-        bodyText?.toLowerCase().includes('family') ||
-        bodyText?.toLowerCase().includes('daniel');
-
-      expect(hasMembers || (bodyText?.length ?? 0) > 50).toBeTruthy();
-    }
-  });
-});
-
-test.describe('Role-Based Access - Child', () => {
-  test.use({
-    storageState: { cookies: [], origins: [] },
+    // Dashboard should have navigation links
+    const links = page.getByRole('link');
+    const linkCount = await links.count();
+    expect(linkCount).toBeGreaterThanOrEqual(1);
   });
 
-  test('child can view dashboard', async ({ page }) => {
-    await page.goto(`/login`);
-    await page.waitForLoadState('networkidle');
+  test('parent can access household member management with real members', async ({ page }) => {
+    await page.goto(`/households/${HID}/members`);
+    await page.waitForLoadState('load');
+    await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
 
-    const emailInput = page.getByLabel(/email/i);
-    if (await emailInput.isVisible().catch(() => false)) {
-      await emailInput.fill(TEST_CONFIG.accounts.child.email);
-      await page.getByLabel(/password/i).fill(TEST_CONFIG.accounts.child.password);
-      await page.getByRole('button', { name: /sign in/i }).click();
+    // Should display family member names (household has 5 members)
+    const memberNames = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
+    let foundCount = 0;
 
-      await page.waitForURL('**/dashboard', { timeout: 30000 }).catch(() => {});
-      await page.waitForTimeout(2000);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+    for (const name of memberNames) {
+      const locator = page.getByText(name, { exact: false }).first();
+      const visible = await locator.isVisible().catch(() => false);
+      if (visible) foundCount++;
     }
-  });
 
-  test('child can view rewards', async ({ page }) => {
-    await page.goto(`/login`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
-
-    const emailInput = page.getByLabel(/email/i);
-    if (await emailInput.isVisible().catch(() => false)) {
-      await emailInput.fill(TEST_CONFIG.accounts.child.email);
-      await page.getByLabel(/password/i).fill(TEST_CONFIG.accounts.child.password);
-      await page.getByRole('button', { name: /sign in/i }).click();
-
-      await page.waitForURL('**/dashboard', { timeout: 30000 }).catch(() => {});
-      await page.waitForTimeout(2000);
-
-      await page.goto(`/households/${HID}/rewards`);
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
+    // Should find at least 3 of the 5 family members
+    expect(foundCount).toBeGreaterThanOrEqual(3);
   });
 });

@@ -7,12 +7,13 @@ const HID = TEST_CONFIG.householdId;
 test.describe('Board Page Deep Interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/board`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('view mode switcher toggles between views', async ({ page }) => {
+  test('board page has view switching controls', async ({ page }) => {
+    // Look for kanban/list/calendar view toggle buttons or tabs
     const viewButtons = page.getByRole('button').filter({
       hasText: /kanban|calendar|list|board|grid|table/i,
     });
@@ -20,137 +21,65 @@ test.describe('Board Page Deep Interactions', () => {
       hasText: /kanban|calendar|list|board|grid|table/i,
     });
 
-    const totalViewOptions = (await viewButtons.count()) + (await viewTabs.count());
+    const buttonCount = await viewButtons.count();
+    const tabCount = await viewTabs.count();
+    const totalViewOptions = buttonCount + tabCount;
 
-    if (totalViewOptions >= 2) {
-      const secondOption = (await viewButtons.count()) >= 2
-        ? viewButtons.nth(1)
-        : viewTabs.nth(1);
-      await secondOption.click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
+    expect(totalViewOptions).toBeGreaterThanOrEqual(2);
   });
 
-  test('search box filters chores', async ({ page }) => {
-    const searchInput = page.getByPlaceholder(/search|filter|find/i).first();
-    const hasSearch = await searchInput.isVisible().catch(() => false);
+  test('board shows chore cards with titles', async ({ page }) => {
+    // The board should display chore cards with recognizable chore names
+    const body = page.locator('body');
+    const choreKeywords = /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make|dust|trash|bed|floor|bathroom|kitchen/i;
 
-    if (hasSearch) {
-      await searchInput.fill('clean');
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
-  });
-
-  test('filter button opens filter panel or modal', async ({ page }) => {
-    const filterBtn = page.getByRole('button', { name: /filter/i }).first();
-    const hasFilter = await filterBtn.isVisible().catch(() => false);
-
-    if (hasFilter) {
-      await filterBtn.click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasFilterUI =
-        bodyText?.toLowerCase().includes('filter') ||
-        bodyText?.toLowerCase().includes('category') ||
-        bodyText?.toLowerCase().includes('assign') ||
-        bodyText?.toLowerCase().includes('priority');
-
-      expect(hasFilterUI).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
-  });
-
-  test('chore cards are clickable and open detail', async ({ page }) => {
-    const choreCards = page.locator('[class*="cursor-pointer"], [class*="card"], [class*="Card"]').filter({
-      hasText: /clean|wash|vacuum|sweep|organize|laundry|dishes|mop|take|make/i,
+    // Find elements that look like chore cards
+    const choreCards = page.locator('[class*="card"], [class*="Card"], [data-testid*="chore"], [role="listitem"]').filter({
+      hasText: choreKeywords,
     });
 
-    if ((await choreCards.count()) > 0) {
-      await choreCards.first().click();
-      await page.waitForTimeout(1000);
+    const cardCount = await choreCards.count();
 
-      const bodyText = await page.locator('body').textContent();
-      const hasDetail =
-        bodyText?.toLowerCase().includes('point') ||
-        bodyText?.toLowerCase().includes('assign') ||
-        bodyText?.toLowerCase().includes('detail') ||
-        bodyText?.toLowerCase().includes('complete') ||
-        bodyText?.toLowerCase().includes('edit');
-
-      expect(hasDetail).toBeTruthy();
-    }
-  });
-
-  test('board columns show priority labels', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const priorities = ['high', 'medium', 'low', 'urgent', 'normal', 'todo', 'done', 'in progress'];
-    const foundPriorities = priorities.filter((p) => bodyText?.toLowerCase().includes(p));
-    expect(foundPriorities.length >= 1 || (bodyText?.length ?? 0) > 100).toBeTruthy();
-  });
-
-  test('add chore button navigates to create form', async ({ page }) => {
-    const addBtn = page.getByRole('button', { name: /add|create|new/i }).first();
-    const addLink = page.getByRole('link', { name: /add|create|new/i }).first();
-    const hasAdd = (await addBtn.isVisible().catch(() => false)) ||
-      (await addLink.isVisible().catch(() => false));
-
-    if (hasAdd) {
-      const target = (await addBtn.isVisible().catch(() => false)) ? addBtn : addLink;
-      await target.click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
-  });
-
-  test('keyboard shortcut help accessible', async ({ page }) => {
-    // Try pressing ? for keyboard shortcuts
-    await page.keyboard.press('?');
-    await page.waitForTimeout(500);
-
-    const bodyText = await page.locator('body').textContent();
-    const hasShortcuts =
-      bodyText?.toLowerCase().includes('shortcut') ||
-      bodyText?.toLowerCase().includes('keyboard') ||
-      bodyText?.toLowerCase().includes('hotkey');
-
-    // Close any modal that may have opened
-    await page.keyboard.press('Escape');
-
-    // This may or may not show shortcuts, so just verify page is still functional
-    expect(bodyText && bodyText.length > 50).toBeTruthy();
-  });
-
-  test('command palette opens with Ctrl+K or Cmd+K', async ({ page }) => {
-    await page.keyboard.press('Meta+k');
-    await page.waitForTimeout(500);
-
-    const commandPalette = page.locator('[role="dialog"], [class*="command"], [class*="palette"]');
-    const hasCommandPalette = (await commandPalette.count()) > 0;
-
-    if (hasCommandPalette) {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText).toBeTruthy();
-      await page.keyboard.press('Escape');
+    if (cardCount > 0) {
+      // Verify at least one card has visible text
+      await expect(choreCards.first()).toBeVisible();
+      const firstCardText = await choreCards.first().textContent();
+      expect(firstCardText).toBeTruthy();
+      expect(firstCardText!.length).toBeGreaterThan(2);
     } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
+      // Fallback: check that the body itself contains chore-related content
+      await expect(body).toContainText(choreKeywords);
     }
+  });
+
+  test('board has search or filter functionality', async ({ page }) => {
+    // Look for a search input or filter button
+    const searchInput = page.getByPlaceholder(/search|filter|find/i).first();
+    const filterBtn = page.getByRole('button', { name: /filter/i }).first();
+
+    const hasSearch = await searchInput.isVisible().catch(() => false);
+    const hasFilter = await filterBtn.isVisible().catch(() => false);
+
+    // At least one of search or filter should exist
+    expect(hasSearch || hasFilter).toBeTruthy();
+
+    if (hasSearch) {
+      await expect(searchInput).toBeVisible();
+    }
+    if (hasFilter) {
+      await expect(filterBtn).toBeVisible();
+    }
+  });
+
+  test('priority columns or categories are visible', async ({ page }) => {
+    const body = page.locator('body');
+
+    // Board should show priority levels, status columns, or category groupings
+    const priorityTerms = ['high', 'medium', 'low', 'urgent', 'normal', 'todo', 'done', 'in progress', 'pending', 'daily', 'weekly'];
+    const bodyText = await body.textContent();
+    const lowerBody = bodyText?.toLowerCase() ?? '';
+
+    const foundTerms = priorityTerms.filter((term) => lowerBody.includes(term));
+    expect(foundTerms.length).toBeGreaterThanOrEqual(1);
   });
 });

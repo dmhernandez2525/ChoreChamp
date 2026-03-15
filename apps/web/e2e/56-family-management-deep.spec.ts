@@ -3,137 +3,91 @@ import { ensureAuthenticated } from './helpers';
 import { TEST_CONFIG } from './config';
 
 const HID = TEST_CONFIG.householdId;
+const FAMILY_MEMBERS = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
 
 test.describe('Family Management Deep Interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/households/${HID}/members`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await ensureAuthenticated(page);
     await page.waitForTimeout(2000);
   });
 
-  test('member list shows all family members', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const members = ['daniel', 'christina', 'adam', 'addison', 'aiden'];
-    const foundMembers = members.filter((m) => bodyText?.toLowerCase().includes(m));
-    expect(foundMembers.length).toBeGreaterThanOrEqual(1);
+  test('shows list of family members with real names', async ({ page }) => {
+    const body = page.locator('body');
+
+    // Verify that at least 3 of the 5 known family members appear on the page
+    let foundCount = 0;
+    for (const member of FAMILY_MEMBERS) {
+      const memberLocator = page.locator(`text=${member}`);
+      const isVisible = await memberLocator.first().isVisible().catch(() => false);
+      if (isVisible) {
+        foundCount++;
+      }
+    }
+
+    expect(foundCount).toBeGreaterThanOrEqual(3);
   });
 
-  test('member cards show role badges', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const roles = ['parent', 'teen', 'child', 'admin', 'member'];
-    const foundRoles = roles.filter((r) => bodyText?.toLowerCase().includes(r));
+  test('has Add Member or Invite button', async ({ page }) => {
+    const addMemberBtn = page.getByRole('button', { name: /add member|add|invite/i }).first();
+    const addMemberLink = page.getByRole('link', { name: /add member|add|invite/i }).first();
+
+    const hasButton = await addMemberBtn.isVisible().catch(() => false);
+    const hasLink = await addMemberLink.isVisible().catch(() => false);
+
+    expect(hasButton || hasLink).toBeTruthy();
+
+    if (hasButton) {
+      await expect(addMemberBtn).toBeVisible();
+    } else {
+      await expect(addMemberLink).toBeVisible();
+    }
+  });
+
+  test('member cards show role information', async ({ page }) => {
+    const body = page.locator('body');
+
+    // Each family member should have a role designation
+    const roleTerms = ['parent', 'teen', 'child', 'admin', 'member', 'owner'];
+    const bodyText = await body.textContent();
+    const lowerBody = bodyText?.toLowerCase() ?? '';
+
+    const foundRoles = roleTerms.filter((role) => lowerBody.includes(role));
     expect(foundRoles.length).toBeGreaterThanOrEqual(1);
   });
 
-  test('add member button opens modal', async ({ page }) => {
-    const addBtn = page.getByRole('button', { name: /add member|add|invite/i }).first();
-    const hasAdd = await addBtn.isVisible().catch(() => false);
+  test('can click on a member to see details', async ({ page }) => {
+    // Find a clickable member card for one of the known members
+    const memberCards = page.locator('[class*="card"], [class*="Card"], [class*="cursor-pointer"], [role="listitem"]').filter({
+      hasText: /Daniel|Christina|Adam|Addison|Aiden/i,
+    });
 
-    if (hasAdd) {
-      await addBtn.click();
+    const cardCount = await memberCards.count();
+
+    if (cardCount > 0) {
+      await memberCards.first().click();
       await page.waitForTimeout(1000);
 
-      const dialog = page.locator('[role="dialog"]');
-      const hasDialog = (await dialog.count()) > 0;
+      // After clicking, should see member detail info (name, role, stats, etc.)
+      const body = page.locator('body');
+      const bodyText = await body.textContent();
+      const lowerBody = bodyText?.toLowerCase() ?? '';
 
-      if (hasDialog) {
-        const dialogText = await dialog.first().textContent();
-        const hasFormFields =
-          dialogText?.toLowerCase().includes('name') ||
-          dialogText?.toLowerCase().includes('role') ||
-          dialogText?.toLowerCase().includes('color');
+      const hasDetail =
+        lowerBody.includes('point') ||
+        lowerBody.includes('chore') ||
+        lowerBody.includes('role') ||
+        lowerBody.includes('name') ||
+        lowerBody.includes('completed') ||
+        lowerBody.includes('edit');
 
-        expect(hasFormFields).toBeTruthy();
-        await page.keyboard.press('Escape');
-      } else {
-        const bodyText = await page.locator('body').textContent();
-        expect(bodyText && bodyText.length > 50).toBeTruthy();
-      }
-    }
-  });
-
-  test('member edit opens editing UI', async ({ page }) => {
-    const editBtns = page.getByRole('button', { name: /edit/i });
-    if ((await editBtns.count()) > 0) {
-      await editBtns.first().click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasEditUI =
-        bodyText?.toLowerCase().includes('name') ||
-        bodyText?.toLowerCase().includes('save') ||
-        bodyText?.toLowerCase().includes('cancel');
-
-      expect(hasEditUI).toBeTruthy();
-      await page.keyboard.press('Escape');
+      expect(hasDetail).toBeTruthy();
     } else {
-      const memberCards = page.locator('[class*="card"], [class*="Card"]').filter({
-        hasText: /daniel|christina|adam/i,
-      });
-      if ((await memberCards.count()) > 0) {
-        await memberCards.first().click();
-        await page.waitForTimeout(1000);
-        const bodyText = await page.locator('body').textContent();
-        expect(bodyText && bodyText.length > 50).toBeTruthy();
-      }
+      // If no clickable cards, try clicking directly on a member name link
+      const memberLink = page.getByRole('link', { name: /Daniel|Christina|Adam/i }).first();
+      const hasLink = await memberLink.isVisible().catch(() => false);
+      expect(hasLink).toBeTruthy();
     }
-  });
-
-  test('invite codes tab shows generation UI', async ({ page }) => {
-    const inviteTab = page.getByRole('button', { name: /invite/i }).first();
-    const inviteLink = page.getByRole('tab', { name: /invite/i }).first();
-    const hasInviteTab =
-      (await inviteTab.isVisible().catch(() => false)) ||
-      (await inviteLink.isVisible().catch(() => false));
-
-    if (hasInviteTab) {
-      const target = (await inviteTab.isVisible().catch(() => false)) ? inviteTab : inviteLink;
-      await target.click();
-      await page.waitForTimeout(1000);
-
-      const bodyText = await page.locator('body').textContent();
-      const hasInviteUI =
-        bodyText?.toLowerCase().includes('invite') ||
-        bodyText?.toLowerCase().includes('code') ||
-        bodyText?.toLowerCase().includes('generate') ||
-        bodyText?.toLowerCase().includes('link');
-
-      expect(hasInviteUI).toBeTruthy();
-    } else {
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText && bodyText.length > 50).toBeTruthy();
-    }
-  });
-
-  test('member color selection works', async ({ page }) => {
-    const editBtns = page.getByRole('button', { name: /edit/i });
-    if ((await editBtns.count()) > 0) {
-      await editBtns.first().click();
-      await page.waitForTimeout(1000);
-
-      const colorButtons = page.locator('button[style*="background-color"]');
-      if ((await colorButtons.count()) > 0) {
-        await colorButtons.first().click();
-        await page.waitForTimeout(500);
-
-        const bodyText = await page.locator('body').textContent();
-        expect(bodyText && bodyText.length > 50).toBeTruthy();
-      }
-
-      await page.keyboard.press('Escape');
-    }
-  });
-
-  test('member stats are visible', async ({ page }) => {
-    const bodyText = await page.locator('body').textContent();
-    const hasStats =
-      bodyText?.toLowerCase().includes('point') ||
-      bodyText?.toLowerCase().includes('chore') ||
-      bodyText?.toLowerCase().includes('streak') ||
-      bodyText?.toLowerCase().includes('completed') ||
-      bodyText?.toLowerCase().includes('level');
-
-    expect(hasStats || (bodyText?.length ?? 0) > 100).toBeTruthy();
   });
 });
