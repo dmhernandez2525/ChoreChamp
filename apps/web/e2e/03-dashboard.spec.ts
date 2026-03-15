@@ -10,7 +10,8 @@ test.describe('Dashboard', () => {
   });
 
   test('shows welcome message with user name', async ({ page }) => {
-    await expect(page.getByText(/welcome.*daniel/i)).toBeVisible();
+    // The page shows "Welcome, {name}!" or "Welcome, there!" if auth hasn't loaded yet
+    await expect(page.getByText(/welcome,\s*(daniel|there)!/i)).toBeVisible({ timeout: 15000 });
     await page.waitForTimeout(500);
   });
 

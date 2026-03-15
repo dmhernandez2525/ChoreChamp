@@ -32,26 +32,30 @@ test.describe('Activity Feed', () => {
   });
 
   test('activity items show member name and action description', async ({ page }) => {
-    // If there are activity items, they should reference family members and actions
-    const memberNames = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
+    // The Activity page heading is "Activity Feed"
+    // ActivityItem renders: memberName (bold) + title text + description
+    // If no activity exists, ActivityFeed shows an empty message
     const bodyText = await page.locator('body').textContent();
 
-    // Check if any member names appear in the activity feed
-    const hasMemberName = memberNames.some(
-      (name) => bodyText?.includes(name)
-    );
+    // The page heading should say "Activity Feed"
+    expect(bodyText?.toLowerCase()).toContain('activity feed');
 
-    // Check if action verbs appear (completed, created, assigned, updated, etc.)
-    const actionPattern = /complet|creat|assign|updat|added|removed|earned|finish/i;
-    const hasAction = actionPattern.test(bodyText || '');
+    // Check for the empty state message from ActivityFeed
+    const emptyMessage = page.getByText(/no activity|no recent/i).first();
+    const hasEmptyState = await emptyMessage.isVisible().catch(() => false);
 
-    // If activity data exists, we should see both member names and actions
-    // If no activity data, an empty state should have been caught by the previous test
-    if (hasMemberName) {
-      expect(hasAction).toBeTruthy();
+    if (!hasEmptyState) {
+      // If there are activity items, check for member names and activity titles
+      const memberNames = ['Daniel', 'Christina', 'Adam', 'Addison', 'Aiden'];
+      const hasMemberName = memberNames.some(
+        (name) => bodyText?.includes(name)
+      );
+
+      // ActivityItem shows title text (from activity.title) which describes the action
+      // At least one member name or action-related text should appear
+      const hasContent = hasMemberName || /complet|creat|assign|updat|added|removed|earned|finish|redeem/i.test(bodyText || '');
+      expect(hasContent).toBeTruthy();
     }
-    // At minimum, the page should contain the Activity heading
-    expect(bodyText?.toLowerCase()).toContain('activity');
   });
 
   test('activity feed has filter or type controls', async ({ page }) => {
