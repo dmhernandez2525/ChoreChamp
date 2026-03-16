@@ -161,9 +161,9 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
-   * GET /location/presets - Get geofence presets
+   * GET /presets - Get geofence presets
    */
-  fastify.get('/location/presets', { preHandler: [requireAuth] }, async (request, reply) => {
+  fastify.get('/presets', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -178,12 +178,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
-   * GET /location/geofences - List all geofences
+   * GET /geofences - List all geofences
    */
   fastify.get<{
     Params: { householdId: string };
     Querystring: { type?: string; enabled?: string };
-  }>('/location/geofences', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/geofences', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -211,12 +211,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * POST /location/geofences - Create a geofence
+   * POST /geofences - Create a geofence
    */
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createGeofenceSchema>;
-  }>('/location/geofences', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/geofences', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -237,11 +237,11 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * GET /location/geofences/:geofenceId - Get a geofence
+   * GET /geofences/:geofenceId - Get a geofence
    */
   fastify.get<{
     Params: { householdId: string; geofenceId: string };
-  }>('/location/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -303,12 +303,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * PATCH /location/geofences/:geofenceId - Update a geofence
+   * PATCH /geofences/:geofenceId - Update a geofence
    */
   fastify.patch<{
     Params: { householdId: string; geofenceId: string };
     Body: z.infer<typeof updateGeofenceSchema>;
-  }>('/location/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -342,11 +342,11 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * DELETE /location/geofences/:geofenceId - Delete a geofence
+   * DELETE /geofences/:geofenceId - Delete a geofence
    */
   fastify.delete<{
     Params: { householdId: string; geofenceId: string };
-  }>('/location/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/geofences/:geofenceId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -376,12 +376,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
-   * POST /location/report - Report current location
+   * POST /report - Report current location
    */
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof reportLocationSchema>;
-  }>('/location/report', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/report', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -587,12 +587,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * POST /location/events - Report a geofence event directly
+   * POST /events - Report a geofence event directly
    */
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof reportGeofenceEventSchema>;
-  }>('/location/events', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/events', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -693,16 +693,71 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
     };
   });
 
+  /**
+   * GET /events - List recent geofence events (frontend compatibility)
+   */
+  fastify.get<{
+    Params: { householdId: string };
+    Querystring: { memberId?: string; geofenceId?: string; type?: string; limit?: string };
+  }>('/events', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId, geofenceId, type, limit = '50' } = request.query;
+
+    const conditions = [eq(geofenceEvents.householdId, householdId)];
+
+    if (memberId) {
+      conditions.push(eq(geofenceEvents.memberId, memberId));
+    }
+    if (geofenceId) {
+      conditions.push(eq(geofenceEvents.geofenceId, geofenceId));
+    }
+    if (type) {
+      conditions.push(eq(geofenceEvents.eventType, type));
+    }
+
+    const events = await db
+      .select({
+        event: geofenceEvents,
+        member: {
+          id: members.id,
+          name: members.name,
+        },
+        geofence: {
+          id: geofences.id,
+          name: geofences.name,
+        },
+      })
+      .from(geofenceEvents)
+      .leftJoin(members, eq(geofenceEvents.memberId, members.id))
+      .leftJoin(geofences, eq(geofenceEvents.geofenceId, geofences.id))
+      .where(and(...conditions))
+      .orderBy(desc(geofenceEvents.occurredAt))
+      .limit(parseInt(limit));
+
+    return {
+      events: events.map((e) => ({
+        ...e.event,
+        member: e.member,
+        geofence: e.geofence,
+      })),
+    };
+  });
+
   // ========================================
   // Member Locations
   // ========================================
 
   /**
-   * GET /location/members - Get all member locations
+   * GET /members - Get all member locations
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/members', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/members', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -760,12 +815,70 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * GET /location/history - Get location history
+   * GET /locations - Alias for GET /members (frontend compatibility)
+   */
+  fastify.get<{
+    Params: { householdId: string };
+  }>('/locations', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const requestingMemberId = membership.id;
+
+    const locations = await db
+      .select({
+        location: memberLocations,
+        member: {
+          id: members.id,
+          name: members.name,
+          avatarUrl: members.avatarUrl,
+        },
+      })
+      .from(memberLocations)
+      .leftJoin(members, eq(memberLocations.memberId, members.id))
+      .where(eq(memberLocations.householdId, householdId));
+
+    const filteredLocations = [];
+    for (const loc of locations) {
+      const settings = await db.query.locationSettings.findFirst({
+        where: eq(locationSettings.memberId, loc.location.memberId),
+      });
+
+      if (!settings?.shareLocationWithHousehold) continue;
+      if (
+        settings?.hideFromSpecificMembers &&
+        (settings.hideFromSpecificMembers as string[]).includes(requestingMemberId)
+      ) {
+        continue;
+      }
+
+      filteredLocations.push({
+        ...loc.location,
+        member: loc.member,
+        latitude:
+          settings?.blurLocationWhenNotHome && !loc.location.isAtHome
+            ? Math.round(loc.location.latitude * 100) / 100
+            : loc.location.latitude,
+        longitude:
+          settings?.blurLocationWhenNotHome && !loc.location.isAtHome
+            ? Math.round(loc.location.longitude * 100) / 100
+            : loc.location.longitude,
+      });
+    }
+
+    return { locations: filteredLocations };
+  });
+
+  /**
+   * GET /history - Get location history
    */
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; from?: string; to?: string; limit?: string };
-  }>('/location/history', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/history', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -801,11 +914,11 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
-   * GET /location/automations - List automations
+   * GET /automations - List automations
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/automations', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/automations', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -835,12 +948,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * POST /location/automations - Create automation
+   * POST /automations - Create automation
    */
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createAutomationSchema>;
-  }>('/location/automations', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/automations', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -873,11 +986,11 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * DELETE /location/automations/:automationId - Delete automation
+   * DELETE /automations/:automationId - Delete automation
    */
   fastify.delete<{
     Params: { householdId: string; automationId: string };
-  }>('/location/automations/:automationId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/automations/:automationId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -907,11 +1020,11 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
-   * GET /location/away-mode - Get away mode status for member
+   * GET /away-mode - Get away mode status for member
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/away-mode', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/away-mode', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -931,12 +1044,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * PUT /location/away-mode - Update away mode
+   * PUT /away-mode - Update away mode
    */
   fastify.put<{
     Params: { householdId: string };
     Body: z.infer<typeof updateAwayModeSchema>;
-  }>('/location/away-mode', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/away-mode', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -983,11 +1096,11 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
-   * GET /location/settings - Get location settings
+   * GET /settings - Get location settings
    */
   fastify.get<{
     Params: { householdId: string };
-  }>('/location/settings', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/settings', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -1015,12 +1128,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * PATCH /location/settings - Update location settings
+   * PATCH /settings - Update location settings
    */
   fastify.patch<{
     Params: { householdId: string };
     Body: z.infer<typeof updateLocationSettingsSchema>;
-  }>('/location/settings', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/settings', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -1061,12 +1174,12 @@ export async function geofencingRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
-   * GET /location/analytics - Get geofencing analytics
+   * GET /analytics - Get geofencing analytics
    */
   fastify.get<{
     Params: { householdId: string };
     Querystring: { days?: string };
-  }>('/location/analytics', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/analytics', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);

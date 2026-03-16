@@ -499,6 +499,130 @@ export async function storyModeRoutes(app: FastifyInstance) {
     });
   });
 
+  // Get all quests (optionally filtered by chapter)
+  app.get('/quests', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const { memberId, chapterId } = request.query as { memberId: string; chapterId?: string };
+
+    // Verify target member belongs to this household
+    const [targetMember] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(and(eq(members.id, memberId), eq(members.householdId, householdId)));
+    if (!targetMember) {
+      return reply.status(404).send({ error: 'Member not found in this household' });
+    }
+
+    // Get quests (all or filtered by chapter)
+    const quests = chapterId
+      ? await db
+          .select()
+          .from(storyQuests)
+          .where(eq(storyQuests.chapterId, chapterId))
+          .orderBy(asc(storyQuests.orderInChapter))
+      : await db
+          .select()
+          .from(storyQuests)
+          .orderBy(asc(storyQuests.orderInChapter));
+
+    if (quests.length === 0) {
+      return reply.send({ quests: [], totalQuests: 0 });
+    }
+
+    // Get quest progress for the member
+    const questIds = quests.map(q => q.id);
+    const questProgressData = await db
+      .select()
+      .from(memberQuestProgress)
+      .where(
+        and(
+          eq(memberQuestProgress.memberId, memberId),
+          inArray(memberQuestProgress.questId, questIds)
+        )
+      );
+
+    const progressByQuestId = new Map(
+      questProgressData.map(p => [p.questId, p])
+    );
+
+    // Get completed/started chapter data for status calculation
+    const completedChapterIds = await getCompletedChapterIds(memberId);
+    const startedChapterIds = await getStartedChapterIds(memberId);
+
+    // For each quest's chapter, find the highest completed order
+    const completedQuestIds = new Set(
+      questProgressData.filter(p => p.status === 'completed').map(p => p.questId)
+    );
+    const startedQuestIds = new Set(
+      questProgressData.filter(p => p.status === 'in_progress').map(p => p.questId)
+    );
+
+    // Group quests by chapter to calculate highestCompletedOrder per chapter
+    const questsByChapter = new Map<string, typeof quests>();
+    for (const quest of quests) {
+      const existing = questsByChapter.get(quest.chapterId) || [];
+      existing.push(quest);
+      questsByChapter.set(quest.chapterId, existing);
+    }
+
+    const highestCompletedOrderByChapter = new Map<string, number>();
+    for (const [chapId, chapQuests] of questsByChapter) {
+      let highest = 0;
+      for (const q of chapQuests) {
+        if (completedQuestIds.has(q.id)) {
+          highest = Math.max(highest, q.orderInChapter);
+        }
+      }
+      highestCompletedOrderByChapter.set(chapId, highest);
+    }
+
+    // Format quests with progress
+    const questsWithProgress = quests.map(quest => {
+      const progress = progressByQuestId.get(quest.id);
+      const chapterStatus = completedChapterIds.has(quest.chapterId)
+        ? 'completed'
+        : startedChapterIds.has(quest.chapterId)
+          ? 'in_progress'
+          : 'locked';
+      const highestCompletedOrder = highestCompletedOrderByChapter.get(quest.chapterId) || 0;
+
+      const status = getQuestStatus(
+        quest.id,
+        quest.orderInChapter,
+        chapterStatus,
+        completedQuestIds,
+        startedQuestIds,
+        highestCompletedOrder
+      );
+
+      return {
+        quest: formatQuest(quest),
+        progress: {
+          questId: quest.id,
+          status,
+          objectives: (progress?.objectiveProgress as QuestObjective[]) || quest.objectives,
+          currentDialogueId: progress?.currentDialogueId || null,
+          dialoguesViewed: (progress?.dialoguesViewed || []) as string[],
+          choicesMade: (progress?.choicesMade || {}) as Record<string, string>,
+          startedAt: progress?.startedAt || null,
+          completedAt: progress?.completedAt || null,
+          timeSpent: progress?.timeSpent || 0,
+        } as QuestProgress,
+      };
+    });
+
+    return reply.send({
+      quests: questsWithProgress,
+      totalQuests: quests.length,
+      completedQuests: completedQuestIds.size,
+    });
+  });
+
   // Start a quest
   app.post('/quests/:questId/start', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
