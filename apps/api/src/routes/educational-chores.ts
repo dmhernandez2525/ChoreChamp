@@ -106,7 +106,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   // Configuration
   // ========================================
 
-  fastify.get('/educational/content-types', { preHandler: [requireAuth] }, async (request, reply) => {
+  fastify.get('/content-types', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -123,7 +123,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { contentType?: string };
-  }>('/educational/templates', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/templates', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -148,7 +148,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createTemplateSchema>;
-  }>('/educational/templates', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/templates', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -171,7 +171,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; templateId: string };
     Body: Partial<z.infer<typeof createTemplateSchema>> & { isEnabled?: boolean };
-  }>('/educational/templates/:templateId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/templates/:templateId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -208,7 +208,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { contentType?: string; difficulty?: string; limit?: string };
-  }>('/educational/questions', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/questions', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -234,7 +234,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createQuestionSchema>;
-  }>('/educational/questions', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/questions', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -257,7 +257,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: { questions: z.infer<typeof createQuestionSchema>[] };
-  }>('/educational/questions/bulk', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/questions/bulk', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -286,7 +286,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; status?: string; limit?: string };
-  }>('/educational/sessions', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -324,7 +324,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof startSessionSchema>;
-  }>('/educational/sessions/start', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions/start', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -392,7 +392,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string; sessionId: string };
     Body: z.infer<typeof submitAnswerSchema>;
-  }>('/educational/sessions/:sessionId/answer', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions/:sessionId/answer', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -509,7 +509,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
 
   fastify.post<{
     Params: { householdId: string; sessionId: string };
-  }>('/educational/sessions/:sessionId/complete', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions/:sessionId/complete', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -556,7 +556,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
 
   fastify.get<{
     Params: { householdId: string; choreId: string };
-  }>('/educational/chore-links/:choreId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/chore-links/:choreId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -588,7 +588,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: { choreId: string; templateId: string; isRequired?: boolean };
-  }>('/educational/chore-links', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/chore-links', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -616,7 +616,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
 
   fastify.get<{
     Params: { householdId: string; memberId: string };
-  }>('/educational/progress/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/progress/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -652,7 +652,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string };
-  }>('/educational/achievements', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/achievements', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -679,7 +679,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { contentType?: string };
-  }>('/educational/paths', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/paths', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -705,7 +705,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createLearningPathSchema>;
-  }>('/educational/paths', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/paths', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -727,7 +727,7 @@ export async function educationalChoreRoutes(fastify: FastifyInstance) {
 
   fastify.get<{
     Params: { householdId: string; memberId: string; pathId: string };
-  }>('/educational/paths/:pathId/progress/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/paths/:pathId/progress/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);

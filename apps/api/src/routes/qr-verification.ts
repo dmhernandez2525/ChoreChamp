@@ -129,7 +129,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   /**
    * GET /qr/templates - Get QR code templates
    */
-  fastify.get('/qr/templates', { preHandler: [requireAuth] }, async (request, reply) => {
+  fastify.get('/templates', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -149,7 +149,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { type?: string; status?: string };
-  }>('/qr/codes', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/codes', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -182,7 +182,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createQRCodeSchema>;
-  }>('/qr/codes', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/codes', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -227,7 +227,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{
     Params: { householdId: string; codeId: string };
-  }>('/qr/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -274,7 +274,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; codeId: string };
     Body: z.infer<typeof updateQRCodeSchema>;
-  }>('/qr/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -316,7 +316,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{
     Params: { householdId: string; codeId: string };
-  }>('/qr/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/codes/:codeId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -343,7 +343,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
    */
   fastify.post<{
     Params: { householdId: string; codeId: string };
-  }>('/qr/codes/:codeId/regenerate', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/codes/:codeId/regenerate', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -386,7 +386,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof scanQRCodeSchema>;
-  }>('/qr/scan', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/scan', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -669,7 +669,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
       limit?: string;
       offset?: string;
     };
-  }>('/qr/scans', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/scans', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -736,7 +736,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof checkoutEquipmentSchema>;
-  }>('/qr/equipment/checkout', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/equipment/checkout', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -796,7 +796,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string; checkoutId: string };
     Body: z.infer<typeof checkinEquipmentSchema>;
-  }>('/qr/equipment/:checkoutId/checkin', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/equipment/:checkoutId/checkin', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -841,7 +841,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { status?: string; memberId?: string };
-  }>('/qr/equipment/checkouts', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/equipment/checkouts', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -885,12 +885,69 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   // ========================================
 
   /**
+   * GET /qr/checkpoints - Get checkpoint progress for member (alias for /checkpoints/progress)
+   */
+  fastify.get<{
+    Params: { householdId: string };
+    Querystring: { memberId?: string; status?: string };
+  }>('/checkpoints', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+    const memberId = request.query.memberId || membership.id;
+    const { status } = request.query;
+
+    const conditions = [eq(checkpointProgress.householdId, householdId)];
+
+    if (memberId) {
+      conditions.push(eq(checkpointProgress.memberId, memberId));
+    }
+    if (status) {
+      conditions.push(eq(checkpointProgress.status, status));
+    }
+
+    const progress = await db
+      .select()
+      .from(checkpointProgress)
+      .where(and(...conditions))
+      .orderBy(desc(checkpointProgress.startedAt));
+
+    // Get checkpoint details for each progress
+    const withCheckpoints = await Promise.all(
+      progress.map(async (p) => {
+        const checkpoints = await db
+          .select({
+            id: qrCodes.id,
+            name: qrCodes.name,
+            checkpointOrder: qrCodes.checkpointOrder,
+          })
+          .from(qrCodes)
+          .where(eq(qrCodes.checkpointGroupId, p.checkpointGroupId))
+          .orderBy(qrCodes.checkpointOrder);
+
+        return {
+          ...p,
+          checkpoints: checkpoints.map((cp) => ({
+            ...cp,
+            completed: (p.completedCheckpointIds as string[]).includes(cp.id),
+          })),
+        };
+      })
+    );
+
+    return { progress: withCheckpoints };
+  });
+
+  /**
    * GET /qr/checkpoints/progress - Get checkpoint progress for member
    */
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; status?: string };
-  }>('/qr/checkpoints/progress', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/checkpoints/progress', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -951,7 +1008,7 @@ export async function qrVerificationRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { days?: string };
-  }>('/qr/analytics', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/analytics', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);

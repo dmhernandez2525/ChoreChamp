@@ -1020,6 +1020,101 @@ export async function skillBuildingRoutes(fastify: FastifyInstance) {
     return updated;
   });
 
+  // === PROGRESS ===
+
+  // Get overall skill progress for the household
+  fastify.get('/progress', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+
+    // Get all skill progress for household members
+    const progress = await db.select({
+      progress: memberSkillProgress,
+      skill: skills,
+    }).from(memberSkillProgress)
+      .innerJoin(skills, eq(memberSkillProgress.skillId, skills.id))
+      .where(eq(memberSkillProgress.householdId, householdId))
+      .orderBy(desc(memberSkillProgress.lastPracticedAt));
+
+    // Get total skills available in the household
+    const allSkills = await db.select().from(skills)
+      .where(eq(skills.householdId, householdId));
+
+    // Build per-skill progress summary
+    const skillProgressMap = new Map<string, {
+      skillId: string;
+      skillName: string;
+      tier: number;
+      level: number;
+      membersStarted: number;
+      membersCompleted: number;
+      membersMastered: number;
+      averageXp: number;
+      totalPracticeMinutes: number;
+    }>();
+
+    for (const { progress: p, skill } of progress) {
+      const existing = skillProgressMap.get(p.skillId);
+      if (existing) {
+        existing.membersStarted += 1;
+        existing.membersCompleted += (p.status === 'completed' || p.status === 'mastered') ? 1 : 0;
+        existing.membersMastered += p.status === 'mastered' ? 1 : 0;
+        existing.averageXp += p.currentXp;
+        existing.totalPracticeMinutes += p.totalPracticeMinutes;
+      } else {
+        skillProgressMap.set(p.skillId, {
+          skillId: p.skillId,
+          skillName: skill.name,
+          tier: skill.tier,
+          level: skill.level,
+          membersStarted: 1,
+          membersCompleted: (p.status === 'completed' || p.status === 'mastered') ? 1 : 0,
+          membersMastered: p.status === 'mastered' ? 1 : 0,
+          averageXp: p.currentXp,
+          totalPracticeMinutes: p.totalPracticeMinutes,
+        });
+      }
+    }
+
+    // Finalize averages
+    const skillProgress = Array.from(skillProgressMap.values()).map(sp => ({
+      ...sp,
+      averageXp: sp.membersStarted > 0 ? Math.round(sp.averageXp / sp.membersStarted) : 0,
+    }));
+
+    // Calculate overall stats
+    let totalXp = 0;
+    let totalPracticeMinutes = 0;
+    let totalCompleted = 0;
+    let totalMastered = 0;
+
+    for (const { progress: p } of progress) {
+      totalXp += p.currentXp;
+      totalPracticeMinutes += p.totalPracticeMinutes;
+      if (p.status === 'completed' || p.status === 'mastered') totalCompleted += 1;
+      if (p.status === 'mastered') totalMastered += 1;
+    }
+
+    return {
+      skillProgress,
+      summary: {
+        totalSkillsAvailable: allSkills.length,
+        totalSkillsStarted: skillProgressMap.size,
+        totalCompleted,
+        totalMastered,
+        totalXp,
+        totalPracticeMinutes,
+        overallCompletionPercentage: allSkills.length > 0
+          ? Math.round((skillProgressMap.size / allSkills.length) * 100)
+          : 0,
+      },
+    };
+  });
+
   // === STATS ===
 
   // Get skill building stats for member

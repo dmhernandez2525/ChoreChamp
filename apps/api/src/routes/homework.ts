@@ -130,7 +130,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   // Configuration Data
   // ========================================
 
-  fastify.get('/homework/colors', { preHandler: [requireAuth] }, async (request, reply) => {
+  fastify.get('/colors', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -140,7 +140,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
     return { colors: SUBJECT_COLORS };
   });
 
-  fastify.get('/homework/study-methods', { preHandler: [requireAuth] }, async (request, reply) => {
+  fastify.get('/study-methods', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -157,7 +157,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; includeArchived?: string };
-  }>('/homework/subjects', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/subjects', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -198,7 +198,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createSubjectSchema> & { memberId: string };
-  }>('/homework/subjects', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/subjects', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -231,7 +231,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; subjectId: string };
     Body: Partial<z.infer<typeof createSubjectSchema>> & { isArchived?: boolean; currentGrade?: string };
-  }>('/homework/subjects/:subjectId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/subjects/:subjectId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -266,7 +266,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.delete<{
     Params: { householdId: string; subjectId: string };
-  }>('/homework/subjects/:subjectId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/subjects/:subjectId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -304,7 +304,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
       dueBefore?: string;
       dueAfter?: string;
     };
-  }>('/homework/assignments', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/assignments', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -350,7 +350,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.get<{
     Params: { householdId: string; assignmentId: string };
-  }>('/homework/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -397,7 +397,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createAssignmentSchema>;
-  }>('/homework/assignments', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/assignments', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -440,7 +440,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; assignmentId: string };
     Body: z.infer<typeof updateAssignmentSchema>;
-  }>('/homework/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -491,7 +491,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.delete<{
     Params: { householdId: string; assignmentId: string };
-  }>('/homework/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/assignments/:assignmentId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -529,7 +529,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
       startBefore?: string;
       limit?: string;
     };
-  }>('/homework/sessions', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -576,7 +576,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof startSessionSchema>;
-  }>('/homework/sessions/start', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions/start', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -614,7 +614,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; sessionId: string };
     Body: z.infer<typeof endSessionSchema>;
-  }>('/homework/sessions/:sessionId/end', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions/:sessionId/end', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -675,7 +675,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.post<{
     Params: { householdId: string; sessionId: string };
-  }>('/homework/sessions/:sessionId/break', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/sessions/:sessionId/break', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -713,7 +713,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; activeOnly?: string };
-  }>('/homework/goals', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/goals', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -751,7 +751,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createGoalSchema>;
-  }>('/homework/goals', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/goals', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -792,7 +792,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { householdId: string; goalId: string };
     Body: { currentValue?: number; isActive?: boolean; isCompleted?: boolean };
-  }>('/homework/goals/:goalId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/goals/:goalId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -837,7 +837,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
 
   fastify.get<{
     Params: { householdId: string; memberId: string };
-  }>('/homework/streaks/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/streaks/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -873,7 +873,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string };
     Querystring: { memberId?: string; date?: string; planType?: string };
-  }>('/homework/plans', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/plans', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -898,7 +898,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { householdId: string };
     Body: z.infer<typeof createPlanSchema>;
-  }>('/homework/plans', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/plans', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -939,7 +939,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
     Body: {
       plannedItems?: z.infer<typeof createPlanSchema>['plannedItems'];
     };
-  }>('/homework/plans/:planId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/plans/:planId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -998,7 +998,7 @@ export async function homeworkRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { householdId: string; memberId: string };
     Querystring: { period?: string; startDate?: string; endDate?: string };
-  }>('/homework/stats/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
+  }>('/stats/:memberId', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
