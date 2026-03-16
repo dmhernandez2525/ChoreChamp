@@ -206,13 +206,13 @@ test.describe('Screen Time Page', () => {
       await expect(page.getByRole('button', { name: tab }).first()).toBeVisible();
     }
 
-    // Overview content: usage stats or loading or error
+    // Overview content: usage stats or loading or error (use .first() for errors that may appear multiple times)
     const hasUsedToday = await page.getByText('Used Today').isVisible().catch(() => false);
     const hasRemaining = await page.getByText('Remaining').isVisible().catch(() => false);
     const hasBonusEarned = await page.getByText('Bonus Earned').isVisible().catch(() => false);
     const hasDevicesActive = await page.getByText('Devices Active').isVisible().catch(() => false);
     const hasLoading = await page.locator('.animate-pulse').first().isVisible().catch(() => false);
-    const hasError = await page.getByText('Something went wrong').isVisible().catch(() => false);
+    const hasError = await page.getByText('Something went wrong').first().isVisible().catch(() => false);
 
     expect(
       hasUsedToday || hasRemaining || hasBonusEarned || hasDevicesActive || hasLoading || hasError
