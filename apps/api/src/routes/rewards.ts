@@ -8,10 +8,15 @@ import {
   members,
   pointTransactions,
   households,
+  choreCompletions,
+  chores,
 } from '@chorechamp/database';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { getEffectiveTierForHousehold, isTierAtLeast } from '../lib/subscription';
-import { verifyMembership } from '../lib/membership';
+import { verifyMembership, verifyParentMembership } from '../lib/membership';
+import { calculateChorePoints, getStreakBonus, type Difficulty } from '@chorechamp/gamification';
+import type { Server } from 'socket.io';
+import { emitToHousehold } from '../lib/socket';
 import type { RewardType, RedemptionStatus } from '@chorechamp/types';
 
 const createRewardSchema = z.object({
@@ -542,5 +547,193 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     });
 
     return updated;
+  });
+
+  // Flat completion approve (client calls /:householdId/completions/:completionId/approve)
+  fastify.post('/completions/:completionId/approve', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, completionId } = request.params as { householdId: string; completionId: string };
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can approve completions' });
+    }
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'You are not a member of this household' });
+    }
+
+    const [completion] = await db
+      .select()
+      .from(choreCompletions)
+      .where(and(
+        eq(choreCompletions.id, completionId),
+        eq(choreCompletions.householdId, householdId),
+        eq(choreCompletions.status, 'pending')
+      ));
+
+    if (!completion) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Pending completion not found' });
+    }
+
+    const [chore] = await db.select().from(chores).where(eq(chores.id, completion.choreId));
+    if (!chore) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Chore not found' });
+    }
+
+    const [completingMember] = await db.select().from(members).where(eq(members.id, completion.memberId));
+    if (!completingMember) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Completing member not found' });
+    }
+
+    const currentStreak = completingMember.streakCurrent || 0;
+    const longestStreak = completingMember.streakLongest || 0;
+    const currentPoints = completingMember.pointsCurrent || 0;
+    const lifetimePoints = completingMember.pointsLifetime || 0;
+
+    const difficultyMap: Record<string, Difficulty> = {
+      trivial: 'easy', easy: 'easy', medium: 'medium', hard: 'hard', epic: 'hard',
+    };
+    const difficulty = difficultyMap[chore.difficulty || 'medium'] || 'medium';
+
+    const basePoints = calculateChorePoints({ basePoints: chore.pointValue, difficulty });
+    const milestoneBonus = getStreakBonus(currentStreak + 1);
+    const totalPoints = basePoints + milestoneBonus;
+
+    const { updatedCompletion } = await db.transaction(async (tx) => {
+      const [comp] = await tx
+        .update(choreCompletions)
+        .set({
+          status: 'approved',
+          approvedBy: membership.id,
+          approvedAt: new Date(),
+          pointsAwarded: totalPoints,
+        })
+        .where(eq(choreCompletions.id, completionId))
+        .returning();
+
+      await tx.update(members).set({
+        pointsCurrent: currentPoints + totalPoints,
+        pointsLifetime: lifetimePoints + totalPoints,
+        streakCurrent: currentStreak + 1,
+        streakLongest: Math.max(longestStreak, currentStreak + 1),
+      }).where(eq(members.id, completion.memberId));
+
+      await tx.insert(pointTransactions).values({
+        householdId,
+        memberId: completion.memberId,
+        amount: totalPoints,
+        balanceAfter: currentPoints + totalPoints,
+        transactionType: 'earned',
+        description: `Completed: ${chore.title}`,
+      });
+
+      return { updatedCompletion: comp };
+    });
+
+    const io = fastify.io as Server;
+    if (io) {
+      emitToHousehold(io, householdId, 'chore:approved', {
+        completionId,
+        choreId: completion.choreId,
+        memberId: completion.memberId,
+        pointsAwarded: totalPoints,
+        approvedBy: membership.name,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return reply.send(updatedCompletion);
+  });
+
+  // Flat completion reject (client calls /:householdId/completions/:completionId/reject)
+  fastify.post('/completions/:completionId/reject', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId, completionId } = request.params as { householdId: string; completionId: string };
+    const { reason } = request.body as { reason?: string };
+
+    const isParent = await verifyParentMembership(user.id, householdId);
+    if (!isParent) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Only parents can reject completions' });
+    }
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'You are not a member of this household' });
+    }
+
+    const [completion] = await db
+      .update(choreCompletions)
+      .set({
+        status: 'rejected',
+        approvedBy: membership.id,
+        approvedAt: new Date(),
+        rejectionReason: reason,
+      })
+      .where(and(
+        eq(choreCompletions.id, completionId),
+        eq(choreCompletions.householdId, householdId),
+        eq(choreCompletions.status, 'pending')
+      ))
+      .returning();
+
+    if (!completion) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Pending completion not found' });
+    }
+
+    const io = fastify.io as Server;
+    if (io) {
+      emitToHousehold(io, householdId, 'chore:rejected', {
+        completionId,
+        choreId: completion.choreId,
+        memberId: completion.memberId,
+        reason,
+        rejectedBy: membership.name,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return reply.send(completion);
+  });
+
+  // Leaderboard (client calls /:householdId/leaderboard)
+  fastify.get('/leaderboard', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { user } = request as AuthenticatedRequest;
+    const { householdId } = request.params as { householdId: string };
+    const { period } = request.query as { period?: 'week' | 'month' | 'all' };
+
+    const membership = await verifyMembership(user.id, householdId);
+    if (!membership) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
+    }
+
+    const householdMembers = await db
+      .select({
+        id: members.id,
+        name: members.name,
+        avatarUrl: members.avatarUrl,
+        role: members.role,
+        pointsCurrent: members.pointsCurrent,
+        pointsLifetime: members.pointsLifetime,
+        streakCurrent: members.streakCurrent,
+        streakLongest: members.streakLongest,
+      })
+      .from(members)
+      .where(eq(members.householdId, householdId))
+      .orderBy(desc(members.pointsLifetime));
+
+    const leaderboard = householdMembers.map((m, index) => ({
+      rank: index + 1,
+      memberId: m.id,
+      name: m.name,
+      avatarUrl: m.avatarUrl,
+      role: m.role,
+      points: period === 'all' || !period ? (m.pointsLifetime || 0) : (m.pointsCurrent || 0),
+      streak: m.streakCurrent || 0,
+      longestStreak: m.streakLongest || 0,
+    }));
+
+    return reply.send(leaderboard);
   });
 }

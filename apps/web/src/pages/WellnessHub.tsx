@@ -106,8 +106,8 @@ function formatDate(dateStr: string): string {
 }
 
 function ActivityTab({ householdId }: { householdId: string }) {
-  const { data: logs, isLoading: logsLoading } = useWellnessActivityLogs(householdId);
-  const { data: stats, isLoading: statsLoading } = useWellnessActivityStats(householdId);
+  const { data: logs, isLoading: logsLoading, isError: logsError } = useWellnessActivityLogs(householdId);
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useWellnessActivityStats(householdId);
   const createLog = useCreateWellnessActivityLog(householdId);
 
   const [showForm, setShowForm] = useState(false);
@@ -117,6 +117,7 @@ function ActivityTab({ householdId }: { householdId: string }) {
   const [note, setNote] = useState('');
 
   const isLoading = logsLoading || statsLoading;
+  const isError = logsError || statsError;
 
   const activityLogs = (Array.isArray(logs) ? logs : (logs as unknown as Record<string, unknown[]>)?.data ?? []) as ActivityLog[];
   const summary = Array.isArray(stats) ? stats[0] : stats;
@@ -149,6 +150,13 @@ function ActivityTab({ householdId }: { householdId: string }) {
   };
 
   if (isLoading) return <LoadingSpinner label="Loading activities..." />;
+
+  if (isError) return (
+    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+      <p className="text-red-600 font-medium">Something went wrong</p>
+      <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -294,7 +302,7 @@ function ActivityTab({ householdId }: { householdId: string }) {
 }
 
 function CheckInTab({ householdId }: { householdId: string }) {
-  const { data: checkIns, isLoading } = useWellnessCheckIns(householdId, { limit: 10 });
+  const { data: checkIns, isLoading, isError } = useWellnessCheckIns(householdId, { limit: 10 });
   const createCheckIn = useCreateWellnessCheckIn(householdId);
 
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
@@ -326,6 +334,13 @@ function CheckInTab({ householdId }: { householdId: string }) {
   };
 
   if (isLoading) return <LoadingSpinner label="Loading check-ins..." />;
+
+  if (isError) return (
+    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+      <p className="text-red-600 font-medium">Something went wrong</p>
+      <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -431,10 +446,11 @@ function CheckInTab({ householdId }: { householdId: string }) {
 }
 
 function SleepTab({ householdId }: { householdId: string }) {
-  const { data: logs, isLoading: logsLoading } = useSleepLogs(householdId);
-  const { data: stats, isLoading: statsLoading } = useSleepStats(householdId);
+  const { data: logs, isLoading: logsLoading, isError: sleepLogsError } = useSleepLogs(householdId);
+  const { data: stats, isLoading: statsLoading, isError: sleepStatsError } = useSleepStats(householdId);
 
   const isLoading = logsLoading || statsLoading;
+  const isError = sleepLogsError || sleepStatsError;
   const sleepLogs = (Array.isArray(logs) ? logs : (logs as unknown as Record<string, unknown[]>)?.data ?? []) as SleepLog[];
   const sleepStats = stats as unknown as Record<string, unknown>;
 
@@ -443,6 +459,13 @@ function SleepTab({ householdId }: { householdId: string }) {
   const consistency = sleepStats?.consistencyScore as number | undefined;
 
   if (isLoading) return <LoadingSpinner label="Loading sleep data..." />;
+
+  if (isError) return (
+    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+      <p className="text-red-600 font-medium">Something went wrong</p>
+      <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -524,7 +547,7 @@ function SleepTab({ householdId }: { householdId: string }) {
 
 function MealsTab({ householdId }: { householdId: string }) {
   const today = new Date().toISOString().split('T')[0];
-  const { data: plans, isLoading } = useMealPlans(householdId, {
+  const { data: plans, isLoading, isError } = useMealPlans(householdId, {
     startDate: today,
     endDate: today,
   });
@@ -545,6 +568,13 @@ function MealsTab({ householdId }: { householdId: string }) {
   }
 
   if (isLoading) return <LoadingSpinner label="Loading meal plans..." />;
+
+  if (isError) return (
+    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+      <p className="text-red-600 font-medium">Something went wrong</p>
+      <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -639,8 +669,8 @@ function MealsTab({ householdId }: { householdId: string }) {
 }
 
 function MentalHealthTab({ householdId }: { householdId: string }) {
-  const { data: resources, isLoading: resourcesLoading } = useMentalHealthResources(householdId);
-  const { data: entries, isLoading: entriesLoading } = useGratitudeEntries(householdId);
+  const { data: resources, isLoading: resourcesLoading, isError: resourcesError } = useMentalHealthResources(householdId);
+  const { data: entries, isLoading: entriesLoading, isError: entriesError } = useGratitudeEntries(householdId);
   const createGratitude = useCreateGratitudeEntry(householdId);
 
   const [gratitudeText, setGratitudeText] = useState('');
@@ -649,6 +679,7 @@ function MentalHealthTab({ householdId }: { householdId: string }) {
   const gratitudeList = (Array.isArray(entries) ? entries : (entries as unknown as Record<string, unknown[]>)?.data ?? []) as GratitudeEntry[];
 
   const isLoading = resourcesLoading || entriesLoading;
+  const isError = resourcesError || entriesError;
 
   const handleSaveGratitude = () => {
     if (!gratitudeText.trim()) return;
@@ -666,6 +697,13 @@ function MentalHealthTab({ householdId }: { householdId: string }) {
   };
 
   if (isLoading) return <LoadingSpinner label="Loading wellness resources..." />;
+
+  if (isError) return (
+    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+      <p className="text-red-600 font-medium">Something went wrong</p>
+      <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">

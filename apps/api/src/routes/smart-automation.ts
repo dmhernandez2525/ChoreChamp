@@ -207,7 +207,7 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   // F17.3 Automation Rules
 
   // GET /automation/rules - List automation rules
-  fastify.get('/automation/rules', { preHandler: [requireAuth] }, async (request, reply) => {
+  fastify.get('/rules', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -218,7 +218,7 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // POST /automation/rules - Create an automation rule
-  fastify.post('/automation/rules', { preHandler: [requireAuth] }, async (request, reply) => {
+  fastify.post('/rules', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);

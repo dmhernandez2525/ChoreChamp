@@ -15,6 +15,7 @@ import {
   useScreenTimeRewards,
   useScreenTimeExtensions,
   useApproveScreenTimeExtension,
+  useMembers,
 } from '@chorechamp/api-client';
 import { DeviceCard } from '../components/screen-time/DeviceCard';
 import { UsageCard } from '../components/screen-time/UsageCard';
@@ -52,11 +53,14 @@ export function ScreenTime() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [selectedMember, setSelectedMember] = useState<string>('all');
 
+  const { data: membersData } = useMembers(householdId!);
   const { data: devices, isLoading: devicesLoading, error: devicesError } = useTrackedDevices(householdId!);
   const { data: usage, isLoading: usageLoading, error: usageError } = useScreenTimeUsage(householdId!);
   const { data: limits, isLoading: limitsLoading, error: limitsError } = useScreenTimeLimits(householdId!);
   const { data: rewards, isLoading: rewardsLoading, error: rewardsError } = useScreenTimeRewards(householdId!);
   const { data: extensions, isLoading: extensionsLoading, error: extensionsError } = useScreenTimeExtensions(householdId!);
+
+  const householdMembers = (membersData ?? []) as Array<{ id: string; name: string; role: string }>;
 
   const { mutate: approveExtension } = useApproveScreenTimeExtension(householdId!);
 
@@ -132,8 +136,9 @@ export function ScreenTime() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Members</option>
-            <option value="m1">Emma</option>
-            <option value="m2">Jack</option>
+            {householdMembers.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
           </select>
         </div>
 
@@ -188,7 +193,7 @@ export function ScreenTime() {
               {usageLoading ? (
                 <LoadingSkeleton count={1} />
               ) : usageError ? null : usageData ? (
-                <UsageCard usage={usageData} memberName="Emma" />
+                <UsageCard usage={usageData} memberName={householdMembers.find(m => m.id === selectedMember)?.name ?? 'Member'} />
               ) : null}
 
               {/* Pending requests alert */}
@@ -308,7 +313,7 @@ export function ScreenTime() {
                   <ScreenTimeLimitCard
                     key={limit.id}
                     limit={limit}
-                    memberName="Emma"
+                    memberName={householdMembers.find(m => m.id === selectedMember)?.name ?? 'Member'}
                     onEdit={() => {}}
                     onToggle={(_id, _enabled) => { /* TODO: add useUpdateScreenTimeLimit hook */ }}
                   />
@@ -397,7 +402,7 @@ export function ScreenTime() {
                         <ExtensionRequestCard
                           key={request.id}
                           request={request}
-                          memberName="Emma"
+                          memberName={householdMembers.find(m => m.id === selectedMember)?.name ?? 'Member'}
                           isParentView={true}
                           onApprove={handleApproveRequest}
                           onDeny={handleDenyRequest}
@@ -417,7 +422,7 @@ export function ScreenTime() {
                         <ExtensionRequestCard
                           key={request.id}
                           request={request}
-                          memberName="Emma"
+                          memberName={householdMembers.find(m => m.id === selectedMember)?.name ?? 'Member'}
                           responderName="Mom"
                         />
                       ))}

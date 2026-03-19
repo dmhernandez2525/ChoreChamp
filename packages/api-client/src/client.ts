@@ -493,7 +493,7 @@ class ApiClient {
   }
 
   async leaveHousehold(householdId: string): Promise<void> {
-    return this.request(`/${householdId}/leave`, {
+    return this.request(`/households/${householdId}/leave`, {
       method: 'POST',
     });
   }
@@ -505,7 +505,7 @@ class ApiClient {
   }
 
   async joinHousehold(data: JoinHouseholdRequest): Promise<JoinHouseholdResponse> {
-    return this.request('/invites/join', {
+    return this.request('/households/join', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -581,11 +581,11 @@ class ApiClient {
 
   // ===== Invite Codes =====
   async getInviteCodes(householdId: string): Promise<InviteCode[]> {
-    return this.request(`/${householdId}/invites`);
+    return this.request(`/households/${householdId}/invites`);
   }
 
   async createInviteCode(householdId: string, data: CreateInviteCodeRequest): Promise<InviteCode> {
-    return this.request(`/${householdId}/invites`, {
+    return this.request(`/households/${householdId}/invites`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2754,14 +2754,14 @@ class ApiClient {
     if (params?.memberId) queryParams.set('memberId', params.memberId);
     if (params?.limit) queryParams.set('limit', String(params.limit));
     const query = queryParams.toString();
-    return this.request(`/${householdId}/wellness/wellness/check-ins${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/check-ins${query ? `?${query}` : ''}`);
   }
 
   async createWellnessCheckIn(
     householdId: string,
     data: CreateCheckInRequest
   ): Promise<WellnessCheckIn> {
-    return this.request(`/${householdId}/wellness/wellness/check-ins`, {
+    return this.request(`/${householdId}/wellness/check-ins`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -2775,7 +2775,7 @@ class ApiClient {
     if (params?.memberId) queryParams.set('memberId', params.memberId);
     if (params?.days) queryParams.set('days', String(params.days));
     const query = queryParams.toString();
-    return this.request(`/${householdId}/wellness/wellness/trends${query ? `?${query}` : ''}`);
+    return this.request(`/${householdId}/wellness/trends${query ? `?${query}` : ''}`);
   }
 
   async getSleepLogs(
@@ -3179,31 +3179,31 @@ class ApiClient {
 
   // F17.3 Automation Rules
   async getAutomationRules(householdId: string): Promise<{ rules: AutomationRule[]; total: number }> {
-    return this.request(`/${householdId}/automation/automation/rules`);
+    return this.request(`/${householdId}/automation/rules`);
   }
 
   async createAutomationRule(householdId: string, data: CreateAutomationRuleRequest): Promise<AutomationRule> {
-    return this.request(`/${householdId}/automation/automation/rules`, { method: 'POST', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/rules`, { method: 'POST', body: JSON.stringify(data) });
   }
 
   async getAutomationRule(householdId: string, ruleId: string): Promise<AutomationRule> {
-    return this.request(`/${householdId}/automation/automation/rules/${ruleId}`);
+    return this.request(`/${householdId}/automation/rules/${ruleId}`);
   }
 
   async updateAutomationRule(householdId: string, ruleId: string, data: UpdateAutomationRuleRequest): Promise<AutomationRule> {
-    return this.request(`/${householdId}/automation/automation/rules/${ruleId}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`/${householdId}/automation/rules/${ruleId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteAutomationRule(householdId: string, ruleId: string): Promise<void> {
-    return this.request(`/${householdId}/automation/automation/rules/${ruleId}`, { method: 'DELETE' });
+    return this.request(`/${householdId}/automation/rules/${ruleId}`, { method: 'DELETE' });
   }
 
   async getAutomationRuleLogs(householdId: string, ruleId: string): Promise<{ logs: AutomationExecutionLog[]; total: number }> {
-    return this.request(`/${householdId}/automation/automation/rules/${ruleId}/logs`);
+    return this.request(`/${householdId}/automation/rules/${ruleId}/logs`);
   }
 
   async testAutomationRule(householdId: string, ruleId: string): Promise<{ ruleId: string; success: boolean; message: string }> {
-    return this.request(`/${householdId}/automation/automation/rules/${ruleId}/test`, { method: 'POST' });
+    return this.request(`/${householdId}/automation/rules/${ruleId}/test`, { method: 'POST' });
   }
 
   // F17.4 Predictive Analytics

@@ -39,7 +39,7 @@ function LoadingSpinner() {
 
 function ForumsTab({ householdId }: { householdId: string }) {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const { data, isLoading } = useForumPosts(householdId, {
+  const { data, isLoading, isError } = useForumPosts(householdId, {
     category: selectedCategory,
   });
 
@@ -94,6 +94,11 @@ function ForumsTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : !data?.posts?.length ? (
         <div
           className="text-center py-12 rounded-lg"
@@ -173,7 +178,7 @@ function ForumsTab({ householdId }: { householdId: string }) {
 
 function SocialChallengesTab({ householdId }: { householdId: string }) {
   const [statusFilter] = useState<string | undefined>(undefined);
-  const { data, isLoading } = useSocialChallenges(householdId, statusFilter);
+  const { data, isLoading, isError } = useSocialChallenges(householdId, statusFilter);
 
   const challengeTypes = ['Competitive', 'Collaborative', 'Milestone'];
   const activeChallenges = data?.challenges?.filter((c) => c.status === 'active') ?? [];
@@ -251,6 +256,11 @@ function SocialChallengesTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : !data?.challenges?.length ? (
         <div
           className="text-center py-12 rounded-lg"
@@ -334,7 +344,7 @@ function SocialChallengesTab({ householdId }: { householdId: string }) {
 
 function SocialFeedTab({ householdId }: { householdId: string }) {
   const [visibility, setVisibility] = useState<string | undefined>(undefined);
-  const { data, isLoading } = useSocialFeed(householdId, { visibility });
+  const { data, isLoading, isError } = useSocialFeed(householdId, { visibility });
 
   const filters = ['Public', 'Friends Only', 'My Posts'];
   const filterMap: Record<string, string | undefined> = {
@@ -374,6 +384,11 @@ function SocialFeedTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : !data?.posts?.length ? (
         <div
           className="text-center py-12 rounded-lg"
@@ -448,10 +463,11 @@ function SocialFeedTab({ householdId }: { householdId: string }) {
 }
 
 function FriendsTab({ householdId }: { householdId: string }) {
-  const { data: friendsData, isLoading: friendsLoading } = useFriends(householdId);
-  const { data: suggestionsData, isLoading: suggestionsLoading } = useFriendSuggestions(householdId);
+  const { data: friendsData, isLoading: friendsLoading, isError: friendsError } = useFriends(householdId);
+  const { data: suggestionsData, isLoading: suggestionsLoading, isError: suggestionsError } = useFriendSuggestions(householdId);
 
   const isLoading = friendsLoading || suggestionsLoading;
+  const isError = friendsError || suggestionsError;
   const friends = friendsData?.friends ?? [];
   const pending = friendsData?.pending ?? [];
   const suggestions = suggestionsData?.suggestions ?? [];
@@ -519,6 +535,11 @@ function FriendsTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : (
         <div className="space-y-6">
           <div>
@@ -696,7 +717,7 @@ function FriendsTab({ householdId }: { householdId: string }) {
 }
 
 function CommunityEventsTab({ householdId }: { householdId: string }) {
-  const { data, isLoading } = useCommunityEvents(householdId);
+  const { data, isLoading, isError } = useCommunityEvents(householdId);
 
   const eventTypes = ['Cleanup', 'Fundraiser', 'Competition', 'Workshop', 'Social', 'Other'];
   const upcomingEvents = data?.events?.filter(
@@ -764,6 +785,11 @@ function CommunityEventsTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : !data?.events?.length ? (
         <div
           className="text-center py-12 rounded-lg"
