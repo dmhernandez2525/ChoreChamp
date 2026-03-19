@@ -638,7 +638,11 @@ async function createPurchaseRecord(
 }
 
 export async function inAppStoreRoutes(fastify: FastifyInstance) {
-  await ensureCatalogSeeded();
+  try {
+    await ensureCatalogSeeded();
+  } catch (err) {
+    fastify.log.warn({ err }, 'Failed to seed store catalog on startup; will retry on first request');
+  }
 
   fastify.get('/catalog', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
