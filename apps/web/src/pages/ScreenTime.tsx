@@ -60,16 +60,16 @@ export function ScreenTime() {
   const { data: rewards, isLoading: rewardsLoading, error: rewardsError } = useScreenTimeRewards(householdId!);
   const { data: extensions, isLoading: extensionsLoading, error: extensionsError } = useScreenTimeExtensions(householdId!);
 
-  const householdMembers = (membersData ?? []) as Array<{ id: string; name: string; role: string }>;
+  const householdMembers = Array.isArray(membersData) ? (membersData as Array<{ id: string; name: string; role: string }>) : [];
 
   const { mutate: approveExtension } = useApproveScreenTimeExtension(householdId!);
 
-  const deviceList = (devices ?? []) as TrackedDevice[];
-  const usageList = (usage ?? []) as ScreenTimeUsageType[];
+  const deviceList = Array.isArray(devices) ? (devices as TrackedDevice[]) : [];
+  const usageList = Array.isArray(usage) ? (usage as ScreenTimeUsageType[]) : [];
   const usageData = usageList[0] ?? null;
-  const limitList = (limits ?? []) as ScreenTimeLimit[];
-  const rewardList = (rewards ?? []) as ScreenTimeReward[];
-  const extensionList = (extensions ?? []) as ScreenTimeExtensionRequest[];
+  const limitList = Array.isArray(limits) ? (limits as ScreenTimeLimit[]) : [];
+  const rewardList = Array.isArray(rewards) ? (rewards as ScreenTimeReward[]) : [];
+  const extensionList = Array.isArray(extensions) ? (extensions as ScreenTimeExtensionRequest[]) : [];
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'overview', label: 'Overview', icon: '📊' },
