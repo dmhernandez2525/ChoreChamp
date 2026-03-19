@@ -147,11 +147,11 @@ export function QRVerification() {
 
   const { mutate: createQRCode, isPending: isCreating } = useCreateQRCode(householdId!);
 
-  const qrCodes = (qrCodesData as QRCode[] | undefined) ?? [];
-  const scans = (scansData as QRCodeScan[] | undefined) ?? [];
-  const checkpointsTyped = checkpointsData as unknown as CheckpointsResponse | undefined;
-  const checkpointProgress: CheckpointProgress[] = checkpointsTyped?.checkpointProgress ?? [];
-  const equipmentCheckouts: EquipmentCheckout[] = checkpointsTyped?.equipmentCheckouts ?? [];
+  const qrCodes = Array.isArray(qrCodesData) ? (qrCodesData as QRCode[]) : [];
+  const scans = Array.isArray(scansData) ? (scansData as QRCodeScan[]) : [];
+  const checkpointsTyped = (checkpointsData && typeof checkpointsData === 'object' && 'checkpointProgress' in (checkpointsData as object)) ? (checkpointsData as unknown as CheckpointsResponse) : undefined;
+  const checkpointProgress: CheckpointProgress[] = Array.isArray(checkpointsTyped?.checkpointProgress) ? checkpointsTyped.checkpointProgress : [];
+  const equipmentCheckouts: EquipmentCheckout[] = Array.isArray(checkpointsTyped?.equipmentCheckouts) ? checkpointsTyped.equipmentCheckouts : [];
   const defaultStats: ScanStats = {
     totalScans: 0,
     successfulScans: 0,

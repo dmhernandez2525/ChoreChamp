@@ -726,10 +726,12 @@ export async function rewardRoutes(fastify: FastifyInstance) {
     const leaderboard = householdMembers.map((m, index) => ({
       rank: index + 1,
       memberId: m.id,
-      name: m.name,
+      memberName: m.name,
+      memberColor: '#3B82F6',
+      totalPoints: period === 'all' || !period ? (m.pointsLifetime || 0) : (m.pointsCurrent || 0),
+      completedChores: 0,
       avatarUrl: m.avatarUrl,
       role: m.role,
-      points: period === 'all' || !period ? (m.pointsLifetime || 0) : (m.pointsCurrent || 0),
       streak: m.streakCurrent || 0,
       longestStreak: m.streakLongest || 0,
     }));

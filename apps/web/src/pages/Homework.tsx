@@ -76,12 +76,12 @@ export function Homework() {
 
   const { mutate: updateAssignment } = useUpdateHomeworkAssignment(householdId!);
   const { data: membersData } = useMembers(householdId!);
-  const householdMembers = (membersData ?? []) as Array<{ id: string; name: string; role: string }>;
+  const householdMembers = Array.isArray(membersData) ? (membersData as Array<{ id: string; name: string; role: string }>) : [];
 
-  const subjectsList = (subjectsRaw as Subject[] | undefined) ?? [];
-  const assignmentsList = (assignmentsRaw as Assignment[] | undefined) ?? [];
-  const sessionsList = (sessionsRaw as StudySession[] | undefined) ?? [];
-  const goalsList = (goalsRaw as StudyGoal[] | undefined) ?? [];
+  const subjectsList = Array.isArray(subjectsRaw) ? (subjectsRaw as Subject[]) : [];
+  const assignmentsList = Array.isArray(assignmentsRaw) ? (assignmentsRaw as Assignment[]) : [];
+  const sessionsList = Array.isArray(sessionsRaw) ? (sessionsRaw as StudySession[]) : [];
+  const goalsList = Array.isArray(goalsRaw) ? (goalsRaw as StudyGoal[]) : [];
 
   // Derive streak from sessions data; the API does not provide a separate streak hook,
   // so we build a lightweight object from sessions metadata when available.

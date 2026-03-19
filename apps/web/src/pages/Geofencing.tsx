@@ -113,11 +113,11 @@ export function Geofencing() {
   const { data: automationsRaw, isLoading: automationsLoading, error: automationsError } = useGeofenceAutomations(householdId!);
   const { data: analyticsRaw, isLoading: analyticsLoading, error: analyticsError } = useGeofenceAnalytics(householdId!);
 
-  const geofences = geofencesRaw as GeofenceData[] | undefined;
-  const memberLocations = memberLocationsRaw as MemberLocationData[] | undefined;
-  const events = eventsRaw as GeofenceEventData[] | undefined;
-  const automations = automationsRaw as GeofenceAutomationData[] | undefined;
-  const analytics = analyticsRaw as GeofenceAnalyticsData | undefined;
+  const geofences = Array.isArray(geofencesRaw) ? (geofencesRaw as GeofenceData[]) : undefined;
+  const memberLocations = Array.isArray(memberLocationsRaw) ? (memberLocationsRaw as MemberLocationData[]) : undefined;
+  const events = Array.isArray(eventsRaw) ? (eventsRaw as GeofenceEventData[]) : undefined;
+  const automations = Array.isArray(automationsRaw) ? (automationsRaw as GeofenceAutomationData[]) : undefined;
+  const analytics = (analyticsRaw && typeof analyticsRaw === 'object' && !Array.isArray(analyticsRaw) && 'totalGeofences' in analyticsRaw) ? (analyticsRaw as GeofenceAnalyticsData) : undefined;
 
   const { mutate: createGeofence, isPending: isCreating } = useCreateGeofence(householdId!);
   const { mutate: deleteGeofence } = useDeleteGeofence(householdId!);

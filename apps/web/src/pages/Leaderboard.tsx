@@ -25,7 +25,9 @@ export default function Leaderboard() {
     period
   );
 
-  const currentMember = members?.find((m) => m.userId === user?.id);
+  const membersList = Array.isArray(members) ? members : [];
+  const leaderboardList = Array.isArray(leaderboard) ? leaderboard : [];
+  const currentMember = membersList.find((m) => m.userId === user?.id);
   const isLoading = loadingHousehold || loadingMembers || loadingLeaderboard;
 
   const periodLabels = {
@@ -80,16 +82,16 @@ export default function Leaderboard() {
             <div className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
               <h2 className="text-2xl font-bold">{periodLabels[period]} Rankings</h2>
               <p className="mt-1 text-blue-100">
-                {leaderboard?.length || 0} family members competing
+                {leaderboardList.length} family members competing
               </p>
             </div>
 
             {/* Podium */}
-            {leaderboard && leaderboard.length > 0 && (
+            {leaderboardList.length > 0 && (
               <div className="rounded-lg border border-gray-200 bg-white p-6">
                 <h3 className="text-center font-semibold text-gray-900 mb-6">Top 3</h3>
                 <LeaderboardPodium
-                  entries={leaderboard}
+                  entries={leaderboardList}
                   currentUserId={currentMember?.id}
                 />
               </div>
@@ -99,31 +101,31 @@ export default function Leaderboard() {
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <h3 className="font-semibold text-gray-900 mb-4">Full Rankings</h3>
               <LeaderboardTable
-                entries={leaderboard || []}
+                entries={leaderboardList}
                 currentUserId={currentMember?.id}
               />
             </div>
 
             {/* Stats Summary */}
-            {leaderboard && leaderboard.length > 0 && (
+            {leaderboardList.length > 0 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
                   <p className="text-3xl font-bold text-blue-600">
-                    {leaderboard.reduce((sum, e) => sum + e.totalPoints, 0).toLocaleString()}
+                    {leaderboardList.reduce((sum, e) => sum + e.totalPoints, 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-gray-500">Total Points Earned</p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
                   <p className="text-3xl font-bold text-green-600">
-                    {leaderboard.reduce((sum, e) => sum + e.completedChores, 0)}
+                    {leaderboardList.reduce((sum, e) => sum + e.completedChores, 0)}
                   </p>
                   <p className="text-sm text-gray-500">Chores Completed</p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
                   <p className="text-3xl font-bold text-purple-600">
                     {Math.round(
-                      leaderboard.reduce((sum, e) => sum + e.totalPoints, 0) /
-                        (leaderboard.length || 1)
+                      leaderboardList.reduce((sum, e) => sum + e.totalPoints, 0) /
+                        (leaderboardList.length || 1)
                     ).toLocaleString()}
                   </p>
                   <p className="text-sm text-gray-500">Avg Points/Member</p>

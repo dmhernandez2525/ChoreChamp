@@ -39,13 +39,13 @@ export default function SkillBuilding() {
   const { data: certificationsData, isLoading: loadingCerts, error: certsError } = useSkillCertifications(householdId!);
   const { mutate: updateProgress, isPending: isUpdating } = useUpdateSkillProgress(householdId!);
 
-  const skillTreesTyped = skillTreesData as unknown as { trees?: SkillTree[]; skills?: Skill[] } | undefined;
-  const skillTrees: SkillTree[] = skillTreesTyped?.trees ?? [];
-  const skills: Skill[] = skillTreesTyped?.skills ?? [];
-  const progress: MemberSkillProgress[] = (progressData ?? []) as MemberSkillProgress[];
-  const certsTyped = certificationsData as unknown as { certifications?: SkillCertification[]; mentorships?: MentorshipRelation[] } | undefined;
-  const certifications: SkillCertification[] = certsTyped?.certifications ?? [];
-  const mentorships: MentorshipRelation[] = certsTyped?.mentorships ?? [];
+  const skillTreesTyped = (skillTreesData && typeof skillTreesData === 'object' && !Array.isArray(skillTreesData)) ? (skillTreesData as { trees?: SkillTree[]; skills?: Skill[] }) : undefined;
+  const skillTrees: SkillTree[] = Array.isArray(skillTreesTyped?.trees) ? skillTreesTyped.trees : [];
+  const skills: Skill[] = Array.isArray(skillTreesTyped?.skills) ? skillTreesTyped.skills : [];
+  const progress: MemberSkillProgress[] = Array.isArray(progressData) ? (progressData as MemberSkillProgress[]) : [];
+  const certsTyped = (certificationsData && typeof certificationsData === 'object' && !Array.isArray(certificationsData)) ? (certificationsData as { certifications?: SkillCertification[]; mentorships?: MentorshipRelation[] }) : undefined;
+  const certifications: SkillCertification[] = Array.isArray(certsTyped?.certifications) ? certsTyped.certifications : [];
+  const mentorships: MentorshipRelation[] = Array.isArray(certsTyped?.mentorships) ? certsTyped.mentorships : [];
 
   const isLoading = loadingTrees || loadingProgress || loadingCerts;
   const error = treesError || progressError || certsError;
