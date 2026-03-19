@@ -205,159 +205,11 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
   });
 
   // F17.3 Automation Rules
+  // Note: CRUD for rules is handled by automation-rules.ts (registered at /:householdId scope)
+  // This file only provides the extended endpoints (logs, test) under the /automation prefix
 
-  // GET /automation/rules - List automation rules
-  fastify.get('/rules', { preHandler: [requireAuth] }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId } = request.params as { householdId: string };
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
-    }
-    return reply.send({ rules: [], total: 0 });
-  });
-
-  // POST /automation/rules - Create an automation rule
-  fastify.post('/rules', { preHandler: [requireAuth] }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId } = request.params as { householdId: string };
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
-    }
-    const body = z
-      .object({
-        name: z.string().min(1).max(100),
-        description: z.string().optional(),
-        trigger: z.object({
-          type: z.enum([
-            'chore_completed',
-            'chore_overdue',
-            'streak_reached',
-            'points_threshold',
-            'time_based',
-            'weather_change',
-            'member_available',
-          ]),
-          conditions: z.record(z.unknown()),
-        }),
-        actions: z.array(
-          z.object({
-            type: z.enum([
-              'assign_chore',
-              'send_notification',
-              'award_bonus_points',
-              'create_chore',
-              'update_schedule',
-              'trigger_celebration',
-              'adjust_difficulty',
-            ]),
-            parameters: z.record(z.unknown()),
-          })
-        ),
-      })
-      .parse(request.body);
-
-    return reply.status(201).send({
-      id: 'rule-1',
-      ...body,
-      status: 'active',
-      executionCount: 0,
-      lastExecutedAt: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  });
-
-  // GET /automation/rules/:ruleId - Get a specific automation rule
-  fastify.get('/automation/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
-    }
-
-    return reply.send({
-      id: ruleId,
-      name: 'Sample Rule',
-      description: null,
-      trigger: { type: 'chore_completed', conditions: {} },
-      actions: [],
-      status: 'active',
-      executionCount: 0,
-      lastExecutedAt: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  });
-
-  // PUT /automation/rules/:ruleId - Update an automation rule
-  fastify.put('/automation/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
-    }
-    const body = z
-      .object({
-        name: z.string().min(1).max(100).optional(),
-        description: z.string().optional(),
-        trigger: z
-          .object({
-            type: z.enum([
-              'chore_completed',
-              'chore_overdue',
-              'streak_reached',
-              'points_threshold',
-              'time_based',
-              'weather_change',
-              'member_available',
-            ]),
-            conditions: z.record(z.unknown()),
-          })
-          .optional(),
-        actions: z
-          .array(
-            z.object({
-              type: z.enum([
-                'assign_chore',
-                'send_notification',
-                'award_bonus_points',
-                'create_chore',
-                'update_schedule',
-                'trigger_celebration',
-                'adjust_difficulty',
-              ]),
-              parameters: z.record(z.unknown()),
-            })
-          )
-          .optional(),
-        status: z.enum(['active', 'paused', 'disabled']).optional(),
-      })
-      .parse(request.body);
-
-    return reply.send({
-      id: ruleId,
-      ...body,
-      updatedAt: new Date().toISOString(),
-    });
-  });
-
-  // DELETE /automation/rules/:ruleId - Delete an automation rule
-  fastify.delete('/automation/rules/:ruleId', { preHandler: [requireAuth] }, async (request, reply) => {
-    const { user } = request as AuthenticatedRequest;
-    const { householdId } = request.params as { householdId: string };
-    const membership = await verifyMembership(user.id, householdId);
-    if (!membership) {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Not a member of this household' });
-    }
-    return reply.status(204).send();
-  });
-
-  // GET /automation/rules/:ruleId/logs - Get execution logs for a rule
-  fastify.get('/automation/rules/:ruleId/logs', { preHandler: [requireAuth] }, async (request, reply) => {
+  // GET /rules/:ruleId/logs - Get execution logs for a rule
+  fastify.get('/rules/:ruleId/logs', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -367,8 +219,8 @@ export async function smartAutomationRoutes(fastify: FastifyInstance) {
     return reply.send({ logs: [], total: 0 });
   });
 
-  // POST /automation/rules/:ruleId/test - Test an automation rule
-  fastify.post('/automation/rules/:ruleId/test', { preHandler: [requireAuth] }, async (request, reply) => {
+  // POST /rules/:ruleId/test - Test an automation rule
+  fastify.post('/rules/:ruleId/test', { preHandler: [requireAuth] }, async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId, ruleId } = request.params as { householdId: string; ruleId: string };
     const membership = await verifyMembership(user.id, householdId);
