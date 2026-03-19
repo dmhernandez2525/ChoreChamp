@@ -14,6 +14,7 @@ import {
   useStudySessions,
   useStudyGoals,
   useUpdateHomeworkAssignment,
+  useMembers,
 } from '@chorechamp/api-client';
 import { SubjectCard } from '../components/homework/SubjectCard';
 import { AssignmentCard } from '../components/homework/AssignmentCard';
@@ -74,6 +75,8 @@ export function Homework() {
   } = useStudyGoals(householdId!);
 
   const { mutate: updateAssignment } = useUpdateHomeworkAssignment(householdId!);
+  const { data: membersData } = useMembers(householdId!);
+  const householdMembers = (membersData ?? []) as Array<{ id: string; name: string; role: string }>;
 
   const subjectsList = (subjectsRaw as Subject[] | undefined) ?? [];
   const assignmentsList = (assignmentsRaw as Assignment[] | undefined) ?? [];
@@ -183,8 +186,9 @@ export function Homework() {
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedMember(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="m1">Emma</option>
-            <option value="m2">Jack</option>
+            {householdMembers.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
           </select>
         </div>
 
@@ -261,7 +265,7 @@ export function Homework() {
                   </div>
 
                   {/* Streak card */}
-                  {streak && <StudyStreakCard streak={streak} memberName="Emma" />}
+                  {streak && <StudyStreakCard streak={streak} memberName={householdMembers.find(m => m.id === selectedMember)?.name ?? 'Student'} />}
 
                   {/* Upcoming assignments */}
                   <div className="bg-white rounded-lg shadow p-4">
@@ -487,7 +491,7 @@ export function Homework() {
                 <LoadingSkeleton count={3} />
               ) : (
                 <>
-                  {streak && <StudyStreakCard streak={streak} memberName="Emma" />}
+                  {streak && <StudyStreakCard streak={streak} memberName={householdMembers.find(m => m.id === selectedMember)?.name ?? 'Student'} />}
 
                   {/* Study by subject */}
                   <div className="bg-white rounded-lg shadow p-4">

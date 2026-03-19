@@ -182,7 +182,7 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
 
   // ===== F14.2: Wellness Check-ins =====
 
-  fastify.get('/wellness/check-ins', async (request, reply) => {
+  fastify.get('/check-ins', async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -193,7 +193,7 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     return { checkIns: [], total: 0, filters: { memberId, limit } };
   });
 
-  fastify.post('/wellness/check-ins', async (request, reply) => {
+  fastify.post('/check-ins', async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);
@@ -212,7 +212,7 @@ export async function healthWellnessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/wellness/trends', async (request, reply) => {
+  fastify.get('/trends', async (request, reply) => {
     const { user } = request as AuthenticatedRequest;
     const { householdId } = request.params as { householdId: string };
     const membership = await verifyMembership(user.id, householdId);

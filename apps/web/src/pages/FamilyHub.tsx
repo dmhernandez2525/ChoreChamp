@@ -41,10 +41,11 @@ function LoadingSpinner({ label }: { label: string }) {
 }
 
 function CalendarSyncTab({ householdId }: { householdId: string }) {
-  const { data: connections, isLoading: loadingConnections } = useCalendarConnections(householdId);
-  const { data: events, isLoading: loadingEvents } = useCalendarEvents(householdId);
+  const { data: connections, isLoading: loadingConnections, isError: connectionsError } = useCalendarConnections(householdId);
+  const { data: events, isLoading: loadingEvents, isError: eventsError } = useCalendarEvents(householdId);
 
   const isLoading = loadingConnections || loadingEvents;
+  const isError = connectionsError || eventsError;
 
   return (
     <div>
@@ -92,6 +93,11 @@ function CalendarSyncTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner label="calendar" />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : events?.events && events.events.length > 0 ? (
         <div className="space-y-3">
           {events.events.map((event: { id: string; title: string; startTime?: string; start?: string; assigneeName?: string }) => (
@@ -141,9 +147,9 @@ function FamilyChatTab({ householdId }: { householdId: string }) {
   const [message, setMessage] = useState('');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
 
-  const { data: channels, isLoading: loadingChannels } = useChatChannels(householdId);
+  const { data: channels, isLoading: loadingChannels, isError: channelsError } = useChatChannels(householdId);
   const { data: unreadCounts } = useChatUnreadCounts(householdId);
-  const { data: messages, isLoading: loadingMessages } = useChatMessages(
+  const { data: messages, isLoading: loadingMessages, isError: messagesError } = useChatMessages(
     householdId,
     selectedChannelId || ''
   );
@@ -181,6 +187,11 @@ function FamilyChatTab({ householdId }: { householdId: string }) {
 
       {loadingChannels ? (
         <LoadingSpinner label="channels" />
+      ) : channelsError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : channels?.channels && channels.channels.length > 0 ? (
         <>
           <div className="flex flex-wrap gap-2 mb-6">
@@ -232,6 +243,11 @@ function FamilyChatTab({ householdId }: { householdId: string }) {
               </div>
             ) : loadingMessages ? (
               <LoadingSpinner label="messages" />
+            ) : messagesError ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+                <p className="text-red-600 font-medium">Something went wrong</p>
+                <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+              </div>
             ) : messages?.messages && messages.messages.length > 0 ? (
               <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
                 {messages.messages.map((msg: { id: string; senderName?: string; content: string; createdAt?: string }) => (
@@ -376,7 +392,7 @@ function FamilyChatTab({ householdId }: { householdId: string }) {
 }
 
 function PhotoAlbumTab({ householdId }: { householdId: string }) {
-  const { data: albums, isLoading } = usePhotoAlbums(householdId);
+  const { data: albums, isLoading, isError } = usePhotoAlbums(householdId);
   const [activeFilter, setActiveFilter] = useState('All');
 
   return (
@@ -413,6 +429,11 @@ function PhotoAlbumTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner label="photo albums" />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : albums?.albums && albums.albums.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {albums.albums
@@ -467,7 +488,7 @@ function PhotoAlbumTab({ householdId }: { householdId: string }) {
 }
 
 function ShareableAchievementsTab({ householdId }: { householdId: string }) {
-  const { data: achievements, isLoading } = useShareableAchievements(householdId);
+  const { data: achievements, isLoading, isError } = useShareableAchievements(householdId);
 
   const achievementList = achievements?.achievements;
   const sharedCount = achievementList?.filter((a) => a.shareCount > 0)?.length ?? 0;
@@ -522,6 +543,11 @@ function ShareableAchievementsTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner label="achievements" />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : achievementList && achievementList.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {achievementList.map((achievement: { id: string; title: string; description?: string; badgeUrl?: string; earnedAt?: string; memberName?: string }) => (
@@ -580,7 +606,7 @@ function ProgressiveUnlocksTab({ householdId }: { householdId: string }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
 
-  const { data: unlocks, isLoading } = useProgressiveUnlocks(householdId, {
+  const { data: unlocks, isLoading, isError } = useProgressiveUnlocks(householdId, {
     category: activeCategory,
   });
 
@@ -668,6 +694,11 @@ function ProgressiveUnlocksTab({ householdId }: { householdId: string }) {
 
       {isLoading ? (
         <LoadingSpinner label="unlocks" />
+      ) : isError ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 font-medium">Something went wrong</p>
+          <p className="text-red-500 text-sm mt-1">Failed to load data. Please try again later.</p>
+        </div>
       ) : filteredUnlocks && filteredUnlocks.length > 0 ? (
         <div className="space-y-3">
           {filteredUnlocks.map(
