@@ -59,8 +59,9 @@ test.describe('Reports Page Interactions', () => {
     const dateDisplay = page.getByText(/showing data from/i);
     const hasDisplay = await dateDisplay.isVisible().catch(() => false);
 
-    // Date range display shows the selected period
-    expect(hasDisplay || true).toBeTruthy();
+    // Date range display or summary text should be visible
+    const hasSummary = await page.getByText(/report|summary|analytics|overview/i).first().isVisible().catch(() => false);
+    expect(hasDisplay || hasSummary).toBeTruthy();
   });
 
   test('export buttons exist for reports', async ({ page }) => {

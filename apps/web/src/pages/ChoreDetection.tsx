@@ -124,10 +124,10 @@ export function ChoreDetection() {
     setShowTemplates(false);
   };
 
-  const safeRules = (rules ?? []) as DetectionRule[];
-  const safeEvents = (events ?? []) as DetectionEvent[];
-  const safeMetrics = (metrics ?? []) as CleanlinessMetric[];
-  const safeAnalytics = (analytics ?? {
+  const safeRules = Array.isArray(rules) ? (rules as DetectionRule[]) : [];
+  const safeEvents = Array.isArray(events) ? (events as DetectionEvent[]) : [];
+  const safeMetrics = Array.isArray(metrics) ? (metrics as CleanlinessMetric[]) : [];
+  const safeAnalytics = (analytics && typeof analytics === 'object' && 'totalDetections' in (analytics as object)) ? (analytics as DetectionAnalytics) : {
     totalDetections: 0,
     confirmedCompletions: 0,
     suggestedNeeds: 0,
@@ -136,7 +136,8 @@ export function ChoreDetection() {
     totalBonusPointsAwarded: 0,
     byChoreType: [],
     byZone: [],
-  }) as DetectionAnalytics;
+    recentDetections: [],
+  } as unknown as DetectionAnalytics;
 
   return (
     <div className="max-w-6xl mx-auto p-6">

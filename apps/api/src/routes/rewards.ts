@@ -712,6 +712,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
       .select({
         id: members.id,
         name: members.name,
+        color: members.color,
         avatarUrl: members.avatarUrl,
         role: members.role,
         pointsCurrent: members.pointsCurrent,
@@ -727,7 +728,7 @@ export async function rewardRoutes(fastify: FastifyInstance) {
       rank: index + 1,
       memberId: m.id,
       memberName: m.name,
-      memberColor: '#3B82F6',
+      memberColor: m.color || '#3B82F6',
       totalPoints: period === 'all' || !period ? (m.pointsLifetime || 0) : (m.pointsCurrent || 0),
       completedChores: 0,
       avatarUrl: m.avatarUrl,

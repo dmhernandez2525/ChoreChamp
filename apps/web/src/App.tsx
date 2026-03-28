@@ -1,3 +1,4 @@
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DemoAuthProvider, useDemoAuth } from './context/DemoAuthContext';
@@ -555,22 +556,63 @@ function AppRoutes() {
   );
 }
 
+class GlobalErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Uncaught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          <div className="text-center max-w-md px-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
+            <p className="text-gray-600 mb-6">An unexpected error occurred. Please try refreshing the page.</p>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false });
+                window.location.href = '/dashboard';
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
-    <DemoAuthProvider>
-      <AuthProvider>
-        <CelebrationProvider>
-          <PWAProvider>
-            <AccessibilityProvider>
-              <I18nProvider>
-                <AppShell>
-                  <AppRoutes />
-                </AppShell>
-              </I18nProvider>
-            </AccessibilityProvider>
-          </PWAProvider>
-        </CelebrationProvider>
-      </AuthProvider>
-    </DemoAuthProvider>
+    <GlobalErrorBoundary>
+      <DemoAuthProvider>
+        <AuthProvider>
+          <CelebrationProvider>
+            <PWAProvider>
+              <AccessibilityProvider>
+                <I18nProvider>
+                  <AppShell>
+                    <AppRoutes />
+                  </AppShell>
+                </I18nProvider>
+              </AccessibilityProvider>
+            </PWAProvider>
+          </CelebrationProvider>
+        </AuthProvider>
+      </DemoAuthProvider>
+    </GlobalErrorBoundary>
   );
 }

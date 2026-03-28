@@ -155,7 +155,7 @@ export default function EnterpriseSchoolEdition() {
   });
 
   const { data: membersData } = useMembers(householdId ?? '');
-  const members = membersData ?? [];
+  const members = Array.isArray(membersData) ? membersData : [];
 
   const currentMember = useMemo(
     () => members.find((member) => member.userId === user?.id) ?? null,
