@@ -65,9 +65,10 @@ export default function InAppStore() {
     allowLimitedTimeOffers: true,
   });
 
-  const { data: members, isLoading: loadingMembers } = useMembers(householdId ?? '');
+  const { data: membersRaw, isLoading: loadingMembers } = useMembers(householdId ?? '');
+  const members = Array.isArray(membersRaw) ? membersRaw : [];
   const currentMember = useMemo(
-    () => members?.find((member) => member.userId === user?.id) ?? null,
+    () => members.find((member) => member.userId === user?.id) ?? null,
     [members, user]
   );
   const isParent = currentMember?.role === 'parent';
@@ -86,18 +87,22 @@ export default function InAppStore() {
   );
 
   const {
-    data: catalogItems,
+    data: catalogItemsRaw,
     isLoading: loadingCatalog,
     refetch: refetchCatalog,
   } = useStoreCatalog(householdId ?? '', catalogOptions);
+  const catalogItems = Array.isArray(catalogItemsRaw) ? catalogItemsRaw : [];
   const { data: offers } = useStoreOffers(householdId ?? '');
   const { data: wallet, refetch: refetchWallet } = useStoreWallet(householdId ?? '');
   const { data: entitlements } = useStoreEntitlements(householdId ?? '');
-  const { data: purchases, refetch: refetchPurchases } = useStorePurchases(householdId ?? '');
-  const { data: refunds, refetch: refetchRefunds } = useStoreRefundRequests(householdId ?? '', isParent);
+  const { data: purchasesRaw, refetch: refetchPurchases } = useStorePurchases(householdId ?? '');
+  const purchases = Array.isArray(purchasesRaw) ? purchasesRaw : [];
+  const { data: refundsRaw, refetch: refetchRefunds } = useStoreRefundRequests(householdId ?? '', isParent);
+  const refunds = Array.isArray(refundsRaw) ? refundsRaw : [];
   const controlsMemberId = isParent ? selectedMemberId : undefined;
   const { data: controls, refetch: refetchControls } = useStoreControls(householdId ?? '', controlsMemberId);
-  const { data: giftCards, refetch: refetchGiftCards } = useStoreGiftCards(householdId ?? '', isParent);
+  const { data: giftCardsRaw, refetch: refetchGiftCards } = useStoreGiftCards(householdId ?? '', isParent);
+  const giftCards = Array.isArray(giftCardsRaw) ? giftCardsRaw : [];
 
   const createPurchase = useCreateStorePurchase(householdId ?? '');
   const approvePurchase = useApproveStorePurchase(householdId ?? '');
@@ -122,7 +127,7 @@ export default function InAppStore() {
 
   const categories = useMemo(() => {
     const unique = new Set<string>();
-    for (const item of catalogItems ?? []) unique.add(item.category);
+    for (const item of catalogItems) unique.add(item.category);
     return ['all', ...Array.from(unique)];
   }, [catalogItems]);
 
@@ -394,7 +399,7 @@ export default function InAppStore() {
                   onChange={(event) => setSelectedMemberId(event.target.value)}
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 >
-                  {(members ?? []).map((member) => (
+                  {(members).map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.name} ({member.role})
                     </option>
@@ -429,7 +434,7 @@ export default function InAppStore() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {(catalogItems ?? []).map((item) => {
+              {(catalogItems).map((item) => {
                 const quantity = quantityByItem[item.id] ?? 1;
                 const saleTag = item.salePercent > 0 ? `${item.salePercent}% off` : null;
                 const limitedTag = item.isLimitedTime ? 'Limited time' : null;
@@ -494,13 +499,13 @@ export default function InAppStore() {
               </p>
             </div>
 
-            {(purchases ?? []).length === 0 ? (
+            {(purchases).length === 0 ? (
               <div className="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-600">
                 No purchases yet.
               </div>
             ) : (
               <div className="space-y-3">
-                {(purchases ?? []).map(({ purchase, item }) => (
+                {(purchases).map(({ purchase, item }) => (
                   <div key={purchase.id} className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -555,11 +560,11 @@ export default function InAppStore() {
             {isParent && (
               <div className="rounded-lg border border-gray-200 bg-white p-4">
                 <h3 className="text-base font-semibold text-gray-900">Refund Requests</h3>
-                {(refunds ?? []).length === 0 ? (
+                {(refunds).length === 0 ? (
                   <p className="mt-2 text-sm text-gray-600">No refund requests.</p>
                 ) : (
                   <div className="mt-3 space-y-3">
-                    {(refunds ?? []).map(({ refund, purchase, item }) => (
+                    {(refunds).map(({ refund, purchase, item }) => (
                       <div key={refund.id} className="rounded-md border border-gray-200 p-3">
                         <p className="text-sm font-semibold text-gray-900">
                           {item?.title ?? 'Unknown Item'} • {refund.status}
@@ -615,7 +620,7 @@ export default function InAppStore() {
                       onChange={(event) => setSelectedMemberId(event.target.value)}
                       className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                     >
-                      {(members ?? []).map((member) => (
+                      {(members).map((member) => (
                         <option key={member.id} value={member.id}>
                           {member.name} ({member.role})
                         </option>
@@ -809,11 +814,11 @@ export default function InAppStore() {
 
                 <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <h2 className="text-lg font-semibold text-gray-900">Gift Card History</h2>
-                  {(giftCards ?? []).length === 0 ? (
+                  {(giftCards).length === 0 ? (
                     <p className="mt-2 text-sm text-gray-600">No gift cards created yet.</p>
                   ) : (
                     <div className="mt-3 space-y-3">
-                      {(giftCards ?? []).map((card) => (
+                      {(giftCards).map((card) => (
                         <div key={card.id} className="rounded-md border border-gray-200 p-3">
                           <p className="text-sm font-semibold text-gray-900">
                             {card.code} • {card.tier} • {card.durationMonths} month(s)
