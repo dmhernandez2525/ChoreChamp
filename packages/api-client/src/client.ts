@@ -598,7 +598,7 @@ class ApiClient {
 
   async getTodaysChores(householdId: string, memberId?: string): Promise<TodayChore[]> {
     const query = memberId ? `?memberId=${memberId}` : '';
-    return this.request(`/${householdId}/chores/today${query}`);
+    return this.request(`/${householdId}/schedule/today${query}`);
   }
 
   async createChore(householdId: string, data: CreateChoreRequest): Promise<Chore> {

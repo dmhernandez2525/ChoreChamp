@@ -21,14 +21,18 @@ export const auth = betterAuth({
     requireEmailVerification: false, // Disabled until email provider is configured
   },
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    },
-    apple: {
-      clientId: process.env.APPLE_CLIENT_ID || '',
-      clientSecret: process.env.APPLE_CLIENT_SECRET || '',
-    },
+    ...(process.env.GOOGLE_CLIENT_ID ? {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      },
+    } : {}),
+    ...(process.env.APPLE_CLIENT_ID ? {
+      apple: {
+        clientId: process.env.APPLE_CLIENT_ID,
+        clientSecret: process.env.APPLE_CLIENT_SECRET || '',
+      },
+    } : {}),
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
@@ -45,8 +49,8 @@ export const auth = betterAuth({
       domain: '.onrender.com',
     },
     defaultCookieAttributes: {
-      secure: true,
-      sameSite: 'none' as const,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
       path: '/',
     },
   },

@@ -33,10 +33,17 @@ export async function requireAuth(
 
     (request as AuthenticatedRequest).user = session.user;
     (request as AuthenticatedRequest).session = session.session;
-  } catch {
-    return reply.status(401).send({
-      error: 'Unauthorized',
-      message: 'Invalid or expired session',
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('token') || err.message.includes('session') || err.message.includes('expired') || err.message.includes('invalid'))) {
+      return reply.status(401).send({
+        error: 'Unauthorized',
+        message: 'Invalid or expired session',
+      });
+    }
+    request.log.error({ err }, 'Unexpected error during authentication');
+    return reply.status(500).send({
+      error: 'Internal Server Error',
+      message: 'Authentication service unavailable',
     });
   }
 }
@@ -54,7 +61,7 @@ export async function optionalAuth(
       (request as AuthenticatedRequest).user = session.user;
       (request as AuthenticatedRequest).session = session.session;
     }
-  } catch {
-    // Silent fail for optional auth
+  } catch (err) {
+    request.log.warn({ err }, 'Optional auth check failed');
   }
 }
