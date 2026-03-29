@@ -38,7 +38,7 @@ export default function MemberStreaks() {
 
   const handlePurchaseFreeze = () => {
     // In real app, this would call an API mutation
-    console.log('Purchase freeze');
+    // TODO: implement streak freeze purchase
   };
 
   if (isLoading) {

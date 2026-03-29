@@ -84,7 +84,7 @@ test.describe('Reward Redemption Interaction', () => {
       const isConfirmDisabled = await confirmBtn.isDisabled().catch(() => false);
 
       // Either shows insufficient message or confirm is disabled, or user has enough points
-      expect(hasInsufficientMsg || isConfirmDisabled || true).toBeTruthy();
+      expect(hasInsufficientMsg || isConfirmDisabled).toBeTruthy();
     }
   });
 

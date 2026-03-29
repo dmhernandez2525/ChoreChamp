@@ -272,7 +272,7 @@ export default function Arcade() {
       const { session } = await startGameSession(householdId, selectedGame.id, difficulty);
       // In a real implementation, this would navigate to the game view
       // For now, we'll just show a placeholder
-      console.log('Game started:', session);
+      // TODO: handle game start
       alert(`Game started! Session ID: ${(session as { id: string }).id}\n\nGame UI would be shown here.`);
       setSelectedGame(null);
       loadGames();

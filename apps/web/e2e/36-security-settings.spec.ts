@@ -68,7 +68,7 @@ test.describe('Security Settings Interaction', () => {
         const error = page.getByText(/current password.*required|required/i);
         const hasError = await error.isVisible().catch(() => false);
         // Form should still be visible (not submitted)
-        expect(hasError || true).toBeTruthy();
+        expect(hasError).toBeTruthy();
       }
     }
   });
@@ -101,7 +101,7 @@ test.describe('Security Settings Interaction', () => {
 
         const mismatchError = page.getByText(/do not match|passwords.*match/i);
         const hasError = await mismatchError.isVisible().catch(() => false);
-        expect(hasError || true).toBeTruthy();
+        expect(hasError).toBeTruthy();
       }
     }
   });

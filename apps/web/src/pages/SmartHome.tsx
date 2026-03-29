@@ -199,7 +199,7 @@ export function SmartHome({ householdId }: SmartHomeProps) {
 
       if (res.ok) {
         const data = await res.json();
-        console.log('Automation triggered:', data);
+        // TODO: handle automation trigger
         // Refresh automations to get updated trigger count
         loadData();
       }

@@ -20,7 +20,7 @@ test.describe('Theme Selection Interaction', () => {
     const themesHeading = page.getByText(/appearance.*theme/i).first();
     const hasThemes = await themesHeading.isVisible().catch(() => false);
 
-    expect(hasThemes || true).toBeTruthy();
+    expect(hasThemes).toBeTruthy();
   });
 
   test('theme cards show name and description', async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe('Theme Selection Interaction', () => {
     const hasIndicator = await currentTheme.isVisible().catch(() => false);
 
     // May or may not be visible depending on feature gate
-    expect(hasIndicator || true).toBeTruthy();
+    expect(hasIndicator).toBeTruthy();
   });
 
   test('apply theme button exists', async ({ page }) => {
@@ -56,6 +56,6 @@ test.describe('Theme Selection Interaction', () => {
     const hasApply = await applyBtn.isVisible().catch(() => false);
 
     // Premium feature, may be behind gate
-    expect(hasApply || true).toBeTruthy();
+    expect(hasApply).toBeTruthy();
   });
 });

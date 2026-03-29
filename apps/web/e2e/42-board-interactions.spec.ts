@@ -66,6 +66,6 @@ test.describe('Board/Kanban Interactions', () => {
     const hasAdd = await addBtn.isVisible().catch(() => false);
 
     // Board may show add button or + icon
-    expect(hasAdd || true).toBeTruthy();
+    expect(hasAdd).toBeTruthy();
   });
 });

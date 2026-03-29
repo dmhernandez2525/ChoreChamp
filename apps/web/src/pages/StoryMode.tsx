@@ -245,7 +245,7 @@ export function StoryMode({ memberId, householdId }: StoryModeProps) {
 
   async function handleDialogueChoice(choiceId: string) {
     // Handle dialogue choice
-    console.log('Choice made:', choiceId);
+    // TODO: handle story choice
   }
 
   function handleDialogueComplete() {

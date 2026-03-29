@@ -54,6 +54,6 @@ test.describe('Activity Feed Filtering', () => {
     const hasSelect = await memberSelect.isVisible().catch(() => false);
 
     // Member filter may or may not be visible depending on activity data
-    expect(hasLabel || hasSelect || true).toBeTruthy();
+    expect(hasLabel || hasSelect).toBeTruthy();
   });
 });

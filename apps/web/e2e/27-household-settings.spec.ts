@@ -148,7 +148,7 @@ test.describe('Household Settings Interaction', () => {
     const hasThemes = await themesHeading.isVisible().catch(() => false);
 
     // Should show theme options or at least the section
-    expect(hasThemes || true).toBeTruthy(); // May be behind premium gate
+    expect(hasThemes).toBeTruthy(); // May be behind premium gate
   });
 
   test('shows delete household option for parent', async ({ page }) => {
@@ -164,6 +164,6 @@ test.describe('Household Settings Interaction', () => {
     const deleteAfterScroll = page.getByText(/delete household/i).first();
     const hasDeleteAfterScroll = await deleteAfterScroll.isVisible().catch(() => false);
 
-    expect(hasDeleteAfterScroll || true).toBeTruthy();
+    expect(hasDeleteAfterScroll).toBeTruthy();
   });
 });

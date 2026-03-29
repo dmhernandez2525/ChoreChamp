@@ -21,7 +21,7 @@ test.describe('Developer API Keys Interaction', () => {
     const hasDevSection = await devHeading.isVisible().catch(() => false);
 
     // May be behind premium gate
-    expect(hasDevSection || true).toBeTruthy();
+    expect(hasDevSection).toBeTruthy();
   });
 
   test('create API key form has name input and create button', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('Developer API Keys Interaction', () => {
         const premiumMsg = page.getByText(/premium|upgrade/i).first();
         const needsPremium = await premiumMsg.isVisible().catch(() => false);
 
-        expect(hasSecret || needsPremium || true).toBeTruthy();
+        expect(hasSecret || needsPremium).toBeTruthy();
       }
     }
   });
@@ -76,6 +76,6 @@ test.describe('Developer API Keys Interaction', () => {
     // Either shows empty state or shows existing keys
     const bodyText = await page.locator('body').textContent();
     const hasApiSection = bodyText?.toLowerCase().includes('api');
-    expect(hasEmpty || hasApiSection || true).toBeTruthy();
+    expect(hasEmpty || hasApiSection).toBeTruthy();
   });
 });

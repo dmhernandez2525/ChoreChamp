@@ -193,11 +193,11 @@ export default function ReportCards() {
   ];
 
   const handleAcknowledge = (cardId: string) => {
-    console.log('Acknowledge report card:', cardId);
+    void cardId;
   };
 
   const handleCelebrate = (achievementId: string) => {
-    console.log('Celebrate achievement:', achievementId);
+    void achievementId;
   };
 
   // Calculate stats
@@ -311,7 +311,7 @@ export default function ReportCards() {
                     memberName="Alex"
                     isParent={true}
                     onAcknowledge={() => handleAcknowledge(card.id)}
-                    onView={() => console.log('View card:', card.id)}
+                    onView={() => void card.id}
                   />
                 ))}
               </div>
@@ -367,8 +367,8 @@ export default function ReportCards() {
                   <AcademicGoalCard
                     key={goal.id}
                     goal={goal}
-                    onEdit={() => console.log('Edit goal:', goal.id)}
-                    onDelete={() => console.log('Delete goal:', goal.id)}
+                    onEdit={() => void goal.id}
+                    onDelete={() => void goal.id}
                   />
                 ))}
               </div>

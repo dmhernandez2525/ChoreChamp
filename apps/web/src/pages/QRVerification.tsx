@@ -384,11 +384,11 @@ export function QRVerification() {
         ) : (
           <QRCodeList
             qrCodes={qrCodes}
-            onView={(id) => console.log('View', id)}
-            onEdit={(id) => console.log('Edit', id)}
-            onDelete={(id) => console.log('Delete', id)}
-            onRegenerate={(id) => console.log('Regenerate', id)}
-            onDownload={(id) => console.log('Download', id)}
+            onView={(id) => void id}
+            onEdit={(id) => void id}
+            onDelete={(id) => void id}
+            onRegenerate={(id) => void id}
+            onDownload={(id) => void id}
           />
         )
       )}

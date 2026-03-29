@@ -127,7 +127,7 @@ test.describe('Create Reward Interaction', () => {
       await page.waitForTimeout(3000);
 
       const url = page.url();
-      expect(!url.includes('/rewards/new') || true).toBeTruthy();
+      expect(!url.includes('/rewards/new')).toBeTruthy();
     }
   });
 

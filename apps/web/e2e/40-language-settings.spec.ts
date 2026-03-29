@@ -38,6 +38,6 @@ test.describe('Language Settings Interaction', () => {
     const infoText = page.getByText(/languages.*supported/i);
     const hasInfo = await infoText.isVisible().catch(() => false);
 
-    expect(hasInfo || true).toBeTruthy();
+    expect(hasInfo).toBeTruthy();
   });
 });

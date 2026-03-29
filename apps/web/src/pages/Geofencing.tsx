@@ -333,7 +333,7 @@ export function Geofencing() {
               memberCounts={memberCounts}
               onEdit={(id) => {
                 // TODO: implement edit geofence modal
-                console.log('Edit geofence:', id);
+                // TODO: implement edit geofence
               }}
               onDelete={(id) => deleteGeofence(id)}
               onToggle={(_id, _enabled) => {

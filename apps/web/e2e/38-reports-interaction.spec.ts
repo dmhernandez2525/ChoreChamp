@@ -51,7 +51,7 @@ test.describe('Reports Page Interactions', () => {
       const startDate = page.locator('input[type="date"]').first();
       const hasStart = await startDate.isVisible().catch(() => false);
 
-      expect(hasStart || true).toBeTruthy();
+      expect(hasStart).toBeTruthy();
     }
   });
 

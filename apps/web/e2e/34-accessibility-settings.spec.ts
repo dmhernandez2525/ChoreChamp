@@ -122,7 +122,7 @@ test.describe('Accessibility Settings Interaction', () => {
     const hasTts = await ttsBtn.isVisible().catch(() => false);
 
     // TTS may or may not be visible depending on scroll
-    expect(hasTts || true).toBeTruthy();
+    expect(hasTts).toBeTruthy();
   });
 
   test('reading profiles section visible', async ({ page }) => {
@@ -135,6 +135,6 @@ test.describe('Accessibility Settings Interaction', () => {
     const hasProfiles = await profilesSection.isVisible().catch(() => false);
     const hasInput = await profileInput.isVisible().catch(() => false);
 
-    expect(hasProfiles || hasInput || true).toBeTruthy();
+    expect(hasProfiles || hasInput).toBeTruthy();
   });
 });
