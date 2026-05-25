@@ -1,0 +1,64 @@
+version: 0.2
+
+# AWS CodeBuild spec for ChoreChamp.
+# Builds:
+#   - production/chorechamp-api  (Docker image, server-production target, port 3001)
+#   - apps/web/dist              (Vite SPA, synced to S3 + CloudFront invalidated)
+# Pushes to ECR + S3 in account 157305260149, region us-east-1.
+
+env:
+  variables:
+    AWS_REGION: us-east-1
+    AWS_ACCOUNT_ID: "157305260149"
+    ECR_REGISTRY: 157305260149.dkr.ecr.us-east-1.amazonaws.com
+    API_REPO: production/chorechamp-api
+    ECS_CLUSTER: production-platform
+    ECS_API_SERVICE: chorechamp-api
+    WEB_BUCKET: production-chorechamp-site-site
+    WEB_CF_DIST: E3I1B3PSU3VD3R
+    WEB_VITE_API_URL: https://chorechamp-api.interestingandbeyond.com
+    WEB_VITE_DEMO_MODE: "true"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - corepack enable
+      - corepack prepare pnpm@9.15.0 --activate
+      - pnpm --version
+      - node --version
+
+  pre_build:
+    commands:
+      - echo "Logging in to ECR..."
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+      - export IMAGE_TAG="$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest} | cut -c1-8)"
+      - echo "IMAGE_TAG=$IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Building api image (server-production target)..."
+      - docker build --target server-production -t $ECR_REGISTRY/$API_REPO:$IMAGE_TAG -t $ECR_REGISTRY/$API_REPO:latest .
+      - echo "Installing workspace deps for web build..."
+      - pnpm install --frozen-lockfile --ignore-scripts
+      - echo "Building web SPA..."
+      - VITE_API_URL=$WEB_VITE_API_URL VITE_DEMO_MODE=$WEB_VITE_DEMO_MODE pnpm --filter @chorechamp/web build
+
+  post_build:
+    commands:
+      - echo "Pushing api image..."
+      - docker push $ECR_REGISTRY/$API_REPO:$IMAGE_TAG
+      - docker push $ECR_REGISTRY/$API_REPO:latest
+      - echo "Forcing ECS service redeployment..."
+      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_API_SERVICE --force-new-deployment --region $AWS_REGION > /dev/null
+      - echo "Syncing apps/web/dist to S3 ($WEB_BUCKET)..."
+      - aws s3 sync apps/web/dist s3://$WEB_BUCKET/ --delete --cache-control "public, max-age=31536000, immutable" --exclude "index.html"
+      - aws s3 cp apps/web/dist/index.html s3://$WEB_BUCKET/index.html --cache-control "public, max-age=0, must-revalidate"
+      - echo "Invalidating CloudFront ($WEB_CF_DIST)..."
+      - aws cloudfront create-invalidation --distribution-id $WEB_CF_DIST --paths "/*" > /dev/null
+      - echo "Build + deploy complete."
+
+artifacts:
+  files:
+    - buildspec.yml

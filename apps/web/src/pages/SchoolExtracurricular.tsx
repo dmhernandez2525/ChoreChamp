@@ -310,7 +310,7 @@ export default function SchoolExtracurricular() {
       events={events}
       onPrevWeek={handlePrevWeek}
       onNextWeek={handleNextWeek}
-      onEventClick={(event) => // TODO: handle event click}
+      onEventClick={(_event) => { /* TODO: handle event click */ }}
     />
   );
 

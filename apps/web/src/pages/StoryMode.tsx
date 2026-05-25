@@ -243,7 +243,7 @@ export function StoryMode({ memberId, householdId }: StoryModeProps) {
     ]);
   }
 
-  async function handleDialogueChoice(choiceId: string) {
+  async function handleDialogueChoice(_choiceId: string) {
     // Handle dialogue choice
     // TODO: handle story choice
   }

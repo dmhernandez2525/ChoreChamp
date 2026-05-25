@@ -331,7 +331,7 @@ export function Geofencing() {
             <GeofenceList
               geofences={geofenceList as Geofence[]}
               memberCounts={memberCounts}
-              onEdit={(id) => {
+              onEdit={(_id) => {
                 // TODO: implement edit geofence modal
                 // TODO: implement edit geofence
               }}
